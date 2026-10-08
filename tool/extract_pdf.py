@@ -36,10 +36,81 @@ CHAR_REMAP = {
 
 # Chapter counts are standard, well-known facts -- independent ground truth,
 # not derived from this PDF. (pdf_first_page/pdf_last_page are 1-indexed PDF
-# pages, from the Phase 1 header scan.)
+# pages, from a full-document running-header scan done after Genesis proved
+# the pipeline out -- see the Phase 2 commit for how.)
 BOOKS = [
     # canonical_id, osis, english_name, chapter_count, pdf_first_page, pdf_last_page
+    # Chained so each book's start is the previous book's end + 1 (catches
+    # opener pages, which never carry a header of their own -- same pattern
+    # as Genesis page 7). Three very short books (Lamentations, 2 John,
+    # Jude) never produced a header match at all and were positioned from
+    # their neighbours' detected boundaries instead.
     (1, "Gen", "Genesis", 50, 7, 94),
+    (2, "Exod", "Exodus", 40, 95, 167),
+    (3, "Lev", "Leviticus", 27, 168, 218),
+    (4, "Num", "Numbers", 36, 219, 290),
+    (5, "Deut", "Deuteronomy", 34, 291, 351),
+    (6, "Josh", "Joshua", 24, 352, 393),
+    (7, "Judg", "Judges", 21, 394, 434),
+    (8, "Ruth", "Ruth", 4, 435, 440),
+    (9, "1Sam", "1 Samuel", 31, 441, 495),
+    (10, "2Sam", "2 Samuel", 24, 496, 542),
+    (11, "1Kgs", "1 Kings", 22, 543, 596),
+    (12, "2Kgs", "2 Kings", 25, 597, 647),
+    (13, "1Chr", "1 Chronicles", 29, 648, 697),
+    (14, "2Chr", "2 Chronicles", 36, 698, 754),
+    (15, "Ezra", "Ezra", 10, 755, 771),
+    (16, "Neh", "Nehemiah", 13, 772, 796),
+    (17, "Esth", "Esther", 10, 797, 809),
+    (18, "Job", "Job", 42, 810, 863),
+    (19, "Ps", "Psalms", 150, 864, 1009),
+    (20, "Prov", "Proverbs", 31, 1010, 1055),
+    (21, "Eccl", "Ecclesiastes", 12, 1056, 1070),
+    (22, "Song", "Song of Solomon", 8, 1071, 1080),
+    (23, "Isa", "Isaiah", 66, 1081, 1185),
+    (24, "Jer", "Jeremiah", 52, 1186, 1287),
+    (25, "Lam", "Lamentations", 5, 1288, 1298),
+    (26, "Ezek", "Ezekiel", 48, 1299, 1385),
+    (27, "Dan", "Daniel", 12, 1386, 1413),
+    (28, "Hos", "Hosea", 14, 1414, 1429),
+    (29, "Joel", "Joel", 3, 1430, 1436),
+    (30, "Amos", "Amos", 9, 1437, 1448),
+    (31, "Obad", "Obadiah", 1, 1449, 1451),
+    (32, "Jonah", "Jonah", 4, 1452, 1455),
+    (33, "Mic", "Micah", 7, 1456, 1465),
+    (34, "Nah", "Nahum", 3, 1466, 1470),
+    (35, "Hab", "Habakkuk", 3, 1471, 1475),
+    (36, "Zeph", "Zephaniah", 3, 1476, 1481),
+    (37, "Hag", "Haggai", 2, 1482, 1484),
+    (38, "Zech", "Zechariah", 14, 1485, 1501),
+    (39, "Mal", "Malachi", 4, 1502, 1507),
+    (40, "Matt", "Matthew", 28, 1508, 1571),
+    (41, "Mark", "Mark", 16, 1572, 1610),
+    (42, "Luke", "Luke", 24, 1611, 1675),
+    (43, "John", "John", 21, 1676, 1723),
+    (44, "Acts", "Acts", 28, 1724, 1784),
+    (45, "Rom", "Romans", 16, 1785, 1810),
+    (46, "1Cor", "1 Corinthians", 16, 1811, 1836),
+    (47, "2Cor", "2 Corinthians", 13, 1837, 1853),
+    (48, "Gal", "Galatians", 6, 1854, 1862),
+    (49, "Eph", "Ephesians", 6, 1863, 1871),
+    (50, "Phil", "Philippians", 4, 1872, 1878),
+    (51, "Col", "Colossians", 4, 1879, 1884),
+    (52, "1Thess", "1 Thessalonians", 5, 1885, 1890),
+    (53, "2Thess", "2 Thessalonians", 3, 1891, 1893),
+    (54, "1Tim", "1 Timothy", 6, 1894, 1900),
+    (55, "2Tim", "2 Timothy", 4, 1901, 1906),
+    (56, "Titus", "Titus", 3, 1907, 1909),
+    (57, "Phlm", "Philemon", 1, 1910, 1911),
+    (58, "Heb", "Hebrews", 13, 1912, 1931),
+    (59, "Jas", "James", 5, 1932, 1938),
+    (60, "1Pet", "1 Peter", 5, 1939, 1946),
+    (61, "2Pet", "2 Peter", 3, 1947, 1951),
+    (62, "1John", "1 John", 5, 1952, 1958),
+    (63, "2John", "2 John", 1, 1959, 1960),
+    (64, "3John", "3 John", 1, 1961, 1961),
+    (65, "Jude", "Jude", 1, 1962, 1965),
+    (66, "Rev", "Revelation", 22, 1966, 1995),
 ]
 
 # The separator is normally "." or whitespace, but a chapter-opener can be
@@ -63,6 +134,24 @@ HEADER_RE = re.compile(
 MAX_VERSE = 176  # Psalm 119, the longest chapter in the Bible -- a sanity
                  # bound so a stray number elsewhere can't be mistaken for
                  # a verse marker.
+
+# Poetry books don't necessarily use the "chapter number stands in for
+# verse 1" convention narrative books do -- found directly: Psalms gives
+# each psalm its own standalone title line ("SAM 2" / "PSALM 2", on both
+# sides), with verse 1 then typeset as a plain, unambiguous "1". Kept
+# book-agnostic (not gated to "only when the current book is Psalms") --
+# the strict num == chapter + 1 check in feed_line that consumes this is
+# the actual safety net, so a coincidental match elsewhere is simply
+# rejected there rather than needing to be filtered out here.
+CHAPTER_TITLE_RE = re.compile(r'^[A-Za-zÂÊÎÛâêîûṬṭ]{2,20}\s+(\d{1,3})$')
+
+# "Selah" (kept as-is, untranslated, on both the Mizo and English sides) is
+# a liturgical pause-marker, not verse text. On its own line it's already
+# handled fine -- it just joins onto the current verse like any other
+# continuation. The harmful case, found directly, is "Selah" sharing a
+# line with the START of the NEXT verse ("Selah  4 My soul is among
+# lions"), which hides that verse's marker from VERSE_RE entirely.
+SELAH_LEAD_RE = re.compile(r'^Selah\s+(?=\d)')
 
 # One scripture citation, e.g. "15:18" (same-book, bare), "Isa. 58:13"
 # (book-prefixed), or "2 Kor. 4:6" (a NUMBERED book -- this is the case that
@@ -185,7 +274,11 @@ def find_gutter(lines: list[str]) -> int | None:
     def consider(start, length):
         nonlocal best
         mid_lo, mid_hi = width * 0.25, width * 0.75
-        if length >= 3 and mid_lo < start < mid_hi:
+        # A dense page (found directly: Exodus 22-23's short, reference-
+        # heavy legal-code verses) can have a gutter only 1 column wide --
+        # the 97% blank threshold above is already a strong filter, so
+        # requiring extra width on top of it only rejects genuine gutters.
+        if length >= 1 and mid_lo < start < mid_hi:
             if best is None or length > best[1]:
                 best = (start, length)
 
@@ -229,7 +322,18 @@ def local_split_point(line: str, gutter: int, margin: int = 20) -> int:
             i = j
         else:
             i += 1
-    return best_start if best_len > 0 else gutter
+    # Require more than ordinary word-spacing (a single space) before
+    # overriding the global gutter -- found directly: on a line where one
+    # side has no content at all (e.g. a short Mizo verse that ends on the
+    # previous line, leaving this line all-English), every normal
+    # word-break in that prose ties at length 1, and the nearest-to-gutter
+    # tie-break was slicing real sentences in half at a random word
+    # boundary. A genuine local shift can still be narrow, though -- a
+    # reference crowded right up against the next verse marker (found
+    # directly: "Thup. 14:6  3 For...") can have as little as a 2-space
+    # gap -- so >=2, not a wider margin, is what actually separates "every
+    # candidate ties at 1" from "a real, if tight, gap".
+    return best_start if best_len >= 2 else gutter
 
 
 def split_page_columns(page_text: str) -> tuple[list[str] | None, list[str] | None, str]:
@@ -312,6 +416,23 @@ class ColumnParser:
         if not line:
             return
 
+        # A standalone chapter-title line ("SAM 2" / "PSALM 2"), checked
+        # before everything else: it doesn't start with a digit, so it
+        # can't collide with the verse regex or is_reference, but left
+        # unhandled it would otherwise just get silently absorbed as
+        # continuation text onto the PREVIOUS verse.
+        m_title = CHAPTER_TITLE_RE.match(line)
+        if m_title and int(m_title.group(1)) == self.chapter + 1:
+            self.chapter, self.verse = int(m_title.group(1)), 0
+            self.cur_key = None
+            return
+
+        m_selah = SELAH_LEAD_RE.match(line)
+        if m_selah:
+            if self.cur_key:
+                self.verses[self.cur_key] = join_wrapped(self.verses[self.cur_key], "Selah")
+            line = line[m_selah.end():]
+
         # Checked BEFORE the verse regex, deliberately: a numbered-book
         # reference like "2 Kor. 4:6" starts with a digit+space exactly
         # like a verse marker. Checking VERSE_RE first (the original bug)
@@ -334,13 +455,36 @@ class ColumnParser:
 
         m = VERSE_RE.match(line)
         if m and int(m.group(1)) <= MAX_VERSE:
-            self._start_verse(int(m.group(1)), m.group(2))
+            num, text = int(m.group(1)), m.group(2)
+            if not self._would_accept(num):
+                # A multi-digit chapter/verse marker can be typeset with an
+                # internal space (found directly: Exodus 17 rendered as
+                # "1 7 Then all the congregation..."). Only merges the next
+                # short digit run onto `num` when doing so produces a
+                # number that DOES satisfy the strict rule below -- this
+                # never guesses blindly, it only resolves an otherwise
+                # certain rejection.
+                m2 = re.match(r'^(\d{1,2})[.\s]\s*(.*)$', text)
+                if m2:
+                    merged = int(f"{num}{m2.group(1)}")
+                    if merged <= MAX_VERSE and self._would_accept(merged):
+                        num, text = merged, m2.group(2)
+            self._start_verse(num, text)
             return
 
         if self.cur_key:
             self.verses[self.cur_key] = join_wrapped(self.verses[self.cur_key], line)
         else:
             self.pending_heading_lines.append(line)
+
+    def _would_accept(self, num: int) -> bool:
+        """Read-only mirror of _start_verse's acceptance rule, used to test
+        a candidate number (e.g. a merged split-digit marker) before
+        committing to it, without duplicating or running the real state
+        transition."""
+        if self.chapter == 0:
+            return True
+        return num == self.verse + 1 or num == self.chapter + 1
 
     def _start_verse(self, num: int, text: str) -> None:
         # Deliberately strict: a bare number is ambiguous between "next
@@ -459,6 +603,44 @@ def extract_book(canonical_id, osis, name, chapter_count, first_page, last_page)
     return mizo, eng, page_strategies, mizo_stripped, eng_stripped, headers
 
 
+def run_all() -> None:
+    """Runs every book in BOOKS, prints one summary line each, and a final
+    totals line. A clean row is 0 anomalies on both sides and a verse count
+    matching between languages -- exactly the bar Genesis was held to."""
+    grand_mizo = grand_eng = 0
+    trouble: list[str] = []
+    print(f"{'Book':<16} {'Ch':>4} {'Mizo v':>7} {'Eng v':>7} {'Anomalies':>10}  Status")
+    print("-" * 64)
+    for canonical_id, osis, name, chapter_count, first_page, last_page in BOOKS:
+        mizo, eng, _, _, _, _ = extract_book(
+            canonical_id, osis, name, chapter_count, first_page, last_page
+        )
+        n_anom = len(mizo.anomalies) + len(eng.anomalies)
+        clean = (
+            n_anom == 0
+            and mizo.chapter == chapter_count
+            and eng.chapter == chapter_count
+            and len(mizo.verses) == len(eng.verses)
+        )
+        status = "OK" if clean else "CHECK"
+        if not clean:
+            trouble.append(name)
+        print(
+            f"{name:<16} {chapter_count:>4} {len(mizo.verses):>7} {len(eng.verses):>7} "
+            f"{n_anom:>10}  {status}"
+        )
+        grand_mizo += len(mizo.verses)
+        grand_eng += len(eng.verses)
+
+    print("-" * 64)
+    print(f"{'TOTAL':<16} {'':>4} {grand_mizo:>7} {grand_eng:>7}")
+    print()
+    if trouble:
+        print(f"Needs a closer look ({len(trouble)}): {', '.join(trouble)}")
+    else:
+        print("All 66 books clean: zero anomalies, exact chapter and verse-count match.")
+
+
 def main():
     # Windows' default console codepage (cp1252) can't print the Mizo
     # diacritics; force UTF-8 regardless of platform rather than relying on
@@ -469,7 +651,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--book", default="genesis")
     ap.add_argument("--json", default=None)
+    ap.add_argument("--all", action="store_true", help="run every book, print a summary table")
     args = ap.parse_args()
+
+    if args.all:
+        run_all()
+        return
 
     try:
         book = next(b for b in BOOKS if b[2].lower() == args.book.lower())
