@@ -248,12 +248,22 @@ _PREFIX = rf'(?:[1-3]\s?)?[{_ABBR_LETTER}][{_ABBR_LETTER} ]{{0,9}}'
 # incidental layout spacing already tolerated after a comma or dash right
 # next to it in this same pattern ("[,-]\s?\d"); the colon just hadn't
 # been given the same allowance yet.
+#
+# The dash-separated repeat can itself carry a second ":verse" -- a range
+# that crosses a CHAPTER boundary ("1 Lal. 22:1-23:30", found directly in
+# Zephaniah's opening cross-reference chain, alongside "2 Chro.
+# 34:1-35:27" right next to it). Without this, is_reference failed on the
+# whole chain, and the strict verse-marker check downstream mistook its
+# second reference's leading "2" for a real verse-2 marker trailing the
+# first -- a worse failure than the plain rejection this gap used to
+# cause, since now it actively started two fake verses instead of
+# dropping one anomalous line.
 _REF_UNIT = (
-    rf'(?:{_PREFIX}\.?\s*\d{{1,3}}:\s?\d{{1,3}}(?:[,-]\s?\d{{1,3}})*'
+    rf'(?:{_PREFIX}\.?\s*\d{{1,3}}:\s?\d{{1,3}}(?:[,-]\s?\d{{1,3}}(?::\d{{1,3}})?)*'
     rf'|{_PREFIX}\.\s*\d{{1,3}}'
-    r'|\d{1,3}:\s?\d{1,3}(?:[,-]\s?\d{1,3})*'
+    r'|\d{1,3}:\s?\d{1,3}(?:[,-]\s?\d{1,3}(?::\d{1,3})?)*'
     r'|\d{1,3}-\d{1,3}'
-    r'|:\s?\d{1,3}(?:[,-]\s?\d{1,3})*'
+    r'|:\s?\d{1,3}(?:[,-]\s?\d{1,3}(?::\d{1,3})?)*'
     r')\.?'
 )
 # A full reference line/tail is one REAL unit (colon or dash required --
@@ -687,6 +697,33 @@ class ColumnParser:
                     merged = int(f"{num}{m2.group(1)}")
                     if merged <= MAX_VERSE and self._would_accept(merged):
                         num, text = merged, m2.group(2)
+            # The text itself can end with the NEXT verse's own marker --
+            # found directly, Leviticus 7:28's whole line is "28 ... 28
+            # Then the LORD spoke to Moses, saying, 29" (both sides open
+            # verse 28 AND close with verse 29's marker on the same row).
+            # VERSE_RE only ever looks at the START of a line, so without
+            # this, the trailing "29" is silently swallowed into verse
+            # 28's own text and never becomes a verse at all -- the same
+            # cascading loss every other missed marker causes. Same
+            # guards as the trailing-marker check below, but against
+            # `num + 1` directly rather than _would_accept: `self.verse`
+            # hasn't been updated to `num` yet at this point, so comparing
+            # against the OLD verse number would be wrong.
+            m_tail = TRAILING_MARKER_RE.match(text)
+            if (
+                m_tail
+                and int(m_tail.group(2)) == num + 1
+                and not is_reference(text[m_tail.start(2):])
+                and not REF_CHAIN_TAIL_RE.search(m_tail.group(1))
+                and (
+                    m_tail.group(3) is None
+                    or m_tail.group(3)[:1].isupper()
+                    or m_tail.group(1)[-1:] in ';:,.'
+                )
+            ):
+                self._start_verse(num, m_tail.group(1))
+                self._start_verse(num + 1, m_tail.group(3) or "")
+                return
             self._start_verse(num, text)
             return
 
