@@ -317,6 +317,38 @@ def is_reference(line: str) -> bool:
 REF_TAIL_SPLIT_RE = re.compile(r'[;\s](?=\S)')
 
 
+_SEMICOLON_BOUNDARY_RE = re.compile(r';\s*(?=\S)')
+
+
+def ends_with_reference(text: str) -> bool:
+    """True if some suffix of `text`, split strictly at a SEMICOLON
+    boundary (unlike strip_trailing_refs' scan, which also splits at
+    plain whitespace), is itself a complete reference -- e.g. "...Sam
+    16:2; I Kor. 9:16,17; Philm. 11" ends with the reference "Philm. 11"
+    even though the whole string isn't one. The trailing-marker check's
+    existing "is the text AFTER the marker a reference" guard (for "Jos.
+    15:35; 2 Lal. 4:8", where the marker's own number LEADS a reference)
+    is the mirror image of this -- found directly, Luke 17:10's own
+    trailing reference ends in "Philm. 11", whose bare "11" happens to
+    equal the real verse+1 and was being mistaken for a fresh verse
+    marker instead of the back half of this reference.
+
+    Restricted to semicolons specifically, NOT plain whitespace (found
+    directly: splitting at every word boundary let "...standing upright.
+    16" -- ordinary prose ending a sentence right before the NEXT
+    verse's real marker -- read as a false "reference", since _PREFIX
+    accepts any short word as a plausible book abbreviation and "upright.
+    16" then looks exactly like "Jer. 16". A semicolon is what actually
+    marks "one more item in a reference chain" elsewhere in this file;
+    plain prose essentially never ends a sentence with one."""
+    if is_reference(text):
+        return True
+    for m in _SEMICOLON_BOUNDARY_RE.finditer(text):
+        if is_reference(text[m.end():]):
+            return True
+    return False
+
+
 def strip_leading_ref(line: str) -> tuple[str | None, str]:
     """Mirror of the trailing case, for the START of a line: on a sparse
     line (little or no real prose), pdftotext's -layout mode positions
@@ -823,6 +855,14 @@ class ColumnParser:
             # it's left to fall through to plain continuation, where the
             # existing strip_trailing_refs cleans it up same as always.
             and not is_reference(line[m_trail.start(2):])
+            # The mirror image: the marker's own bare number can instead
+            # be the TAIL half of a reference sitting right before it
+            # (found directly, Luke 17:10's own trailing reference ends
+            # "...Philm. 11" -- "11" happens to equal the real verse+1,
+            # with nothing after it either, so every other guard here
+            # passes). ends_with_reference catches this from the other
+            # side of the same coin.
+            and not ends_with_reference(line[: m_trail.end(2)])
             and not REF_CHAIN_TAIL_RE.search(trail_g1)
             # A lowercase tail is trusted only right after real punctuation
             # (a clause boundary) -- found directly: Joshua 15:32's "...
