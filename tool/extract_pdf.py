@@ -467,10 +467,32 @@ def local_split_point(line: str, gutter: int, margins: tuple[int, ...] = (20, 30
     # directly: "Thup. 14:6  3 For...") can have as little as a 2-space
     # gap -- so >=2, not a wider margin, is what actually separates "every
     # candidate ties at 1" from "a real, if tight, gap".
-    return best_start if best_len >= 2 else gutter
+    if best_len >= 2:
+        return best_start
+    # Last resort, found directly: John 10:6's line has NO gap anywhere
+    # near the gutter wider than ordinary word-spacing (every candidate
+    # ties at 1, same shape the >=2 rule above is deliberately guarding
+    # against) -- but the raw gutter itself then lands inside a real word
+    # ("used" -> "us" / "ed"), because the English column's own verse
+    # marker is wedged between two single-space gaps too narrow to ever
+    # qualify above. A bare 1-3 digit number flanked by a space on both
+    # sides, immediately followed by a capitalized word ("...mahse eng 6
+    # Jesus used..."), is specific enough to trust even at this width --
+    # ordinary running prose essentially never puts an isolated number
+    # directly before a capitalized word outside of a genuine verse
+    # marker -- so split right before the digit, giving it entirely to
+    # whichever column it actually starts.
+    lo, hi = max(0, gutter - margins[-1]), gutter + margins[-1]
+    best_dist = None
+    for m in re.finditer(r'(?<=\S )\d{1,3} (?=[A-ZÂÊÎÛṬ])', line):
+        if lo <= m.start() < hi and (best_dist is None or abs(m.start() - gutter) < best_dist):
+            best_start, best_dist = m.start(), abs(m.start() - gutter)
+    return best_start if best_dist is not None else gutter
 
 
-STOCK_INTRO_TAIL_RE = re.compile(r'Bu hi Bible|bung \d{1,3} leh ch.ng \d{1,4} a awm')
+STOCK_INTRO_TAIL_RE = re.compile(
+    r'Bu hi Bible|bung \d{1,3} leh ch.ng \d{1,4} a awm|Bible a lehkhabu \d{1,3}-na'
+)
 
 
 def split_page_columns(
@@ -511,13 +533,18 @@ def split_page_columns(
                 left.append(l[:split_at].rstrip())
                 right.append(l[split_at:].rstrip())
             # Every book's intro ends with a stock sentence giving its
-            # position and size. Two different wordings of it were found
+            # position and size. Three different wordings of it were found
             # directly: "X Bu hi Bible bu N-na a ni a..." ("X is Bible's
-            # Nth book...", Genesis, Ezekiel, 1 Kings) and "...bung N leh
+            # Nth book...", Genesis, Ezekiel, 1 Kings), "...bung N leh
             # ch{?}ng N a awm" ("...has N chapters and N verses", Exodus,
             # Leviticus, Judges -- the {?} is a single placeholder char
             # that decodes differently per font subset, same reason
-            # _ABBR_LETTER includes the Unicode replacement character).
+            # _ABBR_LETTER includes the Unicode replacement character),
+            # and "X hi Bible a lehkhabu N-na" (the epistles' own phrasing
+            # for the same "Bible's Nth letter" fact -- 2 Samuel, 1 Peter,
+            # 1/2 John, Revelation; found directly on 2 John's single page,
+            # where this sentence sits just 4 lines into the accepted
+            # skip and leaked straight into English verse 1's text).
             # When the book's own Mizo name starts with a digit ("1
             # Lalte" for 1 Kings, and every other numbered book), THIS
             # line starts with a bare "1" too, which the minimal-skip
