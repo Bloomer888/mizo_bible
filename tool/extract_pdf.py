@@ -45,7 +45,11 @@ BOOKS = [
     # opener pages, which never carry a header of their own -- same pattern
     # as Genesis page 7). Three very short books (Lamentations, 2 John,
     # Jude) never produced a header match at all and were positioned from
-    # their neighbours' detected boundaries instead.
+    # their neighbours' detected boundaries instead -- one of those
+    # estimates was off by a page: 3 John's own verses 13-14 run onto what
+    # was originally marked as Jude's first page, found directly when
+    # Jude's own extraction opened with 3 John's running header and a bare
+    # "13" read as if it were Jude's own verse 1.
     (1, "Gen", "Genesis", 50, 7, 94),
     (2, "Exod", "Exodus", 40, 95, 167),
     (3, "Lev", "Leviticus", 27, 168, 218),
@@ -109,8 +113,8 @@ BOOKS = [
     (61, "2Pet", "2 Peter", 3, 1947, 1951),
     (62, "1John", "1 John", 5, 1952, 1958),
     (63, "2John", "2 John", 1, 1959, 1959),
-    (64, "3John", "3 John", 1, 1960, 1960),
-    (65, "Jude", "Jude", 1, 1961, 1964),
+    (64, "3John", "3 John", 1, 1960, 1961),
+    (65, "Jude", "Jude", 1, 1962, 1964),
     (66, "Rev", "Revelation", 22, 1965, 1995),
 ]
 
