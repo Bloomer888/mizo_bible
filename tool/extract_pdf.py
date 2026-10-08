@@ -15,6 +15,7 @@ Usage:
 import argparse
 import json
 import re
+import statistics
 import subprocess
 import sys
 from pathlib import Path
@@ -230,12 +231,17 @@ _ABBR_LETTER = 'A-Za-zÂÊÎÛâêîûṬṭ�'
 # corrupting 1 Kings 7 onward). A real abbreviation always has the period
 # typeset; ordinary prose essentially never does right before a number.
 _PREFIX = rf'(?:[1-3]\s?)?[{_ABBR_LETTER}][{_ABBR_LETTER} ]{{0,9}}'
+# The colon itself tolerates one space after it too (found directly:
+# "1 Lal. 18: 21" for "1 Kings 18:21", Psalm 119) -- the same kind of
+# incidental layout spacing already tolerated after a comma or dash right
+# next to it in this same pattern ("[,-]\s?\d"); the colon just hadn't
+# been given the same allowance yet.
 _REF_UNIT = (
-    rf'(?:{_PREFIX}\.?\s*\d{{1,3}}:\d{{1,3}}(?:[,-]\s?\d{{1,3}})*'
+    rf'(?:{_PREFIX}\.?\s*\d{{1,3}}:\s?\d{{1,3}}(?:[,-]\s?\d{{1,3}})*'
     rf'|{_PREFIX}\.\s*\d{{1,3}}'
-    r'|\d{1,3}:\d{1,3}(?:[,-]\s?\d{1,3})*'
+    r'|\d{1,3}:\s?\d{1,3}(?:[,-]\s?\d{1,3})*'
     r'|\d{1,3}-\d{1,3}'
-    r'|:\d{1,3}(?:[,-]\s?\d{1,3})*'
+    r'|:\s?\d{1,3}(?:[,-]\s?\d{1,3})*'
     r')\.?'
 )
 # A full reference line/tail is one REAL unit (colon or dash required --
@@ -332,35 +338,33 @@ def join_wrapped(existing: str, new_line: str) -> str:
     return existing + " " + new_line
 
 
-def find_gutter(lines: list[str]) -> int | None:
-    """Longest run of columns blank on >=97% of non-empty lines, in the
-    middle half of the page width. None if no clear gutter -- matches the
-    threshold validated in Phase 1 (93.6% detection rate on sampled pages)."""
+def _gutter_candidates(lines: list[str]) -> list[tuple[int, int]]:
+    """Every maximal run of columns blank on >=97% of non-empty lines, in
+    the middle half of the page width -- the raw candidate list shared by
+    `find_gutter`'s hinted and hintless modes."""
     nonblank = [l for l in lines if l.strip()]
     if len(nonblank) < 5:
-        return None
+        return []
     width = max(len(l) for l in nonblank)
     if width < 60:
-        return None
+        return []
     n = len(nonblank)
     blank_count = [0] * width
     for l in nonblank:
         for c in range(width):
             if c >= len(l) or l[c] == ' ':
                 blank_count[c] += 1
-    best = None
+    mid_lo, mid_hi = width * 0.25, width * 0.75
+    candidates = []
     run_start = None
 
     def consider(start, length):
-        nonlocal best
-        mid_lo, mid_hi = width * 0.25, width * 0.75
         # A dense page (found directly: Exodus 22-23's short, reference-
         # heavy legal-code verses) can have a gutter only 1 column wide --
         # the 97% blank threshold above is already a strong filter, so
         # requiring extra width on top of it only rejects genuine gutters.
         if length >= 1 and mid_lo < start < mid_hi:
-            if best is None or length > best[1]:
-                best = (start, length)
+            candidates.append((start, length))
 
     for c in range(width):
         if blank_count[c] >= 0.97 * n:
@@ -372,21 +376,40 @@ def find_gutter(lines: list[str]) -> int | None:
             run_start = None
     if run_start is not None:
         consider(run_start, width - run_start)
-    return best[0] if best else None
+    return candidates
 
 
-def local_split_point(line: str, gutter: int, margin: int = 20) -> int:
-    """The page's gutter column is computed globally, from where MOST lines
-    are blank -- but on a sparse line (e.g. just a cross-reference), found
-    directly by inspection, pdftotext's -layout mode can position text
-    loosely enough that the real gap sits several characters off from the
-    global gutter, and splitting there physically severs a token in half
-    (observed: "...Heb. 4:4" split into left "...4" / right ":4"). Finds
-    the actual widest blank run within `margin` of the global gutter on
-    THIS line and splits there instead, falling back to the global gutter
-    if the line has no useful gap nearby (the normal case for most lines,
-    where the local and global answers coincide anyway)."""
-    lo, hi = max(0, gutter - margin), gutter + margin
+def find_gutter(lines: list[str], hint: float | None = None) -> int | None:
+    """Picks the real gutter among the candidate blank-column runs. None if
+    no candidate qualifies -- matches the threshold validated in Phase 1
+    (93.6% detection rate on sampled pages).
+
+    Without a hint, the widest run wins (the original rule, still the right
+    default for a page with only one real candidate -- the normal case).
+    With a hint, the run closest to it wins instead: found directly on
+    Psalm 119's pages, whose short, choppy verse-continuation lines leave
+    enough stray blank space that SEVERAL columns pass the 97% threshold,
+    and the real gutter isn't reliably the widest one among them. `hint` is
+    this book's own consensus gutter column (see extract_book) -- every
+    page in a book shares one fixed print layout, so where most pages agree
+    is strong independent evidence for where an ambiguous page's gutter
+    actually is."""
+    candidates = _gutter_candidates(lines)
+    if not candidates:
+        return None
+    if hint is None:
+        best = None
+        for start, length in candidates:
+            if best is None or length > best[1]:
+                best = (start, length)
+        return best[0]
+    start, _ = min(candidates, key=lambda sl: (abs(sl[0] - hint), -sl[1]))
+    return start
+
+
+def _widest_run_in_window(line: str, lo: int, hi: int, gutter: int) -> tuple[int, int]:
+    """Widest blank run within [lo, hi), tie-broken by closeness to
+    `gutter`. Returns (start, length); length is 0 if nothing qualifies."""
     padded = line.ljust(hi)
     best_start, best_len = gutter, 0
     i = lo
@@ -402,6 +425,37 @@ def local_split_point(line: str, gutter: int, margin: int = 20) -> int:
             i = j
         else:
             i += 1
+    return best_start, best_len
+
+
+def local_split_point(line: str, gutter: int, margins: tuple[int, ...] = (20, 30)) -> int:
+    """The page's gutter column is computed globally, from where MOST lines
+    are blank -- but on a sparse line (e.g. just a cross-reference), found
+    directly by inspection, pdftotext's -layout mode can position text
+    loosely enough that the real gap sits several characters off from the
+    global gutter, and splitting there physically severs a token in half
+    (observed: "...Heb. 4:4" split into left "...4" / right ":4"). Finds the
+    WIDEST blank run within the first margin of `margins` and splits there,
+    same rule as always; only widens to the next margin if that one found
+    NOTHING at all (a run >=2 wide -- see below), rather than always
+    searching the widest margin up front. That distinction matters: widest
+    wins reliably within a line's own real column gap, but a wider search
+    window can also reach an unrelated, incidentally-wider gap elsewhere on
+    the same line (a line's leading indentation, or a plain word-gap in
+    running prose) that has nothing to do with the real boundary -- found
+    directly, this broke Exodus and Jeremiah when the wider margin was
+    tried unconditionally. Escalating only on a dead end at the narrower
+    margin keeps every line that already works today exactly as it was,
+    and only reaches further for a line like Nehemiah 9:16's, whose long
+    reference chain ("Ex. 16:14; Num. 20:8; Joh. 6:31; 1 Kor. 10:4") pushes
+    the real gap further from the global gutter than any line had needed
+    before."""
+    best_start, best_len = gutter, 0
+    for margin in margins:
+        lo, hi = max(0, gutter - margin), gutter + margin
+        best_start, best_len = _widest_run_in_window(line, lo, hi, gutter)
+        if best_len >= 2:
+            break
     # Require more than ordinary word-spacing (a single space) before
     # overriding the global gutter -- found directly: on a line where one
     # side has no content at all (e.g. a short Mizo verse that ends on the
@@ -416,13 +470,21 @@ def local_split_point(line: str, gutter: int, margin: int = 20) -> int:
     return best_start if best_len >= 2 else gutter
 
 
-def split_page_columns(page_text: str) -> tuple[list[str] | None, list[str] | None, str]:
+STOCK_INTRO_TAIL_RE = re.compile(r'Bu hi Bible|bung \d{1,3} leh ch.ng \d{1,4} a awm')
+
+
+def split_page_columns(
+    page_text: str, hint: float | None = None
+) -> tuple[list[str] | None, list[str] | None, str]:
     """Returns (left_lines, right_lines, strategy). Tries the whole page
     first; book-opener pages mix single-column intro prose with two-column
     verse text, which can defeat whole-page gutter detection, so falls back
-    to progressively smaller bottom slices (the intro is always at the top)."""
+    to progressively smaller bottom slices (the intro is always at the top).
+    `hint` is this book's consensus gutter column (see extract_book),
+    passed straight through to every find_gutter call so an ambiguous page
+    resolves against the rest of the book instead of guessing alone."""
     lines = page_text.split("\n")
-    gutter = find_gutter(lines)
+    gutter = find_gutter(lines, hint)
     if gutter is not None:
         left, right = [], []
         for l in lines:
@@ -441,7 +503,7 @@ def split_page_columns(page_text: str) -> tuple[list[str] | None, list[str] | No
     max_search = min(len(lines) - 5, 60)
     for skip in range(1, max_search):
         sub = lines[skip:]
-        gutter = find_gutter(sub)
+        gutter = find_gutter(sub, hint)
         if gutter is not None:
             left, right = [], []
             for l in sub:
@@ -449,19 +511,29 @@ def split_page_columns(page_text: str) -> tuple[list[str] | None, list[str] | No
                 left.append(l[:split_at].rstrip())
                 right.append(l[split_at:].rstrip())
             # Every book's intro ends with a stock sentence giving its
-            # position and size ("X Bu hi Bible bu N-na a ni a..." -- "X
-            # is Bible's Nth book..."), found directly in Genesis's,
-            # Ezekiel's, and 1 Kings' openers alike. When the book's own
-            # Mizo name starts with a digit ("1 Lalte" for 1 Kings, and
-            # every other numbered book), THIS line starts with a bare
-            # "1" too, which the minimal-skip search above happily
-            # accepts as if it were verse 1 -- found directly: it broke
-            # 1 Kings specifically this way. A gutter existing doesn't by
-            # itself mean the intro has ended, so a candidate still
-            # containing this stock phrase is rejected in favour of a
-            # larger skip, rather than trusted just because some
-            # two-column structure was detectable.
-            if not any("Bu hi Bible" in l for l in left[:10]):
+            # position and size. Two different wordings of it were found
+            # directly: "X Bu hi Bible bu N-na a ni a..." ("X is Bible's
+            # Nth book...", Genesis, Ezekiel, 1 Kings) and "...bung N leh
+            # ch{?}ng N a awm" ("...has N chapters and N verses", Exodus,
+            # Leviticus, Judges -- the {?} is a single placeholder char
+            # that decodes differently per font subset, same reason
+            # _ABBR_LETTER includes the Unicode replacement character).
+            # When the book's own Mizo name starts with a digit ("1
+            # Lalte" for 1 Kings, and every other numbered book), THIS
+            # line starts with a bare "1" too, which the minimal-skip
+            # search above happily accepts as if it were verse 1 -- found
+            # directly: it broke 1 Kings specifically this way, and the
+            # verse-count sentence similarly leaked a fake "verse 1" into
+            # Exodus. A gutter existing doesn't by itself mean the intro
+            # has ended, so a candidate still containing either stock
+            # phrase is rejected in favour of a larger skip, rather than
+            # trusted just because some two-column structure was
+            # detectable. Checked against the RAW pre-split lines, not
+            # `left` -- found directly: Exodus's stock sentence straddles
+            # exactly where this candidate's (wrong) gutter guess lands,
+            # so it reads intact in `sub` but comes out cut in half across
+            # `left`/`right`, invisible to either one alone.
+            if not any(STOCK_INTRO_TAIL_RE.search(l) for l in sub[:10]):
                 return left, right, f"skip_top_{skip}_lines"
 
     return None, None, "no_gutter_detected"
@@ -698,12 +770,28 @@ def extract_book(canonical_id, osis, name, chapter_count, first_page, last_page)
     page_strategies = []
     headers = []
 
-    for i, page_text in enumerate(pages):
-        pdf_page_num = first_page + i
+    # Strip headers once and bank each page's own (hint-less) gutter guess,
+    # then take the book's consensus (median) as a hint for the real pass
+    # below. Every page in a book is printed with the one same fixed
+    # column layout, so where most pages agree is strong independent
+    # evidence for a page whose own text is too sparse to pin the gutter
+    # down alone (found directly: Psalm 119's short, choppy lines left
+    # enough stray blank space that the wrong column run was the widest).
+    stripped_pages = []
+    gutter_votes = []
+    for page_text in pages:
         page_text, header = strip_header_line(page_text)
+        stripped_pages.append((page_text, header))
+        g = find_gutter(page_text.split("\n"))
+        if g is not None:
+            gutter_votes.append(g)
+    hint = statistics.median(gutter_votes) if gutter_votes else None
+
+    for i, (page_text, header) in enumerate(stripped_pages):
+        pdf_page_num = first_page + i
         if header:
             headers.append((pdf_page_num, header))
-        left_lines, right_lines, strategy = split_page_columns(page_text)
+        left_lines, right_lines, strategy = split_page_columns(page_text, hint)
         page_strategies.append((pdf_page_num, strategy))
         if left_lines is None:
             continue
