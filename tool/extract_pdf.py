@@ -69,8 +69,8 @@ BOOKS = [
     (22, "Song", "Song of Solomon", 8, 1071, 1080),
     (23, "Isa", "Isaiah", 66, 1081, 1185),
     (24, "Jer", "Jeremiah", 52, 1186, 1287),
-    (25, "Lam", "Lamentations", 5, 1288, 1298),
-    (26, "Ezek", "Ezekiel", 48, 1299, 1385),
+    (25, "Lam", "Lamentations", 5, 1288, 1297),
+    (26, "Ezek", "Ezekiel", 48, 1298, 1385),
     (27, "Dan", "Daniel", 12, 1386, 1413),
     (28, "Hos", "Hosea", 14, 1414, 1429),
     (29, "Joel", "Joel", 3, 1430, 1436),
@@ -107,18 +107,20 @@ BOOKS = [
     (60, "1Pet", "1 Peter", 5, 1939, 1946),
     (61, "2Pet", "2 Peter", 3, 1947, 1951),
     (62, "1John", "1 John", 5, 1952, 1958),
-    (63, "2John", "2 John", 1, 1959, 1960),
-    (64, "3John", "3 John", 1, 1961, 1961),
-    (65, "Jude", "Jude", 1, 1962, 1965),
-    (66, "Rev", "Revelation", 22, 1966, 1995),
+    (63, "2John", "2 John", 1, 1959, 1959),
+    (64, "3John", "3 John", 1, 1960, 1960),
+    (65, "Jude", "Jude", 1, 1961, 1964),
+    (66, "Rev", "Revelation", 22, 1965, 1995),
 ]
 
 # The separator is normally "." or whitespace, but a chapter-opener can be
 # typeset with no separator at all (found directly: "41Then it came to
-# pass..." for Genesis 41) -- the lookahead branch covers that specific
-# case (digit directly followed by a capital letter) without accepting a
-# bare digit run into normal prose, which never happens in this text.
-VERSE_RE = re.compile(r'^(\d{1,3})(?:[.\s]|(?=[A-Z]))\s*(.*)$')
+# pass..." for Genesis 41, and "31"At the same time," for Jeremiah 31 --
+# the second shows the number can also run straight into an opening quote
+# before the capital letter). The lookahead covers both, with an optional
+# quote mark, without accepting a bare digit run into normal prose, which
+# never happens in this text.
+VERSE_RE = re.compile(r'^(\d{1,3})(?:[.\s]|(?=["“]?[A-Z]))\s*(.*)$')
 
 # The running header on most pages, e.g.
 # "GENESIS 1:30                    3  GENESIS 2:18" -- book+ch:vs on both
@@ -153,6 +155,15 @@ CHAPTER_TITLE_RE = re.compile(r'^[A-Za-zÂÊÎÛâêîûṬṭ]{2,20}\s+(\d{1,3}
 # lions"), which hides that verse's marker from VERSE_RE entirely.
 SELAH_LEAD_RE = re.compile(r'^Selah\s+(?=\d)')
 
+# The mirror image of a leading marker: a continuation line can end with
+# the NEXT verse's bare marker instead of starting a fresh line with it
+# (found directly: "...maiin ka siam ang.          18", where "18" is
+# verse 18's own marker, not part of verse 17's text). VERSE_RE only ever
+# looks at the START of a line, so this needs its own check. Requires a
+# wide gap (2+ spaces) before the number, the same bar used elsewhere to
+# tell a real column/content boundary apart from ordinary word-spacing.
+TRAILING_MARKER_RE = re.compile(r'^(.*\S)\s{2,}(\d{1,3})$')
+
 # One scripture citation, e.g. "15:18" (same-book, bare), "Isa. 58:13"
 # (book-prefixed), or "2 Kor. 4:6" (a NUMBERED book -- this is the case that
 # matters most: it starts with a digit, exactly like a verse marker, which
@@ -172,19 +183,46 @@ SELAH_LEAD_RE = re.compile(r'^Selah\s+(?=\d)')
 # ever contains it, so treating it as letter-like here is safe and avoids
 # needing to reverse-engineer every font subset's encoding individually.
 _ABBR_LETTER = 'A-Za-zÂÊÎÛâêîûṬṭ�'
-SINGLE_REF_RE = re.compile(
-    rf'^(?:(?:[1-3]\s?)?[{_ABBR_LETTER}][{_ABBR_LETTER}.]{{0,10}}\.?\s*)?'
-    r'\d{1,3}:\d{1,3}(?:[,-]\s?\d{1,3})*\.?$'
+# The abbreviation body tolerates ONE embedded space (found directly:
+# "I sa. 9:13" for what should be "Isa." -- the same kind of mid-token
+# spacing quirk already handled for chapter markers, "1 7Then" for "17").
+# Still bounded to {0,10} total characters, so this can't swallow a real
+# multi-word sentence -- a genuine abbreviation is always short.
+# Two further alternatives, both same-chapter shorthand that skips the
+# chapter number: a bare "N-M" range with NO colon ("1-11; 9-11; 18:1;
+# Jud. 9:8"), and a bare ":M-N" WITH a colon but nothing before it
+# (":12-18; Jer. 34:8-14" -- found directly, Exodus 21). Kept as their own
+# branches rather than making the chapter number optional in the main
+# pattern, so a genuine chapter:verse citation still requires one.
+# One reference unit: an optional book prefix, then either a chapter:verse
+# citation (with comma/dash continuations) or a bare N-M range. No anchors
+# here -- this is a fragment, reused below to match a RUN of these units
+# back to back, which is what a real multi-reference line actually is.
+_REF_UNIT = (
+    rf'(?:(?:[1-3]\s?)?[{_ABBR_LETTER}][{_ABBR_LETTER}. ]{{0,10}}\.?\s*)?'
+    r'(?:\d{1,3}:\d{1,3}(?:[,-]\s?\d{1,3})*|\d{1,3}-\d{1,3}|:\d{1,3}(?:[,-]\s?\d{1,3})*)\.?'
 )
+# A full reference line/tail is one REAL unit (colon or dash required --
+# see _REF_UNIT), then zero or more further units. A further unit can be
+# another real one (separated by ';', ',', or just a bare space, found
+# directly: "Deut. 28:13 Sâm 14:7; I sa. 12:5,6"), OR a bare number with
+# NEITHER colon nor dash -- found directly, "8:8; 15" cites verse 15 of
+# the same chapter -- but a bare number is indistinguishable from a plain
+# verse marker in isolation, so it's only accepted right after a literal
+# ';', never after a plain space. That space-vs-semicolon distinction is
+# what a reference-list continuation and "a reference followed by the
+# next real verse starting on the same line" actually look like here, and
+# requiring a real unit FIRST already keeps a lone "15" from matching at
+# all on its own.
+_REF_CONT = rf'(?:[;,\s]+{_REF_UNIT}|;\s*\d{{1,3}}\.?)'
+MULTI_REF_RE = re.compile(rf'^{_REF_UNIT}{_REF_CONT}*[;,\s]*$')
 
 
 def is_reference(line: str) -> bool:
-    """A line (or the tail of one) is a reference if EVERY ';'-separated
-    segment is independently a single citation. Composing on ';' handles
-    multi-reference lines like "Joh. 1:1,2; Heb. 1:10" and "2 Kor. 4:6;
-    Heb. 11:3", which a single monolithic regex couldn't both match."""
-    segments = [s.strip() for s in line.split(';')]
-    return bool(segments) and all(SINGLE_REF_RE.match(s) for s in segments if s)
+    """Whether a line (or the tail of one) is nothing but reference
+    citations -- one, or several back to back, in any mix of the
+    separators this text actually uses between them."""
+    return bool(line) and bool(MULTI_REF_RE.match(line))
 
 
 # Cross-references are sometimes glued onto the end of a verse's text with
@@ -244,6 +282,12 @@ def join_wrapped(existing: str, new_line: str) -> str:
     directly preceded by a letter -- "--" fails that (preceded by another
     hyphen, not a letter), so it's never touched.
     """
+    if not existing:
+        # A verse opened by a trailing marker (see TRAILING_MARKER_RE)
+        # starts with no text of its own -- the real text only arrives via
+        # continuation lines. Avoids a permanent leading space from the
+        # "existing + ' ' + new_line" path below.
+        return new_line
     # A letter directly before the final hyphen is the wrap case. An
     # em-dash ("--") naturally fails this: the character before ITS final
     # hyphen is another hyphen, not a letter, so it's never mistaken here.
@@ -470,6 +514,15 @@ class ColumnParser:
                     if merged <= MAX_VERSE and self._would_accept(merged):
                         num, text = merged, m2.group(2)
             self._start_verse(num, text)
+            return
+
+        m_trail = TRAILING_MARKER_RE.match(line)
+        if m_trail and self.cur_key and self._would_accept(int(m_trail.group(2))):
+            # The text before the marker finishes the CURRENT verse; the
+            # marker itself opens the next one, with no text of its own
+            # yet -- continuation lines that follow fill it in normally.
+            self.verses[self.cur_key] = join_wrapped(self.verses[self.cur_key], m_trail.group(1))
+            self._start_verse(int(m_trail.group(2)), "")
             return
 
         if self.cur_key:
