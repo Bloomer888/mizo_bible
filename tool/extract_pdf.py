@@ -168,8 +168,15 @@ SELAH_LEAD_RE = re.compile(r'^Selah\s+(?=\d)')
 # width nor "is there trailing text" is the safety net -- the actual bar is
 # requiring the number to pass _would_accept (exactly verse+1 or
 # chapter+1) before it's trusted, same as everywhere else a bare number
-# gets a second look.
-TRAILING_MARKER_RE = re.compile(r'^(.*\S)\s+(\d{1,3})(?:\s+([A-Z].*))?$')
+# gets a second look. Group 3 doesn't require a capital letter -- found
+# directly, Numbers 4:36 continues 4:35's sentence grammatically ("...work
+# in the tabernacle of meeting; 36 and those who were numbered..."), the
+# same lowercase-continuation shape 1 Peter 2:3 has. Safe for the same
+# reason the capital check was never the real safety net here: it's
+# _would_accept's strict numeric match that does the actual work, and a
+# coincidental "number + lowercase word" has to also hit verse+1 or
+# chapter+1 exactly before it's ever trusted.
+TRAILING_MARKER_RE = re.compile(r'^(.*\S)\s+(\d{1,3})(?:\s+(.*))?$')
 
 # A further guard for the trailing-marker check below: a chain of bare,
 # colon-less, period-less chapter citations ("Rom 15; 10; 12", found
@@ -695,6 +702,22 @@ class ColumnParser:
             # existing strip_trailing_refs cleans it up same as always.
             and not is_reference(line[m_trail.start(2):])
             and not REF_CHAIN_TAIL_RE.search(m_trail.group(1))
+            # A lowercase tail is trusted only right after real punctuation
+            # (a clause boundary) -- found directly: Joshua 15:32's "...
+            # khawpui 16 leh a khawperte n>n;" ("16 cities with their
+            # villages") has its OWN number sitting mid-sentence, with
+            # "16" happening to equal chapter+1 and no capital letter
+            # after it either, same shape as Numbers 4:36's genuine
+            # lowercase-continuation marker. The difference is what comes
+            # right before the number: 4:36 follows "...meeting;", a real
+            # clause break; Joshua's follows the ordinary word "khawpui",
+            # no punctuation at all. A capitalized tail skips this check
+            # entirely -- it was never the source of that false positive.
+            and (
+                m_trail.group(3) is None
+                or m_trail.group(3)[:1].isupper()
+                or m_trail.group(1)[-1:] in ';:,.'
+            )
         ):
             # The text before the marker finishes the CURRENT verse; the
             # marker opens the next one. group(3), if present, is that new
