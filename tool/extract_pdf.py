@@ -259,12 +259,18 @@ _PREFIX = rf'(?:[1-3]\s?)?[{_ABBR_LETTER}][{_ABBR_LETTER} ]{{0,9}}'
 # first -- a worse failure than the plain rejection this gap used to
 # cause, since now it actively started two fake verses instead of
 # dropping one anomalous line.
+#
+# The separator also accepts a period, not just comma/dash -- found
+# directly in exactly 3 places across the whole corpus (1 Samuel 20:1.26,
+# 2 Kings 8:27's "2 Chro. 22:3.4", John 5:6.8): a plain typo, a period
+# typed where a comma was meant, rare enough to confirm by exhaustive
+# search rather than guess at.
 _REF_UNIT = (
-    rf'(?:{_PREFIX}\.?\s*\d{{1,3}}\s?:\s?\d{{1,3}}(?:[,-]\s?\d{{1,3}}(?::\d{{1,3}})?)*'
+    rf'(?:{_PREFIX}\.?\s*\d{{1,3}}\s?:\s?\d{{1,3}}(?:[,.-]\s?\d{{1,3}}(?::\d{{1,3}})?)*'
     rf'|{_PREFIX}\.\s*\d{{1,3}}'
-    r'|\d{1,3}\s?:\s?\d{1,3}(?:[,-]\s?\d{1,3}(?::\d{1,3})?)*'
+    r'|\d{1,3}\s?:\s?\d{1,3}(?:[,.-]\s?\d{1,3}(?::\d{1,3})?)*'
     r'|\d{1,3}-\d{1,3}'
-    r'|:\s?\d{1,3}(?:[,-]\s?\d{1,3}(?::\d{1,3})?)*'
+    r'|:\s?\d{1,3}(?:[,.-]\s?\d{1,3}(?::\d{1,3})?)*'
     r')\.?'
 )
 # A full reference line/tail is one REAL unit (colon or dash required --
