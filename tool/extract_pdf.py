@@ -155,14 +155,30 @@ CHAPTER_TITLE_RE = re.compile(r'^[A-Za-zÂÊÎÛâêîûṬṭ]{2,20}\s+(\d{1,3}
 # lions"), which hides that verse's marker from VERSE_RE entirely.
 SELAH_LEAD_RE = re.compile(r'^Selah\s+(?=\d)')
 
-# The mirror image of a leading marker: a continuation line can end with
-# the NEXT verse's bare marker instead of starting a fresh line with it
-# (found directly: "...maiin ka siam ang.          18", where "18" is
-# verse 18's own marker, not part of verse 17's text). VERSE_RE only ever
-# looks at the START of a line, so this needs its own check. Requires a
-# wide gap (2+ spaces) before the number, the same bar used elsewhere to
-# tell a real column/content boundary apart from ordinary word-spacing.
-TRAILING_MARKER_RE = re.compile(r'^(.*\S)\s{2,}(\d{1,3})$')
+# The mirror image of a leading marker: a continuation line can carry the
+# NEXT verse's bare marker instead of it starting a fresh line. Two shapes,
+# unified into one pattern: the marker can be the LAST thing on the line
+# ("...maiin ka siam ang.          18", verse 18's text continuing on the
+# NEXT line), or short verses can run together inline on ONE line, marker
+# and all ("...Libni and Shimei. 19 And the", found directly in Numbers
+# 3:18-19 -- group 3 here is the start of verse 19's own text, present on
+# the SAME line). VERSE_RE only ever looks at the START of a line, so this
+# needs its own check regardless of which shape it is. Neither the gap
+# width nor "is there trailing text" is the safety net -- the actual bar is
+# requiring the number to pass _would_accept (exactly verse+1 or
+# chapter+1) before it's trusted, same as everywhere else a bare number
+# gets a second look.
+TRAILING_MARKER_RE = re.compile(r'^(.*\S)\s+(\d{1,3})(?:\s+([A-Z].*))?$')
+
+# A further guard for the trailing-marker check below: a chain of bare,
+# colon-less, period-less chapter citations ("Rom 15; 10; 12", found
+# directly in Isaiah 11 -- Romans 15, then two more chapters of the
+# current book) leaves the text right before the final number ending in
+# "; N;" or similar -- itself still shaped like a reference, not like the
+# end of a real sentence. is_reference on the tail alone (just "12")
+# doesn't catch this, since a lone number is deliberately never a
+# reference by itself; this catches it from the OTHER side instead.
+REF_CHAIN_TAIL_RE = re.compile(r';\s*\d{1,3}\s*;\s*$')
 
 # One scripture citation, e.g. "15:18" (same-book, bare), "Isa. 58:13"
 # (book-prefixed), or "2 Kor. 4:6" (a NUMBERED book -- this is the case that
@@ -188,19 +204,39 @@ _ABBR_LETTER = 'A-Za-zÂÊÎÛâêîûṬṭ�'
 # spacing quirk already handled for chapter markers, "1 7Then" for "17").
 # Still bounded to {0,10} total characters, so this can't swallow a real
 # multi-word sentence -- a genuine abbreviation is always short.
-# Two further alternatives, both same-chapter shorthand that skips the
-# chapter number: a bare "N-M" range with NO colon ("1-11; 9-11; 18:1;
-# Jud. 9:8"), and a bare ":M-N" WITH a colon but nothing before it
-# (":12-18; Jer. 34:8-14" -- found directly, Exodus 21). Kept as their own
-# branches rather than making the chapter number optional in the main
-# pattern, so a genuine chapter:verse citation still requires one.
-# One reference unit: an optional book prefix, then either a chapter:verse
-# citation (with comma/dash continuations) or a bare N-M range. No anchors
-# here -- this is a fragment, reused below to match a RUN of these units
-# back to back, which is what a real multi-reference line actually is.
+# One reference unit, as any of four shapes. No anchors here -- this is a
+# fragment, reused below to match a RUN of these back to back, which is
+# what a real multi-reference line actually is.
+#
+# Three are same-chapter shorthand with no book prefix, each skipping a
+# different part of "chapter:verse": a bare "N-M" range with no colon at
+# all ("1-11; 9-11; 18:1; Jud. 9:8"), a bare ":M-N" WITH a colon but no
+# chapter number before it (":12-18; Jer. 34:8-14", Exodus 21), and the
+# ordinary bare "N:M" with no book name ("15:18"). Kept as separate
+# branches rather than making any one part optional in a single pattern,
+# so an ordinary citation still requires what it actually needs.
+#
+# The fourth and fifth both take a book prefix. The fourth is an ordinary
+# "prefix + chapter:verse" citation ("Isa. 58:13", "Rom 2:8,9" -- the
+# latter confirmed with NO period at all, so the period after a prefix
+# stays optional there, same as always; the colon is what makes it safe).
+# The fifth lets the verse half be entirely absent -- a whole-chapter
+# citation ("Jer. 16", found directly in Proverbs 15, referencing all of
+# Jeremiah 16) -- and there the period is made MANDATORY, because without
+# a colon to lean on, "prefix + bare number" is dangerously easy to
+# satisfy by accident: ordinary Mizo prose regularly reads as "short
+# phrase, then a number" (found directly: "Ban ding 45 chungah..." was
+# being swallowed as if "Ban ding" were a book name and 45 its chapter,
+# corrupting 1 Kings 7 onward). A real abbreviation always has the period
+# typeset; ordinary prose essentially never does right before a number.
+_PREFIX = rf'(?:[1-3]\s?)?[{_ABBR_LETTER}][{_ABBR_LETTER} ]{{0,9}}'
 _REF_UNIT = (
-    rf'(?:(?:[1-3]\s?)?[{_ABBR_LETTER}][{_ABBR_LETTER}. ]{{0,10}}\.?\s*)?'
-    r'(?:\d{1,3}:\d{1,3}(?:[,-]\s?\d{1,3})*|\d{1,3}-\d{1,3}|:\d{1,3}(?:[,-]\s?\d{1,3})*)\.?'
+    rf'(?:{_PREFIX}\.?\s*\d{{1,3}}:\d{{1,3}}(?:[,-]\s?\d{{1,3}})*'
+    rf'|{_PREFIX}\.\s*\d{{1,3}}'
+    r'|\d{1,3}:\d{1,3}(?:[,-]\s?\d{1,3})*'
+    r'|\d{1,3}-\d{1,3}'
+    r'|:\d{1,3}(?:[,-]\s?\d{1,3})*'
+    r')\.?'
 )
 # A full reference line/tail is one REAL unit (colon or dash required --
 # see _REF_UNIT), then zero or more further units. A further unit can be
@@ -412,7 +448,21 @@ def split_page_columns(page_text: str) -> tuple[list[str] | None, list[str] | No
                 split_at = local_split_point(l, gutter)
                 left.append(l[:split_at].rstrip())
                 right.append(l[split_at:].rstrip())
-            return left, right, f"skip_top_{skip}_lines"
+            # Every book's intro ends with a stock sentence giving its
+            # position and size ("X Bu hi Bible bu N-na a ni a..." -- "X
+            # is Bible's Nth book..."), found directly in Genesis's,
+            # Ezekiel's, and 1 Kings' openers alike. When the book's own
+            # Mizo name starts with a digit ("1 Lalte" for 1 Kings, and
+            # every other numbered book), THIS line starts with a bare
+            # "1" too, which the minimal-skip search above happily
+            # accepts as if it were verse 1 -- found directly: it broke
+            # 1 Kings specifically this way. A gutter existing doesn't by
+            # itself mean the intro has ended, so a candidate still
+            # containing this stock phrase is rejected in favour of a
+            # larger skip, rather than trusted just because some
+            # two-column structure was detectable.
+            if not any("Bu hi Bible" in l for l in left[:10]):
+                return left, right, f"skip_top_{skip}_lines"
 
     return None, None, "no_gutter_detected"
 
@@ -517,12 +567,30 @@ class ColumnParser:
             return
 
         m_trail = TRAILING_MARKER_RE.match(line)
-        if m_trail and self.cur_key and self._would_accept(int(m_trail.group(2))):
+        if (
+            m_trail
+            and self.cur_key
+            and self._would_accept(int(m_trail.group(2)))
+            # A numbered-book reference ("2 Lal. 4:8") starts with exactly
+            # the same shape as a trailing marker with inline text, and
+            # _would_accept alone doesn't catch it if the book number
+            # happens to equal the real next verse (found directly: "...
+            # Jos. 15:35; 2 Lal. 4:8" with the current verse genuinely
+            # about to become 2). Checking whether the tail from the
+            # marker onward is ITSELF a complete reference is what tells
+            # the two apart -- if so, this isn't a new verse at all, and
+            # it's left to fall through to plain continuation, where the
+            # existing strip_trailing_refs cleans it up same as always.
+            and not is_reference(line[m_trail.start(2):])
+            and not REF_CHAIN_TAIL_RE.search(m_trail.group(1))
+        ):
             # The text before the marker finishes the CURRENT verse; the
-            # marker itself opens the next one, with no text of its own
-            # yet -- continuation lines that follow fill it in normally.
+            # marker opens the next one. group(3), if present, is that new
+            # verse's own text already sitting on this same line (short
+            # verses running together inline) -- otherwise it has none yet,
+            # and continuation lines that follow fill it in normally.
             self.verses[self.cur_key] = join_wrapped(self.verses[self.cur_key], m_trail.group(1))
-            self._start_verse(int(m_trail.group(2)), "")
+            self._start_verse(int(m_trail.group(2)), m_trail.group(3) or "")
             return
 
         if self.cur_key:
