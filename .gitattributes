@@ -1,0 +1,19 @@
+# Normalise line endings so the repo is identical on Windows, macOS and CI.
+* text=auto eol=lf
+
+# Binary assets must never be line-ending converted.
+*.ttf   binary
+*.otf   binary
+*.db    binary
+*.pdf   binary
+*.png   binary
+*.jpg   binary
+*.ico   binary
+*.jar   binary
+*.keystore binary
+*.jks   binary
+
+# Generated files: collapse in diffs and exclude from language stats.
+*.g.dart        linguist-generated=true -diff
+lib/l10n/app_localizations*.dart linguist-generated=true -diff
+pubspec.lock    -diff
