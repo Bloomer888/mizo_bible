@@ -475,19 +475,32 @@ def local_split_point(line: str, gutter: int, margins: tuple[int, ...] = (20, 30
     # against) -- but the raw gutter itself then lands inside a real word
     # ("used" -> "us" / "ed"), because the English column's own verse
     # marker is wedged between two single-space gaps too narrow to ever
-    # qualify above. A bare 1-3 digit number flanked by a space on both
-    # sides, immediately followed by a capitalized word ("...mahse eng 6
-    # Jesus used..."), is specific enough to trust even at this width --
-    # ordinary running prose essentially never puts an isolated number
-    # directly before a capitalized word outside of a genuine verse
-    # marker -- so split right before the digit, giving it entirely to
-    # whichever column it actually starts.
-    lo, hi = max(0, gutter - margins[-1]), gutter + margins[-1]
-    best_dist = None
-    for m in re.finditer(r'(?<=\S )\d{1,3} (?=[A-ZÂÊÎÛṬ])', line):
-        if lo <= m.start() < hi and (best_dist is None or abs(m.start() - gutter) < best_dist):
-            best_start, best_dist = m.start(), abs(m.start() - gutter)
-    return best_start if best_dist is not None else gutter
+    # qualify above. Requiring the marker to be followed by a capitalized
+    # word (tried first) is both too strict -- 1 Peter 2:3 opens lowercase
+    # ("3 if indeed...", continuing 2:2's sentence) -- and, loosened to
+    # any word, too loose: it started firing on ordinary prose elsewhere
+    # and regressed five previously-clean books. The signal that's
+    # actually specific enough: this line's OWN leading verse marker (both
+    # languages often start a fresh verse on the same physical row) shows
+    # up a SECOND time near the gutter -- e.g. this line starts "6 Isua'n
+    # ..." and later has "...eng 6 Jesus used...", the same "6" twice.
+    # That exact repetition is vanishingly unlikely in ordinary prose, so
+    # trusted even at this width: split right before the second
+    # occurrence, giving it entirely to whichever column it actually
+    # starts.
+    lead = re.match(r'\s*(\d{1,3})[.\s]', line)
+    if lead:
+        marker = lead.group(1)
+        lo, hi = max(0, gutter - margins[-1]), gutter + margins[-1]
+        best_dist = None
+        for m in re.finditer(rf'(?<=\S ){re.escape(marker)} (?=\S)', line):
+            if lead.end() <= m.start() and lo <= m.start() < hi and (
+                best_dist is None or abs(m.start() - gutter) < best_dist
+            ):
+                best_start, best_dist = m.start(), abs(m.start() - gutter)
+        if best_dist is not None:
+            return best_start
+    return gutter
 
 
 STOCK_INTRO_TAIL_RE = re.compile(
