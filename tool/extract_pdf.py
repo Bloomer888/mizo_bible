@@ -536,7 +536,7 @@ def local_split_point(line: str, gutter: int, margins: tuple[int, ...] = (20, 30
 
 
 STOCK_INTRO_TAIL_RE = re.compile(
-    r'Bu hi Bible|bung \d{1,3} leh ch.ng \d{1,4} a awm|Bible a lehkhabu \d{1,3}-na'
+    r'Bu hi Bible|bung \d{1,3}.{0,15}ch.ng \d{1,4} a awm|Bible a lehkhabu \d{1,3}-na'
 )
 
 
@@ -580,16 +580,20 @@ def split_page_columns(
             # Every book's intro ends with a stock sentence giving its
             # position and size. Three different wordings of it were found
             # directly: "X Bu hi Bible bu N-na a ni a..." ("X is Bible's
-            # Nth book...", Genesis, Ezekiel, 1 Kings), "...bung N leh
-            # ch{?}ng N a awm" ("...has N chapters and N verses", Exodus,
-            # Leviticus, Judges -- the {?} is a single placeholder char
-            # that decodes differently per font subset, same reason
-            # _ABBR_LETTER includes the Unicode replacement character),
-            # and "X hi Bible a lehkhabu N-na" (the epistles' own phrasing
-            # for the same "Bible's Nth letter" fact -- 2 Samuel, 1 Peter,
-            # 1/2 John, Revelation; found directly on 2 John's single page,
-            # where this sentence sits just 4 lines into the accepted
-            # skip and leaked straight into English verse 1's text).
+            # Nth book...", Genesis, Ezekiel, 1 Kings), "bung N ... ch{?}ng
+            # N a awm" ("...has N chapters ... N verses", found with two
+            # different conjunctions joining the two counts -- "bung 40
+            # leh chhâng 1213 a awm" for Exodus/Leviticus/Judges, "bung 34
+            # a awm a, chhâng 958 a awm bawk" for Deuteronomy -- hence the
+            # loose gap between them rather than a fixed "leh"; the {?} is
+            # a single placeholder char that decodes differently per font
+            # subset, same reason _ABBR_LETTER includes the Unicode
+            # replacement character), and "X hi Bible a lehkhabu N-na"
+            # (the epistles' own phrasing for the same "Bible's Nth
+            # letter" fact -- 2 Samuel, 1 Peter, 1/2 John, Revelation;
+            # found directly on 2 John's single page, where this sentence
+            # sits just 4 lines into the accepted skip and leaked straight
+            # into English verse 1's text).
             # When the book's own Mizo name starts with a digit ("1
             # Lalte" for 1 Kings, and every other numbered book), THIS
             # line starts with a bare "1" too, which the minimal-skip
