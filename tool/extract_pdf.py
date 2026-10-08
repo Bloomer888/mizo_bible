@@ -120,8 +120,13 @@ BOOKS = [
 # the second shows the number can also run straight into an opening quote
 # before the capital letter). The lookahead covers both, with an optional
 # quote mark, without accepting a bare digit run into normal prose, which
-# never happens in this text.
-VERSE_RE = re.compile(r'^(\d{1,3})(?:[.\s]|(?=["“]?[A-Z]))\s*(.*)$')
+# never happens in this text. The backtick is this text's other opening
+# quote style (found directly: Numbers 29's own chapter-opener, "29`Thla
+# sarihna..."), used over 2,300 times and essentially always immediately
+# before a capital letter, so added here the same way -- the real guard
+# stays _would_accept's exact verse+1/chapter+1 match, same as every
+# other marker shape.
+VERSE_RE = re.compile(r'^(\d{1,3})(?:[.\s]|(?=["“`]?[A-Z]))\s*(.*)$')
 
 # The running header on most pages, e.g.
 # "GENESIS 1:30                    3  GENESIS 2:18" -- book+ch:vs on both
