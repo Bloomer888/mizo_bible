@@ -1,0 +1,42 @@
+# Static analysis configuration. Run with `flutter analyze`.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  # riverpod_lint 3.x uses the analyzer's native plugin system
+  # (analysis_server_plugin), not custom_lint. It catches provider misuse --
+  # reading a provider in the wrong scope, missing ref.watch, unused providers.
+  plugins:
+    - riverpod_lint
+
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+    # Generated code: Drift tables, Riverpod providers, l10n.
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+    - lib/l10n/app_localizations*.dart
+
+  errors:
+    # Generated l10n is referenced before build_runner runs on a clean clone;
+    # keep this an error, but it tells us when codegen has not been run.
+    missing_required_param: error
+    missing_return: error
+
+linter:
+  rules:
+    # The Bible text is the product; silent string mistakes are expensive.
+    - prefer_single_quotes
+    - unnecessary_string_interpolations
+    # Async correctness matters once sync, auth and billing overlap.
+    - unawaited_futures
+    - avoid_void_async
+    # Keeps the widget tree cheap in the reader, which rebuilds constantly.
+    - prefer_const_constructors
+    - prefer_const_literals_to_create_immutables
+    # Catches accidental `print` left in a release build.
+    - avoid_print

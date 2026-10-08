@@ -1,0 +1,24 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "Mizo Bible",
+  "@appTitle": {
+    "description": "Application name, shown in the app bar and task switcher"
+  },
+
+  "settings": "Settings",
+  "search": "Search",
+  "bookmarks": "Bookmarks",
+  "notes": "Notes",
+  "highlights": "Highlights",
+  "history": "History",
+  "continueReading": "Continue reading",
+
+  "readingModeParallel": "Parallel",
+  "readingModeMizoOnly": "Mizo only",
+  "readingModeEnglishOnly": "English only",
+  "swapLanguageSides": "Swap sides",
+
+  "oldTestament": "Old Testament",
+  "newTestament": "New Testament"
+}

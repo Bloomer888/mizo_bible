@@ -1,0 +1,23 @@
+/// Build-time configuration, supplied with `--dart-define-from-file`.
+///
+/// Values live in `dart_define.json` (gitignored). See
+/// `dart_define.example.json` for the expected shape, and README for the
+/// run command.
+///
+/// Note on secrecy: the Supabase *publishable* key is designed to be shipped
+/// in clients and is not a secret. What actually protects the data is
+/// Row Level Security on every table (phase 7). Keeping it out of source is
+/// hygiene -- so the repo stays portable and the project can be rotated or
+/// swapped without a code change -- not a secret-management measure.
+abstract final class Env {
+  static const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  static const supabasePublishableKey =
+      String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
+
+  /// True when both values were supplied at build time.
+  ///
+  /// The Bible is fully offline, so a missing or unreachable backend must
+  /// never stop the app from starting -- it only disables sync and accounts.
+  static bool get hasSupabase =>
+      supabaseUrl.isNotEmpty && supabasePublishableKey.isNotEmpty;
+}
