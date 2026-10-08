@@ -243,11 +243,12 @@ _ABBR_LETTER = 'A-Za-zÂÊÎÛâêîûṬṭ�'
 # corrupting 1 Kings 7 onward). A real abbreviation always has the period
 # typeset; ordinary prose essentially never does right before a number.
 _PREFIX = rf'(?:[1-3]\s?)?[{_ABBR_LETTER}][{_ABBR_LETTER} ]{{0,9}}'
-# The colon itself tolerates one space after it too (found directly:
-# "1 Lal. 18: 21" for "1 Kings 18:21", Psalm 119) -- the same kind of
-# incidental layout spacing already tolerated after a comma or dash right
+# The colon itself tolerates one space on EITHER side -- found directly:
+# "1 Lal. 18: 21" for "1 Kings 18:21" (Psalm 119, space after) and "35
+# :11" for "35:11" (Job 39:16, space before) are the same incidental
+# pdftotext layout-spacing artifact as the comma/dash tolerance right
 # next to it in this same pattern ("[,-]\s?\d"); the colon just hadn't
-# been given the same allowance yet.
+# been given the same allowance on both sides yet.
 #
 # The dash-separated repeat can itself carry a second ":verse" -- a range
 # that crosses a CHAPTER boundary ("1 Lal. 22:1-23:30", found directly in
@@ -259,9 +260,9 @@ _PREFIX = rf'(?:[1-3]\s?)?[{_ABBR_LETTER}][{_ABBR_LETTER} ]{{0,9}}'
 # cause, since now it actively started two fake verses instead of
 # dropping one anomalous line.
 _REF_UNIT = (
-    rf'(?:{_PREFIX}\.?\s*\d{{1,3}}:\s?\d{{1,3}}(?:[,-]\s?\d{{1,3}}(?::\d{{1,3}})?)*'
+    rf'(?:{_PREFIX}\.?\s*\d{{1,3}}\s?:\s?\d{{1,3}}(?:[,-]\s?\d{{1,3}}(?::\d{{1,3}})?)*'
     rf'|{_PREFIX}\.\s*\d{{1,3}}'
-    r'|\d{1,3}:\s?\d{1,3}(?:[,-]\s?\d{1,3}(?::\d{1,3})?)*'
+    r'|\d{1,3}\s?:\s?\d{1,3}(?:[,-]\s?\d{1,3}(?::\d{1,3})?)*'
     r'|\d{1,3}-\d{1,3}'
     r'|:\s?\d{1,3}(?:[,-]\s?\d{1,3}(?::\d{1,3})?)*'
     r')\.?'
@@ -278,7 +279,16 @@ _REF_UNIT = (
 # next real verse starting on the same line" actually look like here, and
 # requiring a real unit FIRST already keeps a lone "15" from matching at
 # all on its own.
-_REF_CONT = rf'(?:[;,\s]+{_REF_UNIT}|;\s*\d{{1,3}}\.?)'
+#
+# The gap after that semicolon is capped at one space, not unbounded --
+# found directly, Job 38:9's "26:10;     10 When I fixed My limit for
+# it," has a REAL verse-10 marker sitting 5 spaces after a Mizo-side
+# reference, on a row with no other Mizo text to anchor the column
+# split. An unbounded gap there let is_reference (via strip_leading_ref)
+# swallow the real marker as if it were one more chained citation,
+# losing verse 10 as cleanly as if it had never been typeset. "8:8; 15"
+# -- the case this alternative exists for -- only ever needs one space.
+_REF_CONT = rf'(?:[;,\s]+{_REF_UNIT}|;\s?\d{{1,3}}\.?)'
 MULTI_REF_RE = re.compile(rf'^{_REF_UNIT}{_REF_CONT}*[;,\s]*$')
 
 
