@@ -323,6 +323,20 @@ def strip_leading_ref(line: str) -> tuple[str | None, str]:
     is a clean reference and returns (ref, remainder) -- extending word by
     word only while it still parses as a reference, so it stops exactly at
     the first real prose word."""
+    # A translator's footnote ("*Galili Dil; Lk. 5:1 ...", a marginal note
+    # on a Hebrew/Greek term or place name, marked with a leading "*" and
+    # used ~80 times in this text) isn't itself reference-shaped, so the
+    # scan below never recognizes it on its own -- harmless everywhere
+    # else, since real Mizo verse text normally shares the row and anchors
+    # the column split regardless, but found directly to matter on Numbers
+    # 34:12, whose whole physical row is nothing BUT one of these plus the
+    # real next verse's marker, with no other Mizo text on the row at all.
+    # Tried only as a prefix to the real scan below, and only kept if a
+    # real reference is actually found after it -- a leading "*" alone
+    # proves nothing.
+    m_foot = re.match(r'\*[^;]*;\s*', line)
+    foot_prefix, scan_line = (m_foot.group(0), line[m_foot.end():]) if m_foot else ("", line)
+
     # Deliberately scans every candidate rather than stopping at the first
     # failure: a chained reference like "Jer. 51:13; 2 Pet. 2:4-10" has a
     # momentary dip right at "2" (valid as the start of "2 Pet." but not a
@@ -330,13 +344,13 @@ def strip_leading_ref(line: str) -> tuple[str | None, str]:
     # the second, equally real reference. Lines are short, so scanning all
     # of them costs nothing measurable.
     best_end = None
-    for m in re.finditer(r'\s+', line):
-        head = line[:m.start()]
+    for m in re.finditer(r'\s+', scan_line):
+        head = scan_line[:m.start()]
         if head and is_reference(head):
             best_end = m.end()
     if best_end is None:
         return None, line
-    return line[:best_end].strip(), line[best_end:]
+    return (foot_prefix + scan_line[:best_end]).strip(), scan_line[best_end:]
 
 
 def pdftotext_pages(first: int, last: int) -> list[str]:
