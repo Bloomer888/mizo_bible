@@ -461,14 +461,27 @@ def find_gutter(lines: list[str], hint: float | None = None) -> int | None:
 
 def _widest_run_in_window(line: str, lo: int, hi: int, gutter: int) -> tuple[int, int]:
     """Widest blank run within [lo, hi), tie-broken by closeness to
-    `gutter`. Returns (start, length); length is 0 if nothing qualifies."""
-    padded = line.ljust(hi)
+    `gutter`. Returns (start, length); length is 0 if nothing qualifies.
+
+    `hi` is capped to the line's own length -- found directly, Matthew
+    10:31's whole line (both languages' short verse 31, nothing else) is
+    only 93 characters long, but gutter + the wider margin reaches to 98.
+    Padding past the real end of the line to let the window reach that
+    far manufactures a fake "blank run" out of nothing but the absence of
+    any more text, and it was winning as the widest candidate -- pushing
+    the split past ALL of the line's real content and handing the entire
+    line, English half included, to the Mizo side. Capping costs nothing
+    for the case padding was originally meant for (one side genuinely
+    blank for this row): slicing a string past its own length already
+    degrades gracefully to "everything" / "nothing", exactly as wanted,
+    with no fake run required to get there."""
+    hi = min(hi, len(line))
     best_start, best_len = gutter, 0
     i = lo
     while i < hi:
-        if padded[i] == ' ':
+        if line[i] == ' ':
             j = i
-            while j < hi and padded[j] == ' ':
+            while j < hi and line[j] == ' ':
                 j += 1
             run_len = j - i
             center = (i + j) // 2
