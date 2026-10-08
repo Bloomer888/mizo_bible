@@ -762,10 +762,27 @@ class ColumnParser:
             return
 
         m_trail = TRAILING_MARKER_RE.match(line)
+        trail_num = trail_g1 = None
+        if m_trail:
+            trail_num, trail_g1 = int(m_trail.group(2)), m_trail.group(1)
+            if not self._would_accept(trail_num):
+                # Multi-digit marker split across a gap, mirroring the
+                # merge the leading-marker case already does -- found
+                # directly, Jeremiah 34:16's own closing line is "...Ex.
+                # 20:7 1  7": verse 17's marker, typeset as "1" then "7"
+                # with a reference sitting right where the two digits of
+                # "17" would otherwise be adjacent. Only merges when doing
+                # so produces a number that DOES satisfy the strict rule
+                # below -- never guesses blindly, same as the other merge.
+                m2 = re.search(r'(?:^|\s)(\d{1,2})$', trail_g1)
+                if m2:
+                    merged = int(f"{m2.group(1)}{trail_num}")
+                    if merged <= MAX_VERSE and self._would_accept(merged):
+                        trail_num, trail_g1 = merged, trail_g1[:m2.start()].rstrip()
         if (
             m_trail
             and self.cur_key
-            and self._would_accept(int(m_trail.group(2)))
+            and self._would_accept(trail_num)
             # A numbered-book reference ("2 Lal. 4:8") starts with exactly
             # the same shape as a trailing marker with inline text, and
             # _would_accept alone doesn't catch it if the book number
@@ -777,7 +794,7 @@ class ColumnParser:
             # it's left to fall through to plain continuation, where the
             # existing strip_trailing_refs cleans it up same as always.
             and not is_reference(line[m_trail.start(2):])
-            and not REF_CHAIN_TAIL_RE.search(m_trail.group(1))
+            and not REF_CHAIN_TAIL_RE.search(trail_g1)
             # A lowercase tail is trusted only right after real punctuation
             # (a clause boundary) -- found directly: Joshua 15:32's "...
             # khawpui 16 leh a khawperte n>n;" ("16 cities with their
@@ -792,7 +809,7 @@ class ColumnParser:
             and (
                 m_trail.group(3) is None
                 or m_trail.group(3)[:1].isupper()
-                or m_trail.group(1)[-1:] in ';:,.'
+                or trail_g1[-1:] in ';:,.'
             )
         ):
             # The text before the marker finishes the CURRENT verse; the
@@ -800,8 +817,8 @@ class ColumnParser:
             # verse's own text already sitting on this same line (short
             # verses running together inline) -- otherwise it has none yet,
             # and continuation lines that follow fill it in normally.
-            self.verses[self.cur_key] = join_wrapped(self.verses[self.cur_key], m_trail.group(1))
-            self._start_verse(int(m_trail.group(2)), m_trail.group(3) or "")
+            self.verses[self.cur_key] = join_wrapped(self.verses[self.cur_key], trail_g1)
+            self._start_verse(trail_num, m_trail.group(3) or "")
             return
 
         if self.cur_key:
