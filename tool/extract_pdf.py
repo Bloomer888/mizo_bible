@@ -569,6 +569,18 @@ def local_split_point(line: str, gutter: int, margins: tuple[int, ...] = (20, 30
                 best_start, best_dist = m.start(), abs(m.start() - gutter)
         if best_dist is not None:
             return best_start
+    # One more last resort, found directly: Matthew 3:17's reference
+    # chain ends "...Kol. 1:13 well pleased.\"" with barely a single
+    # space before the English text resumes -- too tight to register as
+    # a gap at all, so the raw gutter (no better candidate anywhere)
+    # lands inside "1:13" itself, severing the reference's own
+    # chapter:verse number in half ("...Kol. 1:" / "13 well pleased.\"").
+    # A bare "N:M" straddling the fallback position is specific enough to
+    # trust: nothing in ordinary prose looks like this, so push the whole
+    # number to the side it started on rather than cut through it.
+    for m in re.finditer(r'\d{1,3}:\d{1,3}', line):
+        if m.start() < gutter < m.end():
+            return m.end()
     return gutter
 
 
