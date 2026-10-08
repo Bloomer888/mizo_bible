@@ -613,6 +613,16 @@ def local_split_point(line: str, gutter: int, margins: tuple[int, ...] = (20, 30
     for m in re.finditer(r'\d{1,3}:\d{1,3}', line):
         if m.start() < gutter < m.end():
             return m.end()
+    # Same idea, for a reference with no colon at all -- a bare
+    # whole-chapter citation ("3 Joh. 9"), found directly in Matthew
+    # 23:8's own closing reference chain, "...Lk. 11:43; 20:46; 3 Joh.
+    # 9", severed into "...3 Joh" / ". 9" because nothing else nearby
+    # registered as a gap either. Reuses _REF_UNIT's own "prefix +
+    # mandatory period + bare number" shape, so it only ever matches
+    # what the reference grammar itself already treats as one unit.
+    for m in re.finditer(rf'{_PREFIX}\.\s?\d{{1,3}}', line):
+        if m.start() < gutter < m.end():
+            return m.end()
     return gutter
 
 
