@@ -35,6 +35,41 @@ CHAR_REMAP = {
     '|': 'Ṭ',   # Ṭ
 }
 
+# A SECOND embedded font subset (of the six found in Phase 1) encodes the
+# same circumflex vowels and a couple of symbols at their standard
+# WinAnsi/Latin-1 byte positions instead of VNTTimes' ASCII-punctuation
+# scheme above -- poppler has no ToUnicode CMap for this subset, so it
+# leaks the font's raw single byte straight through instead of real UTF-8,
+# which then fails UTF-8 decoding. pdftotext_pages() decodes with
+# errors="surrogateescape" specifically so each distinct bad byte survives
+# as chr(0xDC00 + byte) instead of collapsing into one indistinguishable
+# U+FFFD, letting these be told apart and fixed here.
+#
+# Found by extracting the whole PDF this way and tallying every surrogate
+# that came out: 11 byte values account for 15,441 of 15,476 total
+# occurrences (99.8%) and line up exactly with WinAnsi/Latin-1 -- strongly
+# confirmed by 0xBD/0xBC showing up as "�" exactly where "3½ years"
+# (Daniel's "time, times, and half a time") and "�" pound/kab (a weights
+# table) need a real ½/¼, not a letter. 0xAD is Latin-1's SOFT HYPHEN, a
+# line-wrap artifact with no visible meaning, so it's dropped rather than
+# mapped to a character. The remaining ~35 occurrences are spread across
+# 9 other byte values at single-digit counts each -- too little evidence
+# to map with any confidence, so remap() below still falls back to U+FFFD
+# for those, same as before this fix existed.
+CHAR_REMAP.update({
+    chr(0xDC00 + 0xE2): 'â',
+    chr(0xDC00 + 0xEA): 'ê',
+    chr(0xDC00 + 0xEE): 'î',
+    chr(0xDC00 + 0xFB): 'û',
+    chr(0xDC00 + 0xC2): 'Â',
+    chr(0xDC00 + 0xCA): 'Ê',
+    chr(0xDC00 + 0xCE): 'Î',
+    chr(0xDC00 + 0xDB): 'Û',
+    chr(0xDC00 + 0xAD): '',   # soft hyphen
+    chr(0xDC00 + 0xBD): '½',
+    chr(0xDC00 + 0xBC): '¼',
+})
+
 # Chapter counts are standard, well-known facts -- independent ground truth,
 # not derived from this PDF. (pdf_first_page/pdf_last_page are 1-indexed PDF
 # pages, from a full-document running-header scan done after Genesis proved
@@ -411,11 +446,20 @@ def pdftotext_pages(first: int, last: int) -> list[str]:
         ["pdftotext", "-f", str(first), "-l", str(last), "-layout", str(PDF_PATH), "-"],
         capture_output=True, timeout=60,
     )
-    return out.stdout.decode("utf-8", errors="replace").split("\f")
+    # surrogateescape, not replace -- preserves each invalid byte as its
+    # own distinguishable surrogate codepoint (see CHAR_REMAP's second
+    # font-subset entries above) instead of collapsing them all into one
+    # indistinguishable U+FFFD before remap() ever gets a chance to fix
+    # the ones it can.
+    return out.stdout.decode("utf-8", errors="surrogateescape").split("\f")
 
 
 def remap(s: str) -> str:
-    return "".join(CHAR_REMAP.get(c, c) for c in s)
+    mapped = "".join(CHAR_REMAP.get(c, c) for c in s)
+    # Any surrogate CHAR_REMAP didn't know how to fix is one of the rare,
+    # unidentified bad bytes -- falls back to U+FFFD, the same character
+    # this would have decoded to everywhere before this fix.
+    return "".join('�' if 0xDC80 <= ord(c) <= 0xDCFF else c for c in mapped)
 
 
 def join_wrapped(existing: str, new_line: str) -> str:

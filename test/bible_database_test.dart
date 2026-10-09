@@ -45,18 +45,51 @@ void main() {
     expect(names['kjv_nkjv_blend'], 'Genesis');
   });
 
-  test('parallel_rows pairs Genesis 1:1 and 1:2 verse-for-verse on both sides', () async {
+  test('parallel_rows pairs Genesis 1:1-4 verse-for-verse on both sides', () async {
     final rows = await (db.select(db.parallelRows)
           ..where((r) => r.bookId.equals(1) & r.chapter.equals(1))
           ..orderBy([(r) => OrderingTerm.asc(r.rowIndex)]))
         .get();
 
-    expect(rows, hasLength(2));
-    expect(rows[0].label, '1');
-    expect(rows[0].aStart, 1);
-    expect(rows[0].bStart, 1);
-    expect(rows[1].label, '2');
-    expect(rows[1].aStart, 2);
-    expect(rows[1].bStart, 2);
+    expect(rows, hasLength(4));
+    for (var i = 0; i < rows.length; i++) {
+      final verse = i + 1;
+      expect(rows[i].label, '$verse');
+      expect(rows[i].aStart, verse);
+      expect(rows[i].bStart, verse);
+    }
+  });
+
+  test('Genesis 1:4 keeps its ṭ (t-with-dot-below) intact', () async {
+    final rows = await (db.select(db.verses)
+          ..where((v) =>
+              v.bookId.equals(1) &
+              v.chapter.equals(1) &
+              v.verse.equals(4) &
+              v.translationId.equals('mizo_crc_2026')))
+        .get();
+
+    expect(rows, hasLength(1));
+    expect(rows.single.verseText, contains('ṭ'));
+  });
+
+  test('Genesis 1:3 has no U+FFFD replacement character', () async {
+    // Regression guard for the second embedded font subset (WinAnsi/
+    // Latin-1 byte values, distinct from the main VNTTimes ASCII-
+    // punctuation scheme) -- see CHAR_REMAP's second block in
+    // extract_pdf.py. This exact verse is what surfaced the bug: it
+    // rendered as `Pathian chuan, "<EFBFBD>ng lo awm rawh se,"` on a real
+    // device before the fix, "\xca" (-> Ê) going through undecoded.
+    final rows = await (db.select(db.verses)
+          ..where((v) =>
+              v.bookId.equals(1) &
+              v.chapter.equals(1) &
+              v.verse.equals(3) &
+              v.translationId.equals('mizo_crc_2026')))
+        .get();
+
+    expect(rows, hasLength(1));
+    expect(rows.single.verseText, isNot(contains('\u{FFFD}')));
+    expect(rows.single.verseText, contains('Êng'));
   });
 }
