@@ -23,5 +23,6 @@
   "newTestament": "New Testament",
 
   "books": "Books",
-  "chapters": "Chapters"
+  "chapters": "Chapters",
+  "textSettings": "Text Settings"
 }

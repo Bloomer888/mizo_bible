@@ -8,6 +8,8 @@ import '../../navigation/data/book_repository.dart';
 import '../../navigation/presentation/book_list_page.dart';
 import '../data/reader_repository.dart';
 import '../domain/reader_item.dart';
+import 'reader_settings.dart';
+import 'reader_settings_sheet.dart';
 
 /// Loads one book's reader items, keyed by canonical book id. autoDispose
 /// since there's no reason to keep a book's whole verse list in memory
@@ -58,6 +60,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
   Widget build(BuildContext context) {
     final itemsAsync = ref.watch(readerItemsProvider(widget.bookId));
     final bookInfoAsync = ref.watch(bookInfoProvider(widget.bookId));
+    final fontScale = ref.watch(readerSettingsProvider.select((s) => s.fontScale));
 
     BookInfo? bookInfo;
     if (bookInfoAsync case AsyncData(:final value)) bookInfo = value;
@@ -74,6 +77,14 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.text_fields),
+            tooltip: context.l10n.textSettings,
+            onPressed: () => showModalBottomSheet(
+              context: context,
+              builder: (_) => const ReaderSettingsSheet(),
+            ),
+          ),
+          IconButton(
             icon: const Icon(Icons.grid_view),
             tooltip: context.l10n.chapters,
             onPressed: (bookInfo != null && items != null)
@@ -82,11 +93,14 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
           ),
         ],
       ),
-      body: switch (itemsAsync) {
-        AsyncData(:final value) => _ReaderList(items: value, scrollController: _scrollController),
-        AsyncError(:final error) => Center(child: Text('Failed to load: $error')),
-        _ => const Center(child: CircularProgressIndicator()),
-      },
+      body: MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(fontScale)),
+        child: switch (itemsAsync) {
+          AsyncData(:final value) => _ReaderList(items: value, scrollController: _scrollController),
+          AsyncError(:final error) => Center(child: Text('Failed to load: $error')),
+          _ => const Center(child: CircularProgressIndicator()),
+        },
+      ),
     );
   }
 }
@@ -147,23 +161,35 @@ class _ReaderList extends StatelessWidget {
   }
 }
 
-class _ReaderItemTile extends StatelessWidget {
+class _ReaderItemTile extends ConsumerWidget {
   final ReaderItem item;
   const _ReaderItemTile({required this.item});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final lineHeight = ref.watch(readerSettingsProvider.select((s) => s.lineHeightScale));
     return switch (item) {
       ChapterHeader(:final chapter) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-          child: Center(child: Text('$chapter', style: theme.textTheme.headlineMedium)),
+          child: Center(
+            child: Text(
+              '$chapter',
+              style: theme.textTheme.headlineMedium?.copyWith(height: lineHeight),
+            ),
+          ),
         ),
       SectionHeading(:final a, :final b) => Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: _ParallelRow(
-            a: Text(a ?? '', style: theme.textTheme.titleMedium?.copyWith(fontStyle: FontStyle.italic)),
-            b: Text(b ?? '', style: theme.textTheme.titleMedium?.copyWith(fontStyle: FontStyle.italic)),
+            a: Text(
+              a ?? '',
+              style: theme.textTheme.titleMedium?.copyWith(fontStyle: FontStyle.italic, height: lineHeight),
+            ),
+            b: Text(
+              b ?? '',
+              style: theme.textTheme.titleMedium?.copyWith(fontStyle: FontStyle.italic, height: lineHeight),
+            ),
           ),
         ),
       VerseRow(:final label, :final a, :final b) => Padding(
@@ -178,37 +204,54 @@ class _ReaderItemTile extends StatelessWidget {
 }
 
 /// Every reader row -- chapter headers excepted -- renders as this same
-/// shape: the two translations side by side, aligned by construction.
-/// Selection/scrolling always operate on the whole Row, never one side.
-class _ParallelRow extends StatelessWidget {
+/// shape: the two translations side by side, aligned by construction, in
+/// parallel mode. Selection/scrolling always operate on the whole Row,
+/// never one side. Single-language mode and swap sides are both purely
+/// display concerns handled here -- the underlying data's a/b identity
+/// (Mizo/English) never changes, only which gets shown and on which side.
+class _ParallelRow extends ConsumerWidget {
   final Widget a;
   final Widget b;
   const _ParallelRow({required this.a, required this.b});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(readerSettingsProvider.select((s) => s.mode));
+
+    if (mode == ReadingMode.mizoOnly) return a;
+    if (mode == ReadingMode.englishOnly) return b;
+
+    final swapped = ref.watch(readerSettingsProvider.select((s) => s.swapped));
+    final left = swapped ? b : a;
+    final right = swapped ? a : b;
+
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(child: a),
+        Expanded(child: left),
         const SizedBox(width: 16),
-        Expanded(child: b),
+        Expanded(child: right),
       ],
     );
   }
 }
 
-class _VerseText extends StatelessWidget {
+class _VerseText extends ConsumerWidget {
   final String label;
   final String? text;
   const _VerseText({required this.label, required this.text});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final content = text;
     if (content == null) return const SizedBox.shrink();
+
+    final lineHeight = ref.watch(readerSettingsProvider.select((s) => s.lineHeightScale));
+    final baseStyle = DefaultTextStyle.of(context).style.copyWith(height: lineHeight);
+
     return Text.rich(
       TextSpan(
+        style: baseStyle,
         children: [
           TextSpan(text: '$label  ', style: Theme.of(context).textTheme.labelSmall),
           TextSpan(text: content),

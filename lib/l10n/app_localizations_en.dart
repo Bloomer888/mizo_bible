@@ -56,4 +56,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chapters => 'Chapters';
+
+  @override
+  String get textSettings => 'Text Settings';
 }

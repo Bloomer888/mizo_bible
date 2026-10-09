@@ -189,6 +189,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Chapters'**
   String get chapters;
+
+  /// No description provided for @textSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Text Settings'**
+  String get textSettings;
 }
 
 class _AppLocalizationsDelegate
