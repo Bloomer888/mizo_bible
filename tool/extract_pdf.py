@@ -269,9 +269,18 @@ _PREFIX = rf'(?:[1-3]\s?)?[{_ABBR_LETTER}][{_ABBR_LETTER} ]{{0,9}}'
 # 2 Kings 8:27's "2 Chro. 22:3.4", John 5:6.8): a plain typo, a period
 # typed where a comma was meant, rare enough to confirm by exhaustive
 # search rather than guess at.
+#
+# The fifth (whole-chapter, no colon) shape needed the same comma/dash
+# repeat the others already had -- found directly, Hosea's own OPENING
+# cross-reference is "2 Chro. 27,28; Amos. 1:1" (citing two chapters of
+# 2 Chronicles at once), and without it, "2 Chro. 27" matched alone,
+# leaving ",28" unconsumed and failing the whole line. The leading "2"
+# of "2 Chro." then read as a real verse-2 marker, and every chapter
+# after it opened one tie early via the chapter+1 rule -- Hosea's entire
+# book-length cascade traced back to this one missing repeat.
 _REF_UNIT = (
     rf'(?:{_PREFIX}\.?\s*\d{{1,3}}\s?:\s?\d{{1,3}}(?:[,.-]\s?\d{{1,3}}(?::\d{{1,3}})?)*'
-    rf'|{_PREFIX}\.\s*\d{{1,3}}'
+    rf'|{_PREFIX}\.\s*\d{{1,3}}(?:[,.-]\s?\d{{1,3}})*'
     r'|\d{1,3}\s?:\s?\d{1,3}(?:[,.-]\s?\d{1,3}(?::\d{1,3})?)*'
     r'|\d{1,3}-\d{1,3}'
     r'|:\s?\d{1,3}(?:[,.-]\s?\d{1,3}(?::\d{1,3})?)*'
