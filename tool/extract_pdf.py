@@ -157,6 +157,14 @@ MAX_VERSE = 176  # Psalm 119, the longest chapter in the Bible -- a sanity
 # rejected there rather than needing to be filtered out here.
 CHAPTER_TITLE_RE = re.compile(r'^[A-Za-zÂÊÎÛâêîûṬṭ]{2,20}\s+(\d{1,3})$')
 
+# A chapter-opener numeral printed twice in a row at the very start of a
+# line, with nothing before it -- found directly, and only once in the
+# whole corpus: Hosea 1/2's transition row is "2 2 In unaupate..." on the
+# Mizo side. Checked against the RAW (pre-split) line in extract_book, so
+# it fires once per physical row regardless of which column the pair
+# lands in; see ColumnParser.force_chapter_start for why.
+DUPLICATE_CHAPTER_RE = re.compile(r'^(\d{1,3}) (\d{1,3}) ')
+
 # "Selah" (kept as-is, untranslated, on both the Mizo and English sides) is
 # a liturgical pause-marker, not verse text. On its own line it's already
 # handled fine -- it just joins onto the current verse like any other
@@ -966,6 +974,26 @@ class ColumnParser:
             self.headings[self.cur_key] = " ".join(self.pending_heading_lines)
             self.pending_heading_lines = []
 
+    def force_chapter_start(self, num: int) -> None:
+        """Starts a new chapter with no marker of its own in THIS column
+        -- used only when the OTHER language's column independently
+        confirms a new chapter began on this exact physical row (see
+        extract_book's DUPLICATE_CHAPTER_RE check). Found directly:
+        Hosea 1/2's own transition row is "2 2 In unaupate..." on the
+        Mizo side (its chapter-opener numeral doubled) paired with
+        English's "Say to your brethren..." (no numeral at all, the only
+        such occurrence in the whole corpus). Still gated by the same
+        num == chapter+1 rule as every other transition -- this only
+        ever fills in for a confirmed-missing marker, never overrides an
+        already-correct state."""
+        if num == self.chapter + 1:
+            self.chapter, self.verse = num, 1
+            self.cur_key = (num, 1)
+            self.verses[self.cur_key] = ""
+            if self.pending_heading_lines:
+                self.headings[self.cur_key] = " ".join(self.pending_heading_lines)
+                self.pending_heading_lines = []
+
     def strip_trailing_refs(self) -> int:
         """Post-process pass: a reference glued onto the end of a verse's
         text with no separating space (seen directly in the PDF, e.g.
@@ -1039,9 +1067,28 @@ def extract_book(canonical_id, osis, name, chapter_count, first_page, last_page)
         page_strategies.append((pdf_page_num, strategy))
         if left_lines is None:
             continue
-        for raw in left_lines:
-            mizo.feed_line(remap(raw))
-        for raw in right_lines:
+        # Walked row by row (not as two separate full passes over
+        # left_lines then right_lines) specifically so the cross-column
+        # chapter signal below lands at the right ROW, not just
+        # somewhere on the right page -- found directly: processing all
+        # of left_lines first forced English into chapter 2 before it
+        # had even reached its own chapter 1 verses 10-11, which sit on
+        # the same page but later in right_lines.
+        for raw_left, raw_right in zip(left_lines, right_lines):
+            # A chapter-opener numeral doubling on one side while the
+            # other's is entirely missing (found directly, and only
+            # once in the whole corpus: Hosea 1/2's "2 2 In unaupate...")
+            # is specific enough -- checked against the RAW line, before
+            # mizo.chapter advances -- to force English's side to the
+            # same new chapter even without a marker of its own.
+            m_dup = DUPLICATE_CHAPTER_RE.match(raw_left)
+            if (
+                m_dup
+                and m_dup.group(1) == m_dup.group(2)
+                and int(m_dup.group(1)) == mizo.chapter + 1
+            ):
+                eng.force_chapter_start(int(m_dup.group(1)))
+            mizo.feed_line(remap(raw_left))
             # A Mizo-side reference that bleeds into the English slice
             # (sparse-line column drift, e.g. "S^m 6:7") carries Mizo's
             # legacy encoding regardless of which column it lands in, and
@@ -1049,7 +1096,7 @@ def extract_book(canonical_id, osis, name, chapter_count, first_page, last_page)
             # isn't a letter, so "S^m" doesn't look like a citation prefix.
             # Safe to remap English too: none of these ASCII punctuation
             # characters have a legitimate meaning in English Bible prose.
-            eng.feed_line(remap(raw))
+            eng.feed_line(remap(raw_right))
 
     mizo_stripped = mizo.strip_trailing_refs()
     eng_stripped = eng.strip_trailing_refs()
