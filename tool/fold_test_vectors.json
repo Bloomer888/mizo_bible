@@ -1,0 +1,15 @@
+[
+  {"input": "Pathianin", "folded": "pathianin"},
+  {"input": "Ṭah Hla", "folded": "tah hla"},
+  {"input": "A tîrah Pathianin", "folded": "a tirah pathianin"},
+  {"input": "hnûah", "folded": "hnuah"},
+  {"input": "Chû", "folded": "chu"},
+  {"input": "HÊ", "folded": "he"},
+  {"input": "pê", "folded": "pe"},
+  {"input": "hmâ", "folded": "hma"},
+  {"input": "Â Ê Î Û", "folded": "a e i u"},
+  {"input": "GENESIS", "folded": "genesis"},
+  {"input": "Mix Ṭa case", "folded": "mix ta case"},
+  {"input": "", "folded": ""},
+  {"input": "plain ascii, no diacritics!", "folded": "plain ascii, no diacritics!"}
+]
