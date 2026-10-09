@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../../../core/db/bible_database.dart';
+import '../../../core/db/user_database.dart';
 import '../../../core/l10n_extension.dart';
 import '../../navigation/data/book_repository.dart';
 import '../../navigation/presentation/book_list_page.dart';
 import '../../search/presentation/search_page.dart';
 import '../data/reader_repository.dart';
+import '../data/reading_progress_repository.dart';
 import '../domain/reader_item.dart';
 import 'reader_settings.dart';
 import 'reader_settings_sheet.dart';
@@ -37,14 +39,105 @@ class ReaderPage extends ConsumerStatefulWidget {
   ConsumerState<ReaderPage> createState() => _ReaderPageState();
 }
 
-class _ReaderPageState extends ConsumerState<ReaderPage> {
+class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObserver {
   final _scrollController = ItemScrollController();
+  final _positionsListener = ItemPositionsListener.create();
+  List<ReaderItem>? _items;
+  int? _visibleTopIndex;
   bool _didInitialScroll = false;
+  int? _restoredChapter;
+  int? _restoredVerse;
 
-  void _maybeScrollToTarget(List<ReaderItem> items) {
-    if (_didInitialScroll || widget.targetChapter == null) return;
+  // Read once up front and kept, not re-read via ref.read from
+  // dispose() -- ref becomes unsafe to use once a widget is unmounting,
+  // which dispose() always is by definition.
+  late final UserDatabase _userDb;
+
+  @override
+  void initState() {
+    super.initState();
+    _userDb = ref.read(userDatabaseProvider);
+    // Only bother loading a saved position if the caller (search, a
+    // bookmark, anything else that knows exactly where it wants to
+    // land) didn't already give us one explicitly -- that always wins.
+    if (widget.targetChapter == null) {
+      _loadRestoredPosition();
+    }
+    _positionsListener.itemPositions.addListener(_onPositionsChanged);
+    // dispose() alone only fires on in-app navigation (switching books,
+    // popping back) -- pressing home or swiping to another app leaves
+    // this widget mounted but backgrounded, so dispose() never runs at
+    // all. That's the actually-common way people stop reading, so
+    // position needs saving on that transition too, not just on
+    // Navigator-driven teardown. (A true instant kill -- Android's own
+    // "force stop", or the OS's low-memory killer -- gives no callback
+    // of any kind to any app, Flutter or native; nothing can save
+    // through that, so it isn't what this guards against.)
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
+      _saveCurrentPosition();
+    }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _positionsListener.itemPositions.removeListener(_onPositionsChanged);
+    _saveCurrentPosition();
+    super.dispose();
+  }
+
+  Future<void> _loadRestoredPosition() async {
+    final position = await loadReadingProgress(_userDb, widget.bookId);
+    if (!mounted || position == null) return;
+    setState(() {
+      _restoredChapter = position.chapter;
+      _restoredVerse = position.verse;
+    });
+  }
+
+  void _onPositionsChanged() {
+    final positions = _positionsListener.itemPositions.value;
+    if (positions.isEmpty) return;
+    _visibleTopIndex = positions.map((p) => p.index).reduce((a, b) => a < b ? a : b);
+  }
+
+  /// Fires once per page visit (back button, switching books via the
+  /// book list, navigating away to search a result) -- not on every
+  /// scroll frame, since "where did the reader last leave off" doesn't
+  /// need finer resolution than that, and a write per visit instead of
+  /// per frame is the obviously cheaper default.
+  void _saveCurrentPosition() {
+    final items = _items;
+    final topIndex = _visibleTopIndex;
+    if (items == null || topIndex == null) return;
+    for (var i = topIndex; i < items.length; i++) {
+      final item = items[i];
+      if (item is VerseRow) {
+        final verse = int.tryParse(item.label);
+        if (verse != null) {
+          // Best-effort: this fires from dispose(), which can't await,
+          // so there's a real window where the provider container (and
+          // the database with it) finishes tearing down before this
+          // write lands -- losing the very last position update then is
+          // an imperceptible cost, not a reason to let the exception
+          // propagate and crash whatever's unwinding the widget tree.
+          saveReadingProgress(_userDb, bookId: widget.bookId, chapter: item.chapter, verse: verse)
+              .catchError((_) {});
+        }
+        return;
+      }
+    }
+  }
+
+  void _maybeScrollToTarget(List<ReaderItem> items, int chapter, int? verse) {
+    if (_didInitialScroll) return;
     _didInitialScroll = true;
-    final index = _targetIndex(items, widget.targetChapter!, widget.targetVerse);
+    final index = _targetIndex(items, chapter, verse);
     if (index == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollController.isAttached) {
@@ -82,7 +175,12 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     if (bookInfoAsync case AsyncData(:final value)) bookInfo = value;
     List<ReaderItem>? items;
     if (itemsAsync case AsyncData(:final value)) items = value;
-    if (items != null) _maybeScrollToTarget(items);
+    _items = items;
+
+    final targetChapter = widget.targetChapter ?? _restoredChapter;
+    if (items != null && targetChapter != null) {
+      _maybeScrollToTarget(items, targetChapter, widget.targetVerse ?? _restoredVerse);
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -120,7 +218,11 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
       body: MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(fontScale)),
         child: switch (itemsAsync) {
-          AsyncData(:final value) => _ReaderList(items: value, scrollController: _scrollController),
+          AsyncData(:final value) => _ReaderList(
+              items: value,
+              scrollController: _scrollController,
+              positionsListener: _positionsListener,
+            ),
           AsyncError(:final error) => Center(child: Text('Failed to load: $error')),
           _ => const Center(child: CircularProgressIndicator()),
         },
@@ -190,12 +292,14 @@ class _ChapterGrid extends StatelessWidget {
 class _ReaderList extends StatelessWidget {
   final List<ReaderItem> items;
   final ItemScrollController scrollController;
-  const _ReaderList({required this.items, required this.scrollController});
+  final ItemPositionsListener positionsListener;
+  const _ReaderList({required this.items, required this.scrollController, required this.positionsListener});
 
   @override
   Widget build(BuildContext context) {
     return ScrollablePositionedList.builder(
       itemScrollController: scrollController,
+      itemPositionsListener: positionsListener,
       itemCount: items.length,
       itemBuilder: (context, index) => _ReaderItemTile(item: items[index]),
     );

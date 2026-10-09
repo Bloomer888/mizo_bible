@@ -1,12 +1,15 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/db/settings_repository.dart';
+import '../../../core/db/user_database.dart';
 
 enum ReadingMode { parallel, mizoOnly, englishOnly }
 
-/// In-memory for now -- not yet persisted across app restarts. Saving
-/// these belongs with Phase 7's local user.db (settings table), not a
-/// one-off mechanism built just for this; "reopen lands on the same
-/// verse" (the plan's related Phase 5 acceptance item) is deferred for
-/// the same reason.
+const _settingsKey = 'reader_settings';
+
 class ReaderSettings {
   final double fontScale;
   final double lineHeightScale;
@@ -33,6 +36,23 @@ class ReaderSettings {
       swapped: swapped ?? this.swapped,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'fontScale': fontScale,
+        'lineHeightScale': lineHeightScale,
+        'mode': mode.name,
+        'swapped': swapped,
+      };
+
+  factory ReaderSettings.fromJson(Map<String, dynamic> json) => ReaderSettings(
+        fontScale: (json['fontScale'] as num?)?.toDouble() ?? 1.0,
+        lineHeightScale: (json['lineHeightScale'] as num?)?.toDouble() ?? 1.0,
+        mode: ReadingMode.values.firstWhere(
+          (m) => m.name == json['mode'],
+          orElse: () => ReadingMode.parallel,
+        ),
+        swapped: json['swapped'] as bool? ?? false,
+      );
 }
 
 const _minFontScale = 0.75;
@@ -43,27 +63,69 @@ const _step = 0.1;
 
 class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
   @override
-  ReaderSettings build() => const ReaderSettings();
+  ReaderSettings build() {
+    // Fires the async load without making build() itself async, so
+    // every existing ref.watch(...select(...)) call site keeps working
+    // unchanged -- state just starts at the default and updates once
+    // the saved value (if any) has loaded, same tick or two after
+    // first frame, not worth an AsyncNotifier's extra AsyncValue
+    // wrapping everywhere this is read.
+    _load();
+    return const ReaderSettings();
+  }
 
-  void increaseFontScale() => state = state.copyWith(
-        fontScale: (state.fontScale + _step).clamp(_minFontScale, _maxFontScale),
-      );
+  Future<void> _load() async {
+    final db = ref.read(userDatabaseProvider);
+    final raw = await loadSetting(db, _settingsKey);
+    if (raw == null) return;
+    try {
+      state = ReaderSettings.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      // Corrupt or old-format value -- keep the default rather than crash.
+    }
+  }
 
-  void decreaseFontScale() => state = state.copyWith(
-        fontScale: (state.fontScale - _step).clamp(_minFontScale, _maxFontScale),
-      );
+  void _save() {
+    final db = ref.read(userDatabaseProvider);
+    // Best-effort, same reasoning as ReaderPage._saveCurrentPosition:
+    // a save racing the database closing during teardown should never
+    // throw into whatever's mid-unwind, just lose that one write.
+    unawaited(saveSetting(db, _settingsKey, jsonEncode(state.toJson())).catchError((_) {}));
+  }
 
-  void increaseLineHeight() => state = state.copyWith(
-        lineHeightScale: (state.lineHeightScale + _step).clamp(_minLineHeightScale, _maxLineHeightScale),
-      );
+  void increaseFontScale() {
+    state = state.copyWith(fontScale: (state.fontScale + _step).clamp(_minFontScale, _maxFontScale));
+    _save();
+  }
 
-  void decreaseLineHeight() => state = state.copyWith(
-        lineHeightScale: (state.lineHeightScale - _step).clamp(_minLineHeightScale, _maxLineHeightScale),
-      );
+  void decreaseFontScale() {
+    state = state.copyWith(fontScale: (state.fontScale - _step).clamp(_minFontScale, _maxFontScale));
+    _save();
+  }
 
-  void setMode(ReadingMode mode) => state = state.copyWith(mode: mode);
+  void increaseLineHeight() {
+    state = state.copyWith(
+      lineHeightScale: (state.lineHeightScale + _step).clamp(_minLineHeightScale, _maxLineHeightScale),
+    );
+    _save();
+  }
 
-  void toggleSwap() => state = state.copyWith(swapped: !state.swapped);
+  void decreaseLineHeight() {
+    state = state.copyWith(
+      lineHeightScale: (state.lineHeightScale - _step).clamp(_minLineHeightScale, _maxLineHeightScale),
+    );
+    _save();
+  }
+
+  void setMode(ReadingMode mode) {
+    state = state.copyWith(mode: mode);
+    _save();
+  }
+
+  void toggleSwap() {
+    state = state.copyWith(swapped: !state.swapped);
+    _save();
+  }
 }
 
 final readerSettingsProvider = NotifierProvider<ReaderSettingsNotifier, ReaderSettings>(
