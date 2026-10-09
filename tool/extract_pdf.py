@@ -789,6 +789,7 @@ class ColumnParser:
         self.refs: dict[tuple[int, int], list[str]] = {}
         self.headings: dict[tuple[int, int], str] = {}
         self.pending_heading_lines: list[str] = []
+        self._prev_heading_group: list[str] = []
         self.cur_key: tuple[int, int] | None = None
         self.anomalies: list[tuple] = []
 
@@ -804,11 +805,22 @@ class ColumnParser:
             # heading ("Jerusalem Lungngaihna") that follows it, with a
             # blank line sitting between them that previously never got
             # a chance to matter, since a blank line returned here
-            # before ever reaching pending_heading_lines. Resetting on
-            # it means only the LAST contiguous block before verse 1 --
-            # the actual heading -- survives to be attached.
+            # before ever reaching pending_heading_lines.
+            #
+            # Banking the current group instead of just clearing it --
+            # found directly, a SECOND regression right after fixing the
+            # first: most books ALSO have a blank line between the real
+            # heading and verse 1 itself ("Thil siam Chanchin" / blank /
+            # "1 A tîrah..."), and clearing on every blank line lost the
+            # real heading too, the moment that second blank arrived.
+            # _start_verse uses pending_heading_lines if non-empty, else
+            # falls back to this banked group -- so whichever of the two
+            # blanks turns out to be the LAST one before verse 1 starts,
+            # the right group (never an earlier, unrelated one) wins.
             if self.cur_key is None:
-                self.pending_heading_lines = []
+                if self.pending_heading_lines:
+                    self._prev_heading_group = self.pending_heading_lines
+                    self.pending_heading_lines = []
             return
 
         # A standalone chapter-title line ("SAM 2" / "PSALM 2"), checked
@@ -1033,9 +1045,19 @@ class ColumnParser:
             return
         self.cur_key = (self.chapter, self.verse)
         self.verses[self.cur_key] = text
-        if self.pending_heading_lines:
-            self.headings[self.cur_key] = " ".join(self.pending_heading_lines)
-            self.pending_heading_lines = []
+        heading = self._take_pending_heading()
+        if heading:
+            self.headings[self.cur_key] = heading
+
+    def _take_pending_heading(self) -> str:
+        """The heading immediately before THIS verse: whichever of
+        pending_heading_lines (the group since the last blank line) or
+        _prev_heading_group (the group before that) is the real one --
+        see feed_line's blank-line handling for why both exist."""
+        group = self.pending_heading_lines or self._prev_heading_group
+        self.pending_heading_lines = []
+        self._prev_heading_group = []
+        return " ".join(group)
 
     def force_chapter_start(self, num: int) -> None:
         """Starts a new chapter with no marker of its own in THIS column
@@ -1053,9 +1075,9 @@ class ColumnParser:
             self.chapter, self.verse = num, 1
             self.cur_key = (num, 1)
             self.verses[self.cur_key] = ""
-            if self.pending_heading_lines:
-                self.headings[self.cur_key] = " ".join(self.pending_heading_lines)
-                self.pending_heading_lines = []
+            heading = self._take_pending_heading()
+            if heading:
+                self.headings[self.cur_key] = heading
 
     def strip_trailing_refs(self) -> int:
         """Post-process pass: a reference glued onto the end of a verse's
