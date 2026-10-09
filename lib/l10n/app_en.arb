@@ -20,5 +20,8 @@
   "swapLanguageSides": "Swap sides",
 
   "oldTestament": "Old Testament",
-  "newTestament": "New Testament"
+  "newTestament": "New Testament",
+
+  "books": "Books",
+  "chapters": "Chapters"
 }

@@ -50,4 +50,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get newTestament => 'New Testament';
+
+  @override
+  String get books => 'Books';
+
+  @override
+  String get chapters => 'Chapters';
 }

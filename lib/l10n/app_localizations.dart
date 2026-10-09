@@ -177,6 +177,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'New Testament'**
   String get newTestament;
+
+  /// No description provided for @books.
+  ///
+  /// In en, this message translates to:
+  /// **'Books'**
+  String get books;
+
+  /// No description provided for @chapters.
+  ///
+  /// In en, this message translates to:
+  /// **'Chapters'**
+  String get chapters;
 }
 
 class _AppLocalizationsDelegate

@@ -3,34 +3,87 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
 import '../../../core/db/bible_database.dart';
+import '../../../core/l10n_extension.dart';
+import '../../navigation/data/book_repository.dart';
+import '../../navigation/presentation/book_list_page.dart';
 import '../data/reader_repository.dart';
 import '../domain/reader_item.dart';
 
 /// Loads one book's reader items, keyed by canonical book id. autoDispose
 /// since there's no reason to keep a book's whole verse list in memory
-/// once nothing is reading it -- the book picker (a later phase) will
-/// switch this family's parameter rather than ever juggling several
-/// books' data at once.
+/// once nothing is reading it -- switching books (the book list) always
+/// replaces this family's parameter rather than juggling several books'
+/// data at once.
 final readerItemsProvider = FutureProvider.autoDispose.family<List<ReaderItem>, int>((ref, bookId) {
   final db = ref.watch(bibleDatabaseProvider);
   return loadBookReaderItems(db, bookId);
 });
 
-class ReaderPage extends ConsumerWidget {
+final bookInfoProvider = FutureProvider.autoDispose.family<BookInfo, int>((ref, bookId) {
+  final db = ref.watch(bibleDatabaseProvider);
+  return loadBookInfo(db, bookId);
+});
+
+class ReaderPage extends ConsumerStatefulWidget {
   final int bookId;
   const ReaderPage({super.key, required this.bookId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final itemsAsync = ref.watch(readerItemsProvider(bookId));
+  ConsumerState<ReaderPage> createState() => _ReaderPageState();
+}
+
+class _ReaderPageState extends ConsumerState<ReaderPage> {
+  final _scrollController = ItemScrollController();
+
+  void _openChapterPicker(int chapterCount, Map<int, int> chapterIndex) {
+    showModalBottomSheet(
+      context: context,
+      builder: (context) => _ChapterGrid(
+        chapterCount: chapterCount,
+        onSelected: (chapter) {
+          Navigator.of(context).pop();
+          final index = chapterIndex[chapter];
+          if (index != null && _scrollController.isAttached) {
+            _scrollController.scrollTo(
+              index: index,
+              duration: const Duration(milliseconds: 300),
+            );
+          }
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final itemsAsync = ref.watch(readerItemsProvider(widget.bookId));
+    final bookInfoAsync = ref.watch(bookInfoProvider(widget.bookId));
+
+    BookInfo? bookInfo;
+    if (bookInfoAsync case AsyncData(:final value)) bookInfo = value;
+    List<ReaderItem>? items;
+    if (itemsAsync case AsyncData(:final value)) items = value;
 
     return Scaffold(
-      // Book name lookup (content.book_names) and a real book/chapter
-      // picker both belong to Phase 6 navigation, not this first reader
-      // pass -- hardcoded for the one book this phase scrolls.
-      appBar: AppBar(title: const Text('Genesis')),
+      appBar: AppBar(
+        title: InkWell(
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const BookListPage()),
+          ),
+          child: Text(bookInfo?.name ?? ''),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.grid_view),
+            tooltip: context.l10n.chapters,
+            onPressed: (bookInfo != null && items != null)
+                ? () => _openChapterPicker(bookInfo!.chapterCount, _chapterIndex(items!))
+                : null,
+          ),
+        ],
+      ),
       body: switch (itemsAsync) {
-        AsyncData(:final value) => _ReaderList(items: value),
+        AsyncData(:final value) => _ReaderList(items: value, scrollController: _scrollController),
         AsyncError(:final error) => Center(child: Text('Failed to load: $error')),
         _ => const Center(child: CircularProgressIndicator()),
       },
@@ -38,13 +91,56 @@ class ReaderPage extends ConsumerWidget {
   }
 }
 
+Map<int, int> _chapterIndex(List<ReaderItem> items) {
+  final index = <int, int>{};
+  for (var i = 0; i < items.length; i++) {
+    final item = items[i];
+    if (item is ChapterHeader) index[item.chapter] = i;
+  }
+  return index;
+}
+
+class _ChapterGrid extends StatelessWidget {
+  final int chapterCount;
+  final ValueChanged<int> onSelected;
+  const _ChapterGrid({required this.chapterCount, required this.onSelected});
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: GridView.builder(
+          shrinkWrap: true,
+          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 56,
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+          ),
+          itemCount: chapterCount,
+          itemBuilder: (context, i) {
+            final chapter = i + 1;
+            return InkWell(
+              onTap: () => onSelected(chapter),
+              borderRadius: BorderRadius.circular(8),
+              child: Center(child: Text('$chapter')),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
 class _ReaderList extends StatelessWidget {
   final List<ReaderItem> items;
-  const _ReaderList({required this.items});
+  final ItemScrollController scrollController;
+  const _ReaderList({required this.items, required this.scrollController});
 
   @override
   Widget build(BuildContext context) {
     return ScrollablePositionedList.builder(
+      itemScrollController: scrollController,
       itemCount: items.length,
       itemBuilder: (context, index) => _ReaderItemTile(item: items[index]),
     );
