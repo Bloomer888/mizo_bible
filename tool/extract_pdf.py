@@ -661,8 +661,21 @@ def local_split_point(line: str, gutter: int, margins: tuple[int, ...] = (20, 30
     return gutter
 
 
+# The verse-count half tolerates a thousands-separator comma -- found
+# directly, Genesis's own intro states "ch.ng 1,533 a awm" (its real
+# verse count), which \d{1,4} alone can't match past the comma. Every
+# OTHER book's count stays under 1,000 and is never comma-separated
+# (Psalms, the next-largest at 2461, writes it as a plain "2461" with no
+# comma at all) -- Genesis is the one and only exception, not a general
+# style. Missing this meant the whole stock-sentence guard never matched
+# on Genesis's opener, so its skip-search accepted an earlier candidate
+# whose first 10 lines still had the book's own outline paragraph in
+# them, and ALL of that outline (plus the stock sentence itself) ended
+# up swept into verse 1:1's `heading` field as pending text -- found
+# directly while building the Supabase seed script, checking each
+# book's verse-1 heading for anything unexpectedly long.
 STOCK_INTRO_TAIL_RE = re.compile(
-    r'Bu hi Bible|bung \d{1,3}.{0,15}ch.ng \d{1,4} a awm|Bible a lehkhabu \d{1,3}-na'
+    r'Bu hi Bible|bung \d{1,3}.{0,15}ch.ng [\d,]{1,5} a awm|Bible a lehkhabu \d{1,3}-na'
 )
 
 
@@ -782,6 +795,20 @@ class ColumnParser:
     def feed_line(self, raw: str) -> None:
         line = raw.strip()
         if not line:
+            # A blank line before any verse has started yet marks a
+            # paragraph break in the book-opener's intro prose, not a
+            # continuation of whatever heading is about to precede verse
+            # 1 -- found directly while building the Supabase seed
+            # script: Lamentations' intro's own LAST sentence ("Kohhran
+            # hmangaih tak taktute'n...") was getting glued onto the real
+            # heading ("Jerusalem Lungngaihna") that follows it, with a
+            # blank line sitting between them that previously never got
+            # a chance to matter, since a blank line returned here
+            # before ever reaching pending_heading_lines. Resetting on
+            # it means only the LAST contiguous block before verse 1 --
+            # the actual heading -- survives to be attached.
+            if self.cur_key is None:
+                self.pending_heading_lines = []
             return
 
         # A standalone chapter-title line ("SAM 2" / "PSALM 2"), checked
