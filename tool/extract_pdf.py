@@ -586,6 +586,24 @@ def local_split_point(line: str, gutter: int, margins: tuple[int, ...] = (20, 30
     # gap -- so >=2, not a wider margin, is what actually separates "every
     # candidate ties at 1" from "a real, if tight, gap".
     if best_len >= 2:
+        # The run just found can still be on the WRONG side of this
+        # line's own leading marker repeating -- found directly, Malachi
+        # 2:3's '3 "Ngai teh u, ... vang a, 3         The refuse of your
+        # solemn feasts;' has its OWN "3" repeating right before a
+        # genuinely wide gap, and that gap's start (right after the
+        # second "3") qualifies normally, handing English's marker to
+        # the Mizo side. A lone digit before a gap is NOT trusted in
+        # general -- that overly broad version regressed Exodus, Judges,
+        # and Acts badly when first tried -- but a digit that specifically
+        # repeats this line's OWN leading marker is the same narrow,
+        # already-proven-safe signal the last-resort check below uses,
+        # just needed one line earlier here.
+        lead = re.match(r'\s*(\d{1,3})[.\s]', line)
+        if lead:
+            left_text = line[:best_start].rstrip()
+            m = re.search(rf'(?<=\S )({re.escape(lead.group(1))})$', left_text)
+            if m:
+                return m.start(1)
         return best_start
     # Last resort, found directly: John 10:6's line has NO gap anywhere
     # near the gutter wider than ordinary word-spacing (every candidate
@@ -802,6 +820,24 @@ class ColumnParser:
             line = remainder.strip()
             if not line:
                 return
+
+        # A line that is NOTHING but a bare marker, with its own text
+        # arriving entirely on the NEXT line -- found directly, Malachi
+        # 2:6's English column has a physical row consisting of just
+        # "7", with its text ("mouth;") on the following row. This
+        # matches neither VERSE_RE (needs something after the number,
+        # even a separator) nor TRAILING_MARKER_RE (needs real text
+        # BEFORE the number too) and fell all the way through to plain
+        # continuation, glued onto the PREVIOUS verse instead of
+        # starting its own. Confirmed by exhaustive search to be rare
+        # enough to trust on _would_accept alone: only 16 such bare lines
+        # exist in the whole corpus, and this is the ONLY one where the
+        # number also happens to satisfy the strict verse+1/chapter+1
+        # rule -- the same rule guards every other marker shape here.
+        m_bare = re.match(r'^(\d{1,3})$', line)
+        if m_bare and int(m_bare.group(1)) <= MAX_VERSE and self._would_accept(int(m_bare.group(1))):
+            self._start_verse(int(m_bare.group(1)), "")
+            return
 
         m = VERSE_RE.match(line)
         if m and int(m.group(1)) <= MAX_VERSE:
