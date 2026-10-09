@@ -142,6 +142,19 @@ create table parallel_rows (
     b_end      integer,
     primary key (pair_id, book_id, chapter, row_index)
 );
+
+-- External-content FTS5 index over the already-folded search column --
+-- indexes text_folded, not text, so a query folded the same way (Dart:
+-- foldForSearch, lib/core/text/fold.dart) matches regardless of case or
+-- Mizo diacritics. content_rowid='rowid' relies on verses' own implicit
+-- SQLite rowid (it isn't declared WITHOUT ROWID), populated below by
+-- copying that same rowid across rather than inserting independently,
+-- so the two tables' rows line up exactly.
+create virtual table verses_fts using fts5(
+    text_folded,
+    content='verses',
+    content_rowid='rowid'
+);
 """
 
 
@@ -175,6 +188,7 @@ def build_db(translations, books, book_names, verses, parallel_rows) -> None:
         "insert into parallel_rows values (?,?,?,?,?,?,?,?,?)",
         parallel_rows,
     )
+    conn.execute("insert into verses_fts(rowid, text_folded) select rowid, text_folded from verses")
 
     # Tells Drift on open "this schema already exists, don't run onCreate"
     # -- must match BibleDatabase.schemaVersion in

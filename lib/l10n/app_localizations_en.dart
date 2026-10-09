@@ -59,4 +59,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get textSettings => 'Text Settings';
+
+  @override
+  String get noResults => 'No results found';
 }

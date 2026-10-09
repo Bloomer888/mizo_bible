@@ -6,6 +6,7 @@ import '../../../core/db/bible_database.dart';
 import '../../../core/l10n_extension.dart';
 import '../../navigation/data/book_repository.dart';
 import '../../navigation/presentation/book_list_page.dart';
+import '../../search/presentation/search_page.dart';
 import '../data/reader_repository.dart';
 import '../domain/reader_item.dart';
 import 'reader_settings.dart';
@@ -28,7 +29,9 @@ final bookInfoProvider = FutureProvider.autoDispose.family<BookInfo, int>((ref, 
 
 class ReaderPage extends ConsumerStatefulWidget {
   final int bookId;
-  const ReaderPage({super.key, required this.bookId});
+  final int? targetChapter;
+  final int? targetVerse;
+  const ReaderPage({super.key, required this.bookId, this.targetChapter, this.targetVerse});
 
   @override
   ConsumerState<ReaderPage> createState() => _ReaderPageState();
@@ -36,6 +39,19 @@ class ReaderPage extends ConsumerStatefulWidget {
 
 class _ReaderPageState extends ConsumerState<ReaderPage> {
   final _scrollController = ItemScrollController();
+  bool _didInitialScroll = false;
+
+  void _maybeScrollToTarget(List<ReaderItem> items) {
+    if (_didInitialScroll || widget.targetChapter == null) return;
+    _didInitialScroll = true;
+    final index = _targetIndex(items, widget.targetChapter!, widget.targetVerse);
+    if (index == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_scrollController.isAttached) {
+        _scrollController.jumpTo(index: index);
+      }
+    });
+  }
 
   void _openChapterPicker(int chapterCount, Map<int, int> chapterIndex) {
     showModalBottomSheet(
@@ -66,6 +82,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
     if (bookInfoAsync case AsyncData(:final value)) bookInfo = value;
     List<ReaderItem>? items;
     if (itemsAsync case AsyncData(:final value)) items = value;
+    if (items != null) _maybeScrollToTarget(items);
 
     return Scaffold(
       appBar: AppBar(
@@ -76,6 +93,13 @@ class _ReaderPageState extends ConsumerState<ReaderPage> {
           child: Text(bookInfo?.name ?? ''),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.search),
+            tooltip: context.l10n.search,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const SearchPage()),
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.text_fields),
             tooltip: context.l10n.textSettings,
@@ -112,6 +136,23 @@ Map<int, int> _chapterIndex(List<ReaderItem> items) {
     if (item is ChapterHeader) index[item.chapter] = i;
   }
   return index;
+}
+
+/// The item index for a search result's exact verse, falling back to its
+/// chapter's start if that verse can't be pinned down (e.g. a future
+/// merged-verse row whose label isn't a bare number -- doesn't happen
+/// with today's 1-to-1 synthesis, but this degrades gracefully instead
+/// of silently failing to scroll at all if that ever changes).
+int? _targetIndex(List<ReaderItem> items, int chapter, int? verse) {
+  if (verse != null) {
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
+      if (item is VerseRow && item.chapter == chapter && int.tryParse(item.label) == verse) {
+        return i;
+      }
+    }
+  }
+  return _chapterIndex(items)[chapter];
 }
 
 class _ChapterGrid extends StatelessWidget {
