@@ -221,6 +221,12 @@ def main():
             "Authorization": f"Bearer {service_key}",
             "Content-Type": "application/json",
             "Prefer": "resolution=merge-duplicates,return=minimal",
+            # content is a non-public schema -- PostgREST needs these to
+            # route there instead of its public-schema default, and it
+            # must also be added to the project's exposed-schemas list
+            # (Project Settings -> Data API) or every request 406s.
+            "Accept-Profile": "content",
+            "Content-Profile": "content",
         }
     )
 
