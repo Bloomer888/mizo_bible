@@ -3,6 +3,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/l10n_extension.dart';
 import 'core/theme/app_theme.dart';
+import 'features/reader/presentation/reader_page.dart';
 import 'l10n/app_localizations.dart';
 
 class MizoBibleApp extends StatelessWidget {
@@ -22,25 +23,9 @@ class MizoBibleApp extends StatelessWidget {
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const _StartupPage(),
-    );
-  }
-}
-
-/// Placeholder home. Replaced by the reader in phase 4.
-class _StartupPage extends StatelessWidget {
-  const _StartupPage();
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.appTitle)),
-      body: const Center(
-        // Renders the two characters most likely to break on a device with
-        // incomplete Latin Extended Additional coverage.
-        child: Text('Pathian Lehkhabu Thianghlim — ṭhu, Ṭ', textScaler: TextScaler.linear(1.4)),
-      ),
+      // Genesis (book id 1), hardcoded -- a real book/chapter picker is
+      // Phase 6 navigation, not this first reader pass.
+      home: const ReaderPage(bookId: 1),
     );
   }
 }

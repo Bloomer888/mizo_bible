@@ -3,10 +3,21 @@ import 'dart:io';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 part 'bible_database.g.dart';
+
+/// The app-wide handle onto bible.db. Overridden in widget tests (see
+/// test/widget_test.dart) with a database opened on the small committed
+/// fixture instead -- the real one depends on path_provider's platform
+/// channel, which plain `flutter_test` doesn't have mocked.
+final bibleDatabaseProvider = Provider<BibleDatabase>((ref) {
+  final db = BibleDatabase();
+  ref.onDispose(db.close);
+  return db;
+});
 
 /// The 66 canonical books' metadata. Translation-independent -- mirrors
 /// content.books (supabase/migrations/20261008133644_content_schema.sql).
