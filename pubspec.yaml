@@ -99,7 +99,7 @@ flutter:
   generate: true
 
   assets:
-    # Pre-built Bible database, produced by tool/build_bible_db.py and
+    # Pre-built Bible database, produced by tool/export_bible_db.py and
     # copied to the app documents directory on first launch.
     - assets/db/
 
