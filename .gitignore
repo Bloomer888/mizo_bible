@@ -60,7 +60,7 @@ app.*.map.json
 .env.*
 !.env.example
 
-# Generated Bible database. Rebuild with: python tool/build_bible_db.py
+# Generated Bible database. Rebuild with: python tool/export_bible_db.py
 # ~30MB binary; regenerable from the pipeline, so not worth versioning.
 /assets/db/*.db
 /assets/db/*.db-journal

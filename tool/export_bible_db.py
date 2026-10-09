@@ -176,6 +176,12 @@ def build_db(translations, books, book_names, verses, parallel_rows) -> None:
         parallel_rows,
     )
 
+    # Tells Drift on open "this schema already exists, don't run onCreate"
+    # -- must match BibleDatabase.schemaVersion in
+    # lib/core/db/bible_database.dart, same cross-language-agreement
+    # reasoning as fold.py/fold.dart.
+    conn.execute("PRAGMA user_version = 1")
+
     conn.commit()
     conn.execute("vacuum")
     conn.close()
