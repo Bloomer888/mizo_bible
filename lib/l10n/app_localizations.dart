@@ -297,6 +297,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No notes yet'**
   String get noNotesYet;
+
+  /// No description provided for @account.
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get account;
+
+  /// No description provided for @signIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in'**
+  String get signIn;
+
+  /// No description provided for @createAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Create account'**
+  String get createAccount;
+
+  /// No description provided for @email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email'**
+  String get email;
+
+  /// No description provided for @password.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get password;
+
+  /// No description provided for @invalidEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address'**
+  String get invalidEmail;
+
+  /// No description provided for @passwordTooShort.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters'**
+  String get passwordTooShort;
+
+  /// No description provided for @forgotPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Forgot password?'**
+  String get forgotPassword;
+
+  /// No description provided for @resetPasswordEmailSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your email for a password reset link'**
+  String get resetPasswordEmailSent;
+
+  /// No description provided for @confirmEmailSent.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your email to confirm your account'**
+  String get confirmEmailSent;
+
+  /// No description provided for @signedInAs.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in as'**
+  String get signedInAs;
+
+  /// No description provided for @signOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get signOut;
+
+  /// No description provided for @needAnAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Need an account? Create one'**
+  String get needAnAccount;
+
+  /// No description provided for @alreadyHaveAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account? Sign in'**
+  String get alreadyHaveAccount;
+
+  /// No description provided for @cloudSyncUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud sync isn\'t set up for this build. Bookmarks, highlights, notes, and history are still saved on this device.'**
+  String get cloudSyncUnavailable;
 }
 
 class _AppLocalizationsDelegate

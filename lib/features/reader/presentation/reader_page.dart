@@ -5,6 +5,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../core/db/bible_database.dart';
 import '../../../core/db/user_database.dart';
 import '../../../core/l10n_extension.dart';
+import '../../auth/presentation/account_page.dart';
 import '../../library/presentation/bookmarks_page.dart';
 import '../../library/presentation/highlights_page.dart';
 import '../../library/presentation/history_page.dart';
@@ -306,6 +307,12 @@ class _ReaderDrawer extends StatelessWidget {
               leading: const Icon(Icons.history),
               title: Text(l10n.history),
               onTap: () => openPage(const HistoryPage()),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.account_circle),
+              title: Text(l10n.account),
+              onTap: () => openPage(const AccountPage()),
             ),
           ],
         ),

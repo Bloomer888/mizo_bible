@@ -42,5 +42,21 @@
   "share": "Share",
   "noBookmarksYet": "No bookmarks yet",
   "noHighlightsYet": "No highlights yet",
-  "noNotesYet": "No notes yet"
+  "noNotesYet": "No notes yet",
+
+  "account": "Account",
+  "signIn": "Sign in",
+  "createAccount": "Create account",
+  "email": "Email",
+  "password": "Password",
+  "invalidEmail": "Enter a valid email address",
+  "passwordTooShort": "Password must be at least 6 characters",
+  "forgotPassword": "Forgot password?",
+  "resetPasswordEmailSent": "Check your email for a password reset link",
+  "confirmEmailSent": "Check your email to confirm your account",
+  "signedInAs": "Signed in as",
+  "signOut": "Sign out",
+  "needAnAccount": "Need an account? Create one",
+  "alreadyHaveAccount": "Already have an account? Sign in",
+  "cloudSyncUnavailable": "Cloud sync isn't set up for this build. Bookmarks, highlights, notes, and history are still saved on this device."
 }

@@ -110,4 +110,51 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noNotesYet => 'No notes yet';
+
+  @override
+  String get account => 'Account';
+
+  @override
+  String get signIn => 'Sign in';
+
+  @override
+  String get createAccount => 'Create account';
+
+  @override
+  String get email => 'Email';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get invalidEmail => 'Enter a valid email address';
+
+  @override
+  String get passwordTooShort => 'Password must be at least 6 characters';
+
+  @override
+  String get forgotPassword => 'Forgot password?';
+
+  @override
+  String get resetPasswordEmailSent =>
+      'Check your email for a password reset link';
+
+  @override
+  String get confirmEmailSent => 'Check your email to confirm your account';
+
+  @override
+  String get signedInAs => 'Signed in as';
+
+  @override
+  String get signOut => 'Sign out';
+
+  @override
+  String get needAnAccount => 'Need an account? Create one';
+
+  @override
+  String get alreadyHaveAccount => 'Already have an account? Sign in';
+
+  @override
+  String get cloudSyncUnavailable =>
+      'Cloud sync isn\'t set up for this build. Bookmarks, highlights, notes, and history are still saved on this device.';
 }
