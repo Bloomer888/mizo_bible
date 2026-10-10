@@ -6,7 +6,7 @@ free and works with no account and no network.
 
 ## Running
 
-Supabase credentials are passed at build time, not committed:
+Supabase and RevenueCat credentials are passed at build time, not committed:
 
 ```bash
 cp dart_define.example.json dart_define.json   # then fill in your values
@@ -16,7 +16,10 @@ flutter run --dart-define-from-file=dart_define.json
 ```
 
 The app starts and reads fine without `dart_define.json` — it just has no
-sync or accounts, which is the intended offline behaviour.
+sync, accounts, or Premium, which is the intended offline behaviour.
+`REVENUECAT_ANDROID_API_KEY` specifically can stay blank until a RevenueCat
+project and Play Console in-app products both exist; every Premium surface
+degrades to "unavailable" rather than erroring (see `Env.hasRevenueCat`).
 
 ## Common commands
 
