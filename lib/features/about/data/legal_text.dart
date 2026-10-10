@@ -56,7 +56,7 @@ collect data from them.
 
 CONTACT
 
-Questions about this policy: [CONTACT EMAIL NOT YET SET]
+Questions about this policy: larc1406@gmail.com
 ''';
 
 const String termsOfServiceText = '''
@@ -102,5 +102,5 @@ These terms are governed by the laws of India.
 
 CONTACT
 
-Questions about these terms: [CONTACT EMAIL NOT YET SET]
+Questions about these terms: larc1406@gmail.com
 ''';
