@@ -27,6 +27,14 @@ flutter gen-l10n                                  # after editing lib/l10n/*.arb
 dart run build_runner build --delete-conflicting-outputs
                                                   # after changing a Drift table
                                                   # or a Riverpod provider
+python tool/export_bible_db.py                    # regenerate assets/db/bible.db --
+                                                  # always do this before a release
+                                                  # build; it's gitignored, so a
+                                                  # locally stale copy (e.g. predating
+                                                  # a schema/FTS change) won't show up
+                                                  # in any diff and can ship silently
+                                                  # broken -- caught once already, when
+                                                  # search had no verses_fts table
 flutter build apk --release --dart-define-from-file=dart_define.json
 ```
 
