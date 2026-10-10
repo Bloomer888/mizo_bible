@@ -199,34 +199,48 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
       drawer: const _ReaderDrawer(),
       appBar: AppBar(
         title: InkWell(
+          borderRadius: BorderRadius.circular(12),
           onTap: () => Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => const BookListPage()),
           ),
-          child: Text(bookInfo?.name ?? ''),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Flexible(child: Text(bookInfo?.name ?? '', overflow: TextOverflow.ellipsis)),
+                const SizedBox(width: 2),
+                Icon(Icons.expand_more_rounded, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
+              ],
+            ),
+          ),
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
+          IconButton.filledTonal(
+            icon: const Icon(Icons.search_rounded),
             tooltip: context.l10n.search,
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const SearchPage()),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.text_fields),
+          const SizedBox(width: 6),
+          IconButton.filledTonal(
+            icon: const Icon(Icons.text_fields_rounded),
             tooltip: context.l10n.textSettings,
             onPressed: () => showModalBottomSheet(
               context: context,
               builder: (_) => const ReaderSettingsSheet(),
             ),
           ),
-          IconButton(
-            icon: const Icon(Icons.grid_view),
+          const SizedBox(width: 6),
+          IconButton.filledTonal(
+            icon: const Icon(Icons.grid_view_rounded),
             tooltip: context.l10n.chapters,
             onPressed: (bookInfo != null && items != null)
                 ? () => _openChapterPicker(bookInfo!.chapterCount, _chapterIndex(items!))
                 : null,
           ),
+          const SizedBox(width: 8),
         ],
       ),
       body: MediaQuery(
@@ -285,38 +299,62 @@ class _ReaderDrawer extends StatelessWidget {
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
     }
 
+    final scheme = Theme.of(context).colorScheme;
+
     return Drawer(
       child: SafeArea(
         child: ListView(
+          padding: EdgeInsets.zero,
           children: [
+            Container(
+              padding: const EdgeInsets.fromLTRB(24, 36, 24, 28),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [scheme.primary, scheme.tertiary],
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.menu_book_rounded, color: scheme.onPrimary, size: 34),
+                  const SizedBox(width: 14),
+                  Text(
+                    l10n.appTitle,
+                    style: TextStyle(color: scheme.onPrimary, fontSize: 22, fontWeight: FontWeight.w700),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
             ListTile(
-              leading: const Icon(Icons.bookmark),
+              leading: const Icon(Icons.bookmark_rounded),
               title: Text(l10n.bookmarks),
               onTap: () => openPage(const BookmarksPage()),
             ),
             ListTile(
-              leading: const Icon(Icons.format_color_fill),
+              leading: const Icon(Icons.format_color_fill_rounded),
               title: Text(l10n.highlights),
               onTap: () => openPage(const HighlightsPage()),
             ),
             ListTile(
-              leading: const Icon(Icons.edit_note),
+              leading: const Icon(Icons.edit_note_rounded),
               title: Text(l10n.notes),
               onTap: () => openPage(const NotesPage()),
             ),
             ListTile(
-              leading: const Icon(Icons.history),
+              leading: const Icon(Icons.history_rounded),
               title: Text(l10n.history),
               onTap: () => openPage(const HistoryPage()),
             ),
-            const Divider(),
+            const Divider(indent: 16, endIndent: 16),
             ListTile(
-              leading: const Icon(Icons.account_circle),
+              leading: const Icon(Icons.account_circle_rounded),
               title: Text(l10n.account),
               onTap: () => openPage(const AccountPage()),
             ),
             ListTile(
-              leading: const Icon(Icons.info_outline),
+              leading: const Icon(Icons.info_outline_rounded),
               title: Text(l10n.about),
               onTap: () => openPage(const AboutPage()),
             ),
@@ -334,23 +372,33 @@ class _ChapterGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
         child: GridView.builder(
           shrinkWrap: true,
           gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
             maxCrossAxisExtent: 56,
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
+            mainAxisSpacing: 10,
+            crossAxisSpacing: 10,
           ),
           itemCount: chapterCount,
           itemBuilder: (context, i) {
             final chapter = i + 1;
-            return InkWell(
-              onTap: () => onSelected(chapter),
-              borderRadius: BorderRadius.circular(8),
-              child: Center(child: Text('$chapter')),
+            return Material(
+              color: scheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                onTap: () => onSelected(chapter),
+                borderRadius: BorderRadius.circular(14),
+                child: Center(
+                  child: Text(
+                    '$chapter',
+                    style: TextStyle(color: scheme.onSecondaryContainer, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
             );
           },
         ),
@@ -464,7 +512,7 @@ class _VerseRowTile extends ConsumerWidget {
         ? null
         : highlightColors[annotations.highlightColor]?.withValues(alpha: 0.35);
 
-    return GestureDetector(
+    return InkWell(
       onLongPress: verse == null
           ? null
           : () => openVerseActions(
@@ -476,9 +524,16 @@ class _VerseRowTile extends ConsumerWidget {
                 mizoText: a,
                 englishText: b,
               ),
-      child: Container(
-        color: highlightColor,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      borderRadius: BorderRadius.circular(14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+        margin: EdgeInsets.symmetric(horizontal: highlightColor == null ? 0 : 6, vertical: highlightColor == null ? 0 : 2),
+        padding: EdgeInsets.symmetric(horizontal: highlightColor == null ? 16 : 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: highlightColor,
+          borderRadius: BorderRadius.circular(14),
+        ),
         child: _ParallelRow(
           a: _VerseText(label: label, text: a, annotations: annotations),
           b: _VerseText(label: label, text: b, annotations: null),

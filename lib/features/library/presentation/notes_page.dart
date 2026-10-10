@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/db/user_database.dart';
 import '../../../core/l10n_extension.dart';
+import '../../../core/widgets/entry_card.dart';
 import '../../reader/data/verse_annotations_repository.dart';
 import '../../reader/presentation/reader_page.dart';
 import 'library_providers.dart';
@@ -24,15 +25,17 @@ class NotesPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.notes)),
       body: switch (itemsAsync) {
-        AsyncData(:final value) when value.isEmpty => Center(child: Text(l10n.noNotesYet)),
+        AsyncData(:final value) when value.isEmpty =>
+          EmptyState(icon: Icons.edit_note_rounded, message: l10n.noNotesYet),
         AsyncData(:final value) => ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: value.length,
             itemBuilder: (context, i) {
               final entry = value[i];
-              return ListTile(
-                leading: const Icon(Icons.edit_note),
-                title: Text('${entry.bookName} ${entry.chapter}:${entry.verse}'),
-                subtitle: Text(entry.text, maxLines: 2, overflow: TextOverflow.ellipsis),
+              return EntryCard(
+                icon: Icons.edit_note_rounded,
+                title: '${entry.bookName} ${entry.chapter}:${entry.verse}',
+                subtitle: entry.text,
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => ReaderPage(

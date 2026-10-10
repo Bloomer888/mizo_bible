@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/db/user_database.dart';
 import '../../../core/l10n_extension.dart';
+import '../../../core/widgets/entry_card.dart';
 import '../../reader/data/verse_annotations_repository.dart';
 import '../../reader/presentation/reader_page.dart';
 import 'library_providers.dart';
@@ -24,14 +25,16 @@ class BookmarksPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.bookmarks)),
       body: switch (itemsAsync) {
-        AsyncData(:final value) when value.isEmpty => Center(child: Text(l10n.noBookmarksYet)),
+        AsyncData(:final value) when value.isEmpty =>
+          EmptyState(icon: Icons.bookmark_border_rounded, message: l10n.noBookmarksYet),
         AsyncData(:final value) => ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: value.length,
             itemBuilder: (context, i) {
               final entry = value[i];
-              return ListTile(
-                leading: const Icon(Icons.bookmark),
-                title: Text('${entry.bookName} ${entry.chapter}:${entry.verse}'),
+              return EntryCard(
+                icon: Icons.bookmark_rounded,
+                title: '${entry.bookName} ${entry.chapter}:${entry.verse}',
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) => ReaderPage(

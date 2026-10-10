@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/db/bible_database.dart';
 import '../../../core/l10n_extension.dart';
+import '../../../core/widgets/entry_card.dart';
 import '../../reader/presentation/reader_page.dart';
 import '../data/search_repository.dart';
 
@@ -67,8 +68,10 @@ class _SearchPageState extends ConsumerState<SearchPage> {
       ),
       body: switch (resultsAsync) {
         AsyncData() when query.trim().isEmpty => const SizedBox.shrink(),
-        AsyncData(:final value) when value.isEmpty => Center(child: Text(l10n.noResults)),
+        AsyncData(:final value) when value.isEmpty =>
+          EmptyState(icon: Icons.search_off_rounded, message: l10n.noResults),
         AsyncData(:final value) => ListView.builder(
+            padding: const EdgeInsets.symmetric(vertical: 8),
             itemCount: value.length,
             itemBuilder: (context, i) => _ResultTile(result: value[i]),
           ),
@@ -85,9 +88,10 @@ class _ResultTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text('${result.bookName} ${result.chapter}:${result.verse}'),
-      subtitle: Text(result.text, maxLines: 2, overflow: TextOverflow.ellipsis),
+    return EntryCard(
+      icon: Icons.menu_book_rounded,
+      title: '${result.bookName} ${result.chapter}:${result.verse}',
+      subtitle: result.text,
       onTap: () {
         Navigator.of(context).push(
           MaterialPageRoute(

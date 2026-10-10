@@ -55,9 +55,18 @@ class _TestamentHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-      child: Text(title, style: Theme.of(context).textTheme.labelLarge),
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          color: scheme.primary,
+          fontWeight: FontWeight.w700,
+          fontSize: 13,
+          letterSpacing: 0.8,
+        ),
+      ),
     );
   }
 }
@@ -68,14 +77,27 @@ class _BookTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      title: Text(book.name),
-      trailing: Text('${book.chapterCount}'),
-      onTap: () {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => ReaderPage(bookId: book.id)),
-        );
-      },
+    final scheme = Theme.of(context).colorScheme;
+    return Card(
+      child: ListTile(
+        title: Text(book.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+        trailing: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: scheme.secondaryContainer,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            '${book.chapterCount}',
+            style: TextStyle(color: scheme.onSecondaryContainer, fontWeight: FontWeight.w600, fontSize: 13),
+          ),
+        ),
+        onTap: () {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (_) => ReaderPage(bookId: book.id)),
+          );
+        },
+      ),
     );
   }
 }

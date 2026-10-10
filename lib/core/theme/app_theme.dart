@@ -7,19 +7,137 @@ abstract final class AppTheme {
   static ThemeData dark() => _build(Brightness.dark);
 
   static ThemeData _build(Brightness brightness) {
+    // `vibrant` over Material 3's default tonal-spot algorithm -- the
+    // default reads as muted/pastel at this seed's chroma, which is a
+    // real part of why the app felt flat before any component theming
+    // even comes into it.
     final scheme = ColorScheme.fromSeed(
       seedColor: const Color(0xFF6B4E3D),
       brightness: brightness,
+      dynamicSchemeVariant: DynamicSchemeVariant.vibrant,
     );
 
     final base = ThemeData(colorScheme: scheme, useMaterial3: true);
+    final radius = BorderRadius.circular(16);
 
-    // Default every text style to the bundled font, so no string anywhere in
-    // the app can fall back to a system font that lacks the Mizo alphabet.
     return base.copyWith(
+      // Default every text style to the bundled font, so no string anywhere
+      // in the app can fall back to a system font that lacks the Mizo
+      // alphabet.
       textTheme: base.textTheme.apply(fontFamily: AppTypography.sans),
-      primaryTextTheme:
-          base.primaryTextTheme.apply(fontFamily: AppTypography.sans),
+      primaryTextTheme: base.primaryTextTheme.apply(fontFamily: AppTypography.sans),
+
+      scaffoldBackgroundColor: scheme.surface,
+
+      appBarTheme: AppBarTheme(
+        backgroundColor: scheme.surface,
+        surfaceTintColor: scheme.surfaceTint,
+        scrolledUnderElevation: 3,
+        shadowColor: scheme.shadow.withValues(alpha: 0.2),
+        titleTextStyle: TextStyle(
+          fontFamily: AppTypography.sans,
+          fontVariations: AppTypography.variations(FontWeight.w600),
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: scheme.onSurface,
+        ),
+      ),
+
+      iconButtonTheme: IconButtonThemeData(
+        style: IconButton.styleFrom(
+          foregroundColor: scheme.onSurfaceVariant,
+          highlightColor: scheme.primary.withValues(alpha: 0.14),
+        ),
+      ),
+
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: radius),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          elevation: 1,
+          shadowColor: scheme.shadow.withValues(alpha: 0.35),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15.5),
+        ),
+      ),
+
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: radius),
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          side: BorderSide(color: scheme.outlineVariant, width: 1.5),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15.5),
+        ),
+      ),
+
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: scheme.surfaceContainerLow,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      ),
+
+      listTileTheme: ListTileThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        iconColor: scheme.primary,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      ),
+
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: scheme.surfaceContainerHighest.withValues(alpha: 0.55),
+        border: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
+        enabledBorder: OutlineInputBorder(borderRadius: radius, borderSide: BorderSide.none),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide(color: scheme.primary, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: radius,
+          borderSide: BorderSide(color: scheme.error, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+      ),
+
+      dividerTheme: DividerThemeData(color: scheme.outlineVariant.withValues(alpha: 0.6), space: 1, thickness: 1),
+
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: scheme.surfaceContainerLow,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+        showDragHandle: true,
+        dragHandleColor: scheme.outlineVariant,
+      ),
+
+      drawerTheme: DrawerThemeData(
+        backgroundColor: scheme.surface,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.horizontal(right: Radius.circular(24))),
+      ),
+
+      chipTheme: ChipThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        side: BorderSide(color: scheme.outlineVariant),
+      ),
+
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: scheme.primary),
+
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+
+      dialogTheme: DialogThemeData(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        surfaceTintColor: Colors.transparent,
+      ),
     );
   }
 }

@@ -298,6 +298,12 @@ abstract class AppLocalizations {
   /// **'No notes yet'**
   String get noNotesYet;
 
+  /// No description provided for @noHistoryYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No reading history yet'**
+  String get noHistoryYet;
+
   /// No description provided for @account.
   ///
   /// In en, this message translates to:

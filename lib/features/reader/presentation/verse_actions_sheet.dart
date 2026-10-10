@@ -85,19 +85,30 @@ class VerseActionsSheet extends ConsumerWidget {
       _ => VerseAnnotations.none,
     };
 
+    final scheme = Theme.of(context).colorScheme;
+
+    Widget iconBadge(IconData icon, {Color? tint}) => CircleAvatar(
+          radius: 19,
+          backgroundColor: (tint ?? scheme.primary).withValues(alpha: 0.14),
+          child: Icon(icon, color: tint ?? scheme.primary, size: 21),
+        );
+
     return SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
             child: Align(
               alignment: Alignment.centerLeft,
-              child: Text('$bookName $chapter:$verse', style: Theme.of(context).textTheme.titleMedium),
+              child: Text(
+                '$bookName $chapter:$verse',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+              ),
             ),
           ),
           ListTile(
-            leading: Icon(annotations.bookmarked ? Icons.bookmark : Icons.bookmark_border),
+            leading: iconBadge(annotations.bookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded),
             title: Text(annotations.bookmarked ? l10n.removeBookmark : l10n.addBookmark),
             onTap: () async {
               await toggleBookmark(db, bookId: bookId, chapter: chapter, verse: verse);
@@ -106,32 +117,27 @@ class VerseActionsSheet extends ConsumerWidget {
             },
           ),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Row(
               children: [
-                Icon(Icons.format_color_fill, color: Theme.of(context).iconTheme.color),
-                const SizedBox(width: 24),
+                iconBadge(Icons.format_color_fill_rounded),
+                const SizedBox(width: 16),
                 for (final entry in highlightColors.entries)
                   Padding(
-                    padding: const EdgeInsets.only(right: 12),
-                    child: GestureDetector(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: _HighlightSwatch(
+                      color: entry.value,
+                      selected: annotations.highlightColor == entry.key,
                       onTap: () async {
                         await setHighlight(db, bookId: bookId, chapter: chapter, verse: verse, color: entry.key);
                         ref.invalidate(verseAnnotationsProvider(_key));
                         if (context.mounted) Navigator.of(context).pop();
                       },
-                      child: CircleAvatar(
-                        backgroundColor: entry.value,
-                        radius: 14,
-                        child: annotations.highlightColor == entry.key
-                            ? const Icon(Icons.check, size: 16, color: Colors.black54)
-                            : null,
-                      ),
                     ),
                   ),
                 if (annotations.highlightColor != null)
-                  IconButton(
-                    icon: const Icon(Icons.close),
+                  IconButton.filledTonal(
+                    icon: const Icon(Icons.close_rounded),
                     tooltip: l10n.removeHighlight,
                     onPressed: () async {
                       await removeHighlight(db, bookId: bookId, chapter: chapter, verse: verse);
@@ -143,12 +149,12 @@ class VerseActionsSheet extends ConsumerWidget {
             ),
           ),
           ListTile(
-            leading: const Icon(Icons.edit_note),
+            leading: iconBadge(Icons.edit_note_rounded),
             title: Text(annotations.hasNote ? l10n.editNote : l10n.addNote),
             onTap: () => _openNoteEditor(context, db, ref),
           ),
           ListTile(
-            leading: const Icon(Icons.copy),
+            leading: iconBadge(Icons.copy_rounded),
             title: Text(l10n.copy),
             onTap: () {
               Clipboard.setData(ClipboardData(text: _shareText));
@@ -156,14 +162,14 @@ class VerseActionsSheet extends ConsumerWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.share),
+            leading: iconBadge(Icons.share_rounded),
             title: Text(l10n.share),
             onTap: () {
               Navigator.of(context).pop();
               SharePlus.instance.share(ShareParams(text: _shareText));
             },
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
         ],
       ),
     );
@@ -226,6 +232,39 @@ class VerseActionsSheet extends ConsumerWidget {
             child: Text(l10n.save),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// A highlight-color option in the picker row. Grows and gains a ring +
+/// soft glow when it's the active color, rather than just swapping in a
+/// checkmark -- a static icon swap reads as a state label, this reads
+/// as something that responds to being tapped.
+class _HighlightSwatch extends StatelessWidget {
+  final Color color;
+  final bool selected;
+  final VoidCallback onTap;
+  const _HighlightSwatch({required this.color, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        curve: Curves.easeOut,
+        width: selected ? 40 : 32,
+        height: selected ? 40 : 32,
+        decoration: BoxDecoration(
+          color: color,
+          shape: BoxShape.circle,
+          border: selected ? Border.all(color: Theme.of(context).colorScheme.primary, width: 2.5) : null,
+          boxShadow: selected
+              ? [BoxShadow(color: color.withValues(alpha: 0.6), blurRadius: 10, spreadRadius: 1)]
+              : null,
+        ),
+        child: selected ? const Icon(Icons.check_rounded, size: 18, color: Colors.black54) : null,
       ),
     );
   }

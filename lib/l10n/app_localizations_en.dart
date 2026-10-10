@@ -112,6 +112,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noNotesYet => 'No notes yet';
 
   @override
+  String get noHistoryYet => 'No reading history yet';
+
+  @override
   String get account => 'Account';
 
   @override
