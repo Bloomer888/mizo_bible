@@ -16,6 +16,24 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings => 'Settings';
 
   @override
+  String get home => 'Home';
+
+  @override
+  String get bible => 'Bible';
+
+  @override
+  String get more => 'More';
+
+  @override
+  String get yourBible => 'Your Bible';
+
+  @override
+  String get startReadingPrompt => 'You haven\'t started reading yet';
+
+  @override
+  String get startReading => 'Start in Genesis';
+
+  @override
   String get search => 'Search';
 
   @override

@@ -3,11 +3,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'app_shell.dart';
 import 'core/db/user_database.dart';
 import 'core/env.dart';
 import 'core/l10n_extension.dart';
 import 'core/theme/app_theme.dart';
-import 'features/reader/presentation/reader_page.dart';
 import 'features/sync/data/sync_repository.dart';
 import 'l10n/app_localizations.dart';
 
@@ -65,9 +65,7 @@ class _MizoBibleAppState extends ConsumerState<MizoBibleApp> with WidgetsBinding
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: AppLocalizations.supportedLocales,
-      // Genesis (book id 1), hardcoded -- a real book/chapter picker is
-      // Phase 6 navigation, not this first reader pass.
-      home: const ReaderPage(bookId: 1),
+      home: const AppShell(),
     );
   }
 }

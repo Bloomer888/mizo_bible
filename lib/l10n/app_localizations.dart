@@ -106,6 +106,42 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settings;
 
+  /// No description provided for @home.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get home;
+
+  /// No description provided for @bible.
+  ///
+  /// In en, this message translates to:
+  /// **'Bible'**
+  String get bible;
+
+  /// No description provided for @more.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get more;
+
+  /// No description provided for @yourBible.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Bible'**
+  String get yourBible;
+
+  /// No description provided for @startReadingPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t started reading yet'**
+  String get startReadingPrompt;
+
+  /// No description provided for @startReading.
+  ///
+  /// In en, this message translates to:
+  /// **'Start in Genesis'**
+  String get startReading;
+
   /// No description provided for @search.
   ///
   /// In en, this message translates to:

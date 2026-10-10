@@ -35,4 +35,25 @@ void main() {
     expect(await loadReadingProgress(db, 1), (chapter: 10, verse: 1));
     expect(await loadReadingProgress(db, 2), (chapter: 2, verse: 5));
   });
+
+  group('loadMostRecentReadingProgress', () {
+    test('no saved progress anywhere returns null', () async {
+      expect(await loadMostRecentReadingProgress(db), isNull);
+    });
+
+    test('returns whichever book was touched most recently', () async {
+      await saveReadingProgress(db, bookId: 1, chapter: 10, verse: 1);
+      await saveReadingProgress(db, bookId: 2, chapter: 2, verse: 5);
+
+      expect(await loadMostRecentReadingProgress(db), (bookId: 2, chapter: 2, verse: 5));
+    });
+
+    test('re-saving an earlier book makes it the most recent again', () async {
+      await saveReadingProgress(db, bookId: 1, chapter: 10, verse: 1);
+      await saveReadingProgress(db, bookId: 2, chapter: 2, verse: 5);
+      await saveReadingProgress(db, bookId: 1, chapter: 11, verse: 3);
+
+      expect(await loadMostRecentReadingProgress(db), (bookId: 1, chapter: 11, verse: 3));
+    });
+  });
 }

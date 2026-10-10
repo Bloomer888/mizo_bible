@@ -7,6 +7,12 @@
   },
 
   "settings": "Settings",
+  "home": "Home",
+  "bible": "Bible",
+  "more": "More",
+  "yourBible": "Your Bible",
+  "startReadingPrompt": "You haven't started reading yet",
+  "startReading": "Start in Genesis",
   "search": "Search",
   "bookmarks": "Bookmarks",
   "notes": "Notes",

@@ -5,15 +5,8 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../core/db/bible_database.dart';
 import '../../../core/db/user_database.dart';
 import '../../../core/l10n_extension.dart';
-import '../../about/presentation/about_page.dart';
-import '../../auth/presentation/account_page.dart';
-import '../../library/presentation/bookmarks_page.dart';
-import '../../library/presentation/highlights_page.dart';
-import '../../library/presentation/history_page.dart';
-import '../../library/presentation/notes_page.dart';
 import '../../navigation/data/book_repository.dart';
 import '../../navigation/presentation/book_list_page.dart';
-import '../../search/presentation/search_page.dart';
 import '../data/reader_repository.dart';
 import '../data/reading_history_repository.dart';
 import '../data/reading_progress_repository.dart';
@@ -177,7 +170,6 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
     }
 
     return Scaffold(
-      drawer: const _ReaderDrawer(),
       appBar: AppBar(
         title: Text(bookInfo?.name ?? ''),
         actions: [
@@ -262,89 +254,6 @@ int? _targetIndex(List<ReaderItem> items, int chapter, int? verse) {
     }
   }
   return _chapterIndex(items)[chapter];
-}
-
-class _ReaderDrawer extends StatelessWidget {
-  const _ReaderDrawer();
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = context.l10n;
-
-    void openPage(Widget page) {
-      Navigator.of(context).pop(); // close the drawer first
-      Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
-    }
-
-    final scheme = Theme.of(context).colorScheme;
-
-    return Drawer(
-      child: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            Container(
-              padding: const EdgeInsets.fromLTRB(24, 36, 24, 28),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [scheme.primary, scheme.tertiary],
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.menu_book_rounded, color: scheme.onPrimary, size: 34),
-                  const SizedBox(width: 14),
-                  Text(
-                    l10n.appTitle,
-                    style: TextStyle(color: scheme.onPrimary, fontSize: 22, fontWeight: FontWeight.w700),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              leading: const Icon(Icons.search_rounded),
-              title: Text(l10n.search),
-              onTap: () => openPage(const SearchPage()),
-            ),
-            ListTile(
-              leading: const Icon(Icons.bookmark_rounded),
-              title: Text(l10n.bookmarks),
-              onTap: () => openPage(const BookmarksPage()),
-            ),
-            ListTile(
-              leading: const Icon(Icons.format_color_fill_rounded),
-              title: Text(l10n.highlights),
-              onTap: () => openPage(const HighlightsPage()),
-            ),
-            ListTile(
-              leading: const Icon(Icons.edit_note_rounded),
-              title: Text(l10n.notes),
-              onTap: () => openPage(const NotesPage()),
-            ),
-            ListTile(
-              leading: const Icon(Icons.history_rounded),
-              title: Text(l10n.history),
-              onTap: () => openPage(const HistoryPage()),
-            ),
-            const Divider(indent: 16, endIndent: 16),
-            ListTile(
-              leading: const Icon(Icons.account_circle_rounded),
-              title: Text(l10n.account),
-              onTap: () => openPage(const AccountPage()),
-            ),
-            ListTile(
-              leading: const Icon(Icons.info_outline_rounded),
-              title: Text(l10n.about),
-              onTap: () => openPage(const AboutPage()),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 class _ReaderList extends StatelessWidget {
