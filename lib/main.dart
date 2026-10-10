@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app.dart';
@@ -33,6 +34,18 @@ See https://scripts.sil.org/OFL for the full license text.'''),
       );
     } catch (error, stackTrace) {
       debugPrint('Supabase init failed; continuing offline: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
+  // Same reasoning as Supabase above: Premium is additive, never a
+  // startup dependency. A failure here just leaves isPremiumProvider
+  // reporting false, same as when RevenueCat isn't configured at all.
+  if (Env.hasRevenueCat) {
+    try {
+      await Purchases.configure(PurchasesConfiguration(Env.revenueCatAndroidApiKey));
+    } catch (error, stackTrace) {
+      debugPrint('RevenueCat init failed; Premium unavailable: $error');
       debugPrintStack(stackTrace: stackTrace);
     }
   }

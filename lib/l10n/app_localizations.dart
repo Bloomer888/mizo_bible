@@ -501,6 +501,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This permanently deletes your bookmarks, highlights, notes, reading history, and reading progress from this device and from our servers, and signs you out. This can\'t be undone.'**
   String get deleteMyDataConfirmation;
+
+  /// No description provided for @premium.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium'**
+  String get premium;
+
+  /// No description provided for @upgradeToPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Upgrade to Premium'**
+  String get upgradeToPremium;
+
+  /// No description provided for @premiumTagline.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync your bookmarks, highlights, and notes across every device.'**
+  String get premiumTagline;
+
+  /// No description provided for @premiumActive.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re a Premium member'**
+  String get premiumActive;
+
+  /// No description provided for @signInToSubscribe.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to subscribe to Premium'**
+  String get signInToSubscribe;
+
+  /// No description provided for @syncRequiresPremium.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud sync is a Premium feature'**
+  String get syncRequiresPremium;
+
+  /// No description provided for @unlockSync.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock sync'**
+  String get unlockSync;
+
+  /// No description provided for @restorePurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore purchases'**
+  String get restorePurchases;
+
+  /// No description provided for @restoreSuccessful.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium restored'**
+  String get restoreSuccessful;
+
+  /// No description provided for @restoreNoPurchasesFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No previous purchases found for this account'**
+  String get restoreNoPurchasesFound;
+
+  /// No description provided for @purchaseSuccessful.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re now a Premium member'**
+  String get purchaseSuccessful;
+
+  /// No description provided for @purchaseError.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong with that purchase. Please try again.'**
+  String get purchaseError;
+
+  /// No description provided for @premiumNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Premium isn\'t available right now. Please try again later.'**
+  String get premiumNotAvailable;
+
+  /// No description provided for @retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get retry;
+
+  /// No description provided for @freeTrialThen.
+  ///
+  /// In en, this message translates to:
+  /// **'{days}-day free trial, then {price}'**
+  String freeTrialThen(int days, String price);
 }
 
 class _AppLocalizationsDelegate

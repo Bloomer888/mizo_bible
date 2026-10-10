@@ -216,4 +216,55 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get deleteMyDataConfirmation =>
       'This permanently deletes your bookmarks, highlights, notes, reading history, and reading progress from this device and from our servers, and signs you out. This can\'t be undone.';
+
+  @override
+  String get premium => 'Premium';
+
+  @override
+  String get upgradeToPremium => 'Upgrade to Premium';
+
+  @override
+  String get premiumTagline =>
+      'Sync your bookmarks, highlights, and notes across every device.';
+
+  @override
+  String get premiumActive => 'You\'re a Premium member';
+
+  @override
+  String get signInToSubscribe => 'Sign in to subscribe to Premium';
+
+  @override
+  String get syncRequiresPremium => 'Cloud sync is a Premium feature';
+
+  @override
+  String get unlockSync => 'Unlock sync';
+
+  @override
+  String get restorePurchases => 'Restore purchases';
+
+  @override
+  String get restoreSuccessful => 'Premium restored';
+
+  @override
+  String get restoreNoPurchasesFound =>
+      'No previous purchases found for this account';
+
+  @override
+  String get purchaseSuccessful => 'You\'re now a Premium member';
+
+  @override
+  String get purchaseError =>
+      'Something went wrong with that purchase. Please try again.';
+
+  @override
+  String get premiumNotAvailable =>
+      'Premium isn\'t available right now. Please try again later.';
+
+  @override
+  String get retry => 'Retry';
+
+  @override
+  String freeTrialThen(int days, String price) {
+    return '$days-day free trial, then $price';
+  }
 }

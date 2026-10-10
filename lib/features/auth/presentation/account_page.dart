@@ -5,6 +5,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/db/user_database.dart';
 import '../../../core/env.dart';
 import '../../../core/l10n_extension.dart';
+import '../../premium/data/premium_providers.dart';
+import '../../premium/presentation/paywall_page.dart';
 import '../../sync/data/sync_repository.dart';
 import '../data/auth_repository.dart';
 
@@ -94,6 +96,7 @@ class _SignedInViewState extends ConsumerState<_SignedInView> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final isPremium = ref.watch(isPremiumProvider);
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -103,24 +106,37 @@ class _SignedInViewState extends ConsumerState<_SignedInView> {
           const SizedBox(height: 4),
           Text(widget.user.email ?? '', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 24),
-          OutlinedButton.icon(
-            onPressed: _isSyncing ? null : _sync,
-            icon: _isSyncing
-                ? const SizedBox(
-                    height: 16,
-                    width: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.sync),
-            label: Text(l10n.syncNow),
-          ),
-          if (_justSynced && !_isSyncing) ...[
+          if (isPremium) ...[
+            OutlinedButton.icon(
+              onPressed: _isSyncing ? null : _sync,
+              icon: _isSyncing
+                  ? const SizedBox(
+                      height: 16,
+                      width: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.sync),
+              label: Text(l10n.syncNow),
+            ),
+            if (_justSynced && !_isSyncing) ...[
+              const SizedBox(height: 8),
+              Text(l10n.syncedJustNow, style: Theme.of(context).textTheme.bodySmall),
+            ],
+            if (_syncError != null) ...[
+              const SizedBox(height: 8),
+              Text(_syncError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            ],
+          ] else ...[
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const PaywallPage())),
+              icon: const Icon(Icons.workspace_premium_rounded),
+              label: Text(l10n.unlockSync),
+            ),
             const SizedBox(height: 8),
-            Text(l10n.syncedJustNow, style: Theme.of(context).textTheme.bodySmall),
-          ],
-          if (_syncError != null) ...[
-            const SizedBox(height: 8),
-            Text(_syncError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            Text(
+              l10n.syncRequiresPremium,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.outline),
+            ),
           ],
           const SizedBox(height: 24),
           FilledButton(onPressed: signOut, child: Text(l10n.signOut)),

@@ -20,4 +20,15 @@ abstract final class Env {
   /// never stop the app from starting -- it only disables sync and accounts.
   static bool get hasSupabase =>
       supabaseUrl.isNotEmpty && supabasePublishableKey.isNotEmpty;
+
+  /// RevenueCat's Android *public* API key -- safe to ship in the client,
+  /// same trust level as the Supabase publishable key above.
+  static const revenueCatAndroidApiKey =
+      String.fromEnvironment('REVENUECAT_ANDROID_API_KEY');
+
+  /// True once Play Console products + a RevenueCat project exist and this
+  /// key is supplied. Until then, every Premium surface must behave as
+  /// "not premium, feature unavailable" rather than erroring -- nothing
+  /// about reading the Bible may ever depend on this being true.
+  static bool get hasRevenueCat => revenueCatAndroidApiKey.isNotEmpty;
 }

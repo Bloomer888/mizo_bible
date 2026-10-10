@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/db/user_database.dart';
+import '../../premium/data/premium_repository.dart';
 
 /// Every auth event (sign in, sign out, token refresh). supabase_flutter
 /// persists the session to disk itself and restores it before this
@@ -21,16 +22,23 @@ final currentUserProvider = Provider<User?>((ref) {
   return Supabase.instance.client.auth.currentUser;
 });
 
-Future<AuthResponse> signUp({required String email, required String password}) {
-  return Supabase.instance.client.auth.signUp(email: email, password: password);
+Future<AuthResponse> signUp({required String email, required String password}) async {
+  final response = await Supabase.instance.client.auth.signUp(email: email, password: password);
+  final user = response.user;
+  if (user != null) await linkPremiumIdentity(user.id);
+  return response;
 }
 
-Future<AuthResponse> signIn({required String email, required String password}) {
-  return Supabase.instance.client.auth.signInWithPassword(email: email, password: password);
+Future<AuthResponse> signIn({required String email, required String password}) async {
+  final response = await Supabase.instance.client.auth.signInWithPassword(email: email, password: password);
+  final user = response.user;
+  if (user != null) await linkPremiumIdentity(user.id);
+  return response;
 }
 
-Future<void> signOut() {
-  return Supabase.instance.client.auth.signOut();
+Future<void> signOut() async {
+  await unlinkPremiumIdentity();
+  await Supabase.instance.client.auth.signOut();
 }
 
 Future<void> resetPassword(String email) {

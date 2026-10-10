@@ -8,6 +8,7 @@ import 'core/db/user_database.dart';
 import 'core/env.dart';
 import 'core/l10n_extension.dart';
 import 'core/theme/app_theme.dart';
+import 'features/premium/data/premium_providers.dart';
 import 'features/sync/data/sync_repository.dart';
 import 'l10n/app_localizations.dart';
 
@@ -48,6 +49,7 @@ class _MizoBibleAppState extends ConsumerState<MizoBibleApp> with WidgetsBinding
     if (!Env.hasSupabase) return;
     final user = Supabase.instance.client.auth.currentUser;
     if (user == null) return;
+    if (!ref.read(isPremiumProvider)) return;
     syncUserData(ref.read(userDatabaseProvider), user.id).catchError((_) {});
   }
 

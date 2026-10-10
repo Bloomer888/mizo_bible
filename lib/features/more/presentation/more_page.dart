@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/l10n_extension.dart';
 import '../../about/presentation/about_page.dart';
@@ -7,6 +8,8 @@ import '../../library/presentation/bookmarks_page.dart';
 import '../../library/presentation/highlights_page.dart';
 import '../../library/presentation/history_page.dart';
 import '../../library/presentation/notes_page.dart';
+import '../../premium/data/premium_providers.dart';
+import '../../premium/presentation/paywall_page.dart';
 import '../../reader/presentation/reader_settings_sheet.dart';
 import '../../search/presentation/search_page.dart';
 
@@ -14,12 +17,13 @@ import '../../search/presentation/search_page.dart';
 /// the library views, reading preferences, account, and the legal/
 /// about screens. Replaces the reader's old hamburger drawer, which
 /// had the same job but only while a book happened to be on screen.
-class MorePage extends StatelessWidget {
+class MorePage extends ConsumerWidget {
   const MorePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final isPremium = ref.watch(isPremiumProvider);
 
     void openPage(Widget page) {
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
@@ -29,6 +33,12 @@ class MorePage extends StatelessWidget {
       appBar: AppBar(title: Text(l10n.more)),
       body: ListView(
         children: [
+          ListTile(
+            leading: Icon(Icons.workspace_premium_rounded, color: Theme.of(context).colorScheme.primary),
+            title: Text(isPremium ? l10n.premium : l10n.upgradeToPremium),
+            onTap: () => openPage(const PaywallPage()),
+          ),
+          const Divider(indent: 16, endIndent: 16),
           _SectionLabel(l10n.yourBible),
           ListTile(
             leading: const Icon(Icons.search_rounded),

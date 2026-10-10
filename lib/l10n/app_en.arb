@@ -79,5 +79,27 @@
 
   "deleteMyData": "Delete my data",
   "deleteMyDataTitle": "Delete all your data?",
-  "deleteMyDataConfirmation": "This permanently deletes your bookmarks, highlights, notes, reading history, and reading progress from this device and from our servers, and signs you out. This can't be undone."
+  "deleteMyDataConfirmation": "This permanently deletes your bookmarks, highlights, notes, reading history, and reading progress from this device and from our servers, and signs you out. This can't be undone.",
+
+  "premium": "Premium",
+  "upgradeToPremium": "Upgrade to Premium",
+  "premiumTagline": "Sync your bookmarks, highlights, and notes across every device.",
+  "premiumActive": "You're a Premium member",
+  "signInToSubscribe": "Sign in to subscribe to Premium",
+  "syncRequiresPremium": "Cloud sync is a Premium feature",
+  "unlockSync": "Unlock sync",
+  "restorePurchases": "Restore purchases",
+  "restoreSuccessful": "Premium restored",
+  "restoreNoPurchasesFound": "No previous purchases found for this account",
+  "purchaseSuccessful": "You're now a Premium member",
+  "purchaseError": "Something went wrong with that purchase. Please try again.",
+  "premiumNotAvailable": "Premium isn't available right now. Please try again later.",
+  "retry": "Retry",
+  "freeTrialThen": "{days}-day free trial, then {price}",
+  "@freeTrialThen": {
+    "placeholders": {
+      "days": { "type": "int" },
+      "price": { "type": "String" }
+    }
+  }
 }
