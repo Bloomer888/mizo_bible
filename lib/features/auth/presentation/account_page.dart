@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/db/user_database.dart';
 import '../../../core/env.dart';
 import '../../../core/l10n_extension.dart';
+import '../../sync/data/sync_repository.dart';
 import '../data/auth_repository.dart';
 
 class AccountPage extends ConsumerWidget {
@@ -35,9 +36,33 @@ class AccountPage extends ConsumerWidget {
   }
 }
 
-class _SignedInView extends StatelessWidget {
+class _SignedInView extends ConsumerStatefulWidget {
   final User user;
   const _SignedInView({required this.user});
+
+  @override
+  ConsumerState<_SignedInView> createState() => _SignedInViewState();
+}
+
+class _SignedInViewState extends ConsumerState<_SignedInView> {
+  bool _isSyncing = false;
+  String? _syncError;
+  bool _justSynced = false;
+
+  Future<void> _sync() async {
+    setState(() {
+      _isSyncing = true;
+      _syncError = null;
+    });
+    try {
+      await syncUserData(ref.read(userDatabaseProvider), widget.user.id);
+      if (mounted) setState(() => _justSynced = true);
+    } catch (error) {
+      if (mounted) setState(() => _syncError = error.toString());
+    } finally {
+      if (mounted) setState(() => _isSyncing = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +74,27 @@ class _SignedInView extends StatelessWidget {
         children: [
           Text(l10n.signedInAs, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 4),
-          Text(user.email ?? '', style: Theme.of(context).textTheme.titleMedium),
+          Text(widget.user.email ?? '', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 24),
+          OutlinedButton.icon(
+            onPressed: _isSyncing ? null : _sync,
+            icon: _isSyncing
+                ? const SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.sync),
+            label: Text(l10n.syncNow),
+          ),
+          if (_justSynced && !_isSyncing) ...[
+            const SizedBox(height: 8),
+            Text(l10n.syncedJustNow, style: Theme.of(context).textTheme.bodySmall),
+          ],
+          if (_syncError != null) ...[
+            const SizedBox(height: 8),
+            Text(_syncError!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          ],
           const SizedBox(height: 24),
           FilledButton(onPressed: signOut, child: Text(l10n.signOut)),
         ],
@@ -98,7 +143,7 @@ class _SignInFormState extends ConsumerState<_SignInForm> {
 
       final user = response.user;
       if (user != null) {
-        await claimLocalRows(ref.read(userDatabaseProvider), user.id);
+        await syncUserData(ref.read(userDatabaseProvider), user.id);
       }
 
       // Sign-up with email confirmation required returns a user but no

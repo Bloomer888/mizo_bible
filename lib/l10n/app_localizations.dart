@@ -387,6 +387,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Cloud sync isn\'t set up for this build. Bookmarks, highlights, notes, and history are still saved on this device.'**
   String get cloudSyncUnavailable;
+
+  /// No description provided for @syncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get syncNow;
+
+  /// No description provided for @syncedJustNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Synced just now'**
+  String get syncedJustNow;
 }
 
 class _AppLocalizationsDelegate

@@ -157,4 +157,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get cloudSyncUnavailable =>
       'Cloud sync isn\'t set up for this build. Bookmarks, highlights, notes, and history are still saved on this device.';
+
+  @override
+  String get syncNow => 'Sync now';
+
+  @override
+  String get syncedJustNow => 'Synced just now';
 }
