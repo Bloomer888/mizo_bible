@@ -159,25 +159,6 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
     });
   }
 
-  void _openChapterPicker(int chapterCount, Map<int, int> chapterIndex) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) => _ChapterGrid(
-        chapterCount: chapterCount,
-        onSelected: (chapter) {
-          Navigator.of(context).pop();
-          final index = chapterIndex[chapter];
-          if (index != null && _scrollController.isAttached) {
-            _scrollController.scrollTo(
-              index: index,
-              duration: const Duration(milliseconds: 300),
-            );
-          }
-        },
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final itemsAsync = ref.watch(readerItemsProvider(widget.bookId));
@@ -198,32 +179,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
     return Scaffold(
       drawer: const _ReaderDrawer(),
       appBar: AppBar(
-        title: InkWell(
-          borderRadius: BorderRadius.circular(12),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const BookListPage()),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 4),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Flexible(child: Text(bookInfo?.name ?? '', overflow: TextOverflow.ellipsis)),
-                const SizedBox(width: 2),
-                Icon(Icons.expand_more_rounded, size: 20, color: Theme.of(context).colorScheme.onSurfaceVariant),
-              ],
-            ),
-          ),
-        ),
+        title: Text(bookInfo?.name ?? ''),
         actions: [
-          IconButton.filledTonal(
-            icon: const Icon(Icons.search_rounded),
-            tooltip: context.l10n.search,
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SearchPage()),
-            ),
-          ),
-          const SizedBox(width: 6),
           IconButton.filledTonal(
             icon: const Icon(Icons.text_fields_rounded),
             tooltip: context.l10n.textSettings,
@@ -232,16 +189,36 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
               builder: (_) => const ReaderSettingsSheet(),
             ),
           ),
-          const SizedBox(width: 6),
-          IconButton.filledTonal(
-            icon: const Icon(Icons.grid_view_rounded),
-            tooltip: context.l10n.chapters,
-            onPressed: (bookInfo != null && items != null)
-                ? () => _openChapterPicker(bookInfo!.chapterCount, _chapterIndex(items!))
-                : null,
-          ),
           const SizedBox(width: 8),
         ],
+        bottom: (bookInfo != null && items != null)
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(76),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                  child: _BookChapterVersePicker(
+                    bookId: widget.bookId,
+                    bookName: bookInfo.name,
+                    chapterCount: bookInfo.chapterCount,
+                    items: items,
+                    initialChapter: targetChapter ?? 1,
+                    initialVerse: widget.targetVerse ?? _restoredVerse ?? 1,
+                    onChapterSelected: (chapter) {
+                      final index = _chapterIndex(items!)[chapter];
+                      if (index != null && _scrollController.isAttached) {
+                        _scrollController.scrollTo(index: index, duration: const Duration(milliseconds: 300));
+                      }
+                    },
+                    onVerseSelected: (chapter, verse) {
+                      final index = _targetIndex(items!, chapter, verse);
+                      if (index != null && _scrollController.isAttached) {
+                        _scrollController.scrollTo(index: index, duration: const Duration(milliseconds: 300));
+                      }
+                    },
+                  ),
+                ),
+              )
+            : null,
       ),
       body: MediaQuery(
         data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(fontScale)),
@@ -328,6 +305,11 @@ class _ReaderDrawer extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             ListTile(
+              leading: const Icon(Icons.search_rounded),
+              title: Text(l10n.search),
+              onTap: () => openPage(const SearchPage()),
+            ),
+            ListTile(
               leading: const Icon(Icons.bookmark_rounded),
               title: Text(l10n.bookmarks),
               onTap: () => openPage(const BookmarksPage()),
@@ -359,48 +341,6 @@ class _ReaderDrawer extends StatelessWidget {
               onTap: () => openPage(const AboutPage()),
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ChapterGrid extends StatelessWidget {
-  final int chapterCount;
-  final ValueChanged<int> onSelected;
-  const _ChapterGrid({required this.chapterCount, required this.onSelected});
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 20),
-        child: GridView.builder(
-          shrinkWrap: true,
-          gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-            maxCrossAxisExtent: 56,
-            mainAxisSpacing: 10,
-            crossAxisSpacing: 10,
-          ),
-          itemCount: chapterCount,
-          itemBuilder: (context, i) {
-            final chapter = i + 1;
-            return Material(
-              color: scheme.secondaryContainer,
-              borderRadius: BorderRadius.circular(14),
-              child: InkWell(
-                onTap: () => onSelected(chapter),
-                borderRadius: BorderRadius.circular(14),
-                child: Center(
-                  child: Text(
-                    '$chapter',
-                    style: TextStyle(color: scheme.onSecondaryContainer, fontWeight: FontWeight.w600),
-                  ),
-                ),
-              ),
-            );
-          },
         ),
       ),
     );
@@ -615,6 +555,137 @@ class _VerseText extends ConsumerWidget {
           TextSpan(text: content),
         ],
       ),
+    );
+  }
+}
+
+/// Direct book/chapter/verse navigation -- replaces the old pair of
+/// "tap the title for a book list" and "tap a grid icon for chapters"
+/// with one row that jumps anywhere in a tap or two, covering the
+/// common "I already know exactly where I want to go" case without
+/// needing full-text search (still reachable from the drawer).
+class _BookChapterVersePicker extends ConsumerStatefulWidget {
+  final int bookId;
+  final String bookName;
+  final int chapterCount;
+  final List<ReaderItem> items;
+  final int initialChapter;
+  final int initialVerse;
+  final ValueChanged<int> onChapterSelected;
+  final void Function(int chapter, int verse) onVerseSelected;
+
+  const _BookChapterVersePicker({
+    required this.bookId,
+    required this.bookName,
+    required this.chapterCount,
+    required this.items,
+    required this.initialChapter,
+    required this.initialVerse,
+    required this.onChapterSelected,
+    required this.onVerseSelected,
+  });
+
+  @override
+  ConsumerState<_BookChapterVersePicker> createState() => _BookChapterVersePickerState();
+}
+
+class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker> {
+  late int _chapter;
+  late int _verse;
+
+  @override
+  void initState() {
+    super.initState();
+    // widget.* isn't safe to read in field initializers (the framework
+    // assigns `widget` after this State is constructed) -- initState is
+    // the first point it's guaranteed set.
+    _chapter = widget.initialChapter;
+    _verse = widget.initialVerse;
+  }
+
+  List<int> _versesInChapter(int chapter) {
+    final verses = <int>[];
+    for (final item in widget.items) {
+      if (item is VerseRow && item.chapter == chapter) {
+        final v = int.tryParse(item.label);
+        if (v != null) verses.add(v);
+      }
+    }
+    return verses;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final booksAsync = ref.watch(bookListProvider);
+    final verses = _versesInChapter(_chapter);
+    final verseSelection = verses.contains(_verse) ? _verse : (verses.isEmpty ? null : verses.first);
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          flex: 4,
+          child: switch (booksAsync) {
+            AsyncData(:final value) => DropdownMenu<int>(
+                initialSelection: widget.bookId,
+                label: Text(context.l10n.books),
+                expandedInsets: EdgeInsets.zero,
+                menuHeight: 420,
+                dropdownMenuEntries: [
+                  for (final book in value) DropdownMenuEntry(value: book.id, label: book.name),
+                ],
+                onSelected: (bookId) {
+                  if (bookId == null || bookId == widget.bookId) return;
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (_) => ReaderPage(bookId: bookId)),
+                  );
+                },
+              ),
+            _ => const SizedBox.shrink(),
+          },
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          flex: 3,
+          child: DropdownMenu<int>(
+            key: ValueKey('chapter-${widget.bookId}-$_chapter'),
+            initialSelection: _chapter,
+            label: Text(context.l10n.chapters),
+            expandedInsets: EdgeInsets.zero,
+            menuHeight: 420,
+            dropdownMenuEntries: [
+              for (var c = 1; c <= widget.chapterCount; c++) DropdownMenuEntry(value: c, label: '$c'),
+            ],
+            onSelected: (chapter) {
+              if (chapter == null || chapter == _chapter) return;
+              setState(() {
+                _chapter = chapter;
+                _verse = 1;
+              });
+              widget.onChapterSelected(chapter);
+            },
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          flex: 3,
+          child: DropdownMenu<int>(
+            key: ValueKey('verse-${widget.bookId}-$_chapter'),
+            initialSelection: verseSelection,
+            label: Text(context.l10n.verse),
+            expandedInsets: EdgeInsets.zero,
+            menuHeight: 420,
+            dropdownMenuEntries: [
+              for (final v in verses) DropdownMenuEntry(value: v, label: '$v'),
+            ],
+            onSelected: (verse) {
+              if (verse == null || verse == _verse) return;
+              setState(() => _verse = verse);
+              widget.onVerseSelected(_chapter, verse);
+            },
+          ),
+        ),
+      ],
     );
   }
 }

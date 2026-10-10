@@ -190,6 +190,12 @@ abstract class AppLocalizations {
   /// **'Chapters'**
   String get chapters;
 
+  /// No description provided for @verse.
+  ///
+  /// In en, this message translates to:
+  /// **'Verse'**
+  String get verse;
+
   /// No description provided for @textSettings.
   ///
   /// In en, this message translates to:

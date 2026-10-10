@@ -37,7 +37,10 @@ void main() {
     await tester.pumpWidget(testScope());
     await tester.pumpAndSettle();
 
-    expect(find.text('Genesis'), findsOneWidget);
+    // At least one, not exactly one: the book/chapter/verse picker's own
+    // field also displays the current book's name now, alongside the
+    // app bar title -- both showing "Genesis" is correct, not a dupe bug.
+    expect(find.text('Genesis'), findsAtLeastNWidgets(1));
     expect(find.textContaining('In the beginning God created'), findsOneWidget);
     expect(find.textContaining('A tîrah Pathianin'), findsOneWidget);
   });
