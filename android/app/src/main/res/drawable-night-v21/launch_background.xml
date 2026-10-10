@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Matches AppTheme.dark()'s ColorScheme.surface (app_theme.dart):
+         a dark warm brown, not pure black, so the splash matches the
+         app's actual dark-mode background instead of flashing to it. -->
+    <item android:drawable="@color/launch_background_dark" />
+</layer-list>

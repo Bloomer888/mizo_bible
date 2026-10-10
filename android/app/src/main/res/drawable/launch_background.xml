@@ -1,12 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Modify this file to customize your launch splash screen -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
-        <bitmap
-            android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+    <!-- Matches AppTheme.light()'s ColorScheme.surface (app_theme.dart) so
+         there's no flash of plain white between this splash and Flutter's
+         first frame. -->
+    <item android:drawable="@color/launch_background_light" />
 </layer-list>
