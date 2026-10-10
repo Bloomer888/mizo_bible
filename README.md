@@ -37,19 +37,39 @@ flutter build apk --release --dart-define-from-file=dart_define.json
 | `lib/core/` | Database, text utilities, theme, build-time config |
 | `lib/features/` | One folder per feature (reader, search, settings, …) |
 | `lib/l10n/` | `.arb` translation files; English filled, Mizo later |
-| `tool/` | `build_bible_db.py` — builds the shipped Bible database |
+| `tool/` | PDF → `bible.db` pipeline: `extract_pdf.py`, `seed_supabase.py`, `export_bible_db.py` |
 | `assets/db/` | Generated `bible.db` (gitignored, rebuild with the tool) |
 | `assets/fonts/` | Noto Sans/Serif — needed for `ṭ` (U+1E6D) and circumflex vowels |
 | `source_pdfs/` | Your Bible PDFs (gitignored, copyrighted) |
+| `supabase/migrations/` | `content.*` (canonical Bible text, admin-only) and `user_data.*` (bookmarks/notes/etc., RLS-owned by each user) |
+
+The Bible text is canonical in Supabase's `content.*` schema (admin-edited) and
+exported per release into the bundled `bible.db` — the app itself only ever
+reads the local file, never Supabase, for Bible text:
+
+```
+PDF --(extract_pdf.py)--> structured data --(seed_supabase.py)--> Supabase content.*
+                                            --(export_bible_db.py, per release)--> assets/db/bible.db
+```
 
 ## Text and licensing
 
-- **English: King James Version** — public domain.
-- **Mizo: Pathian Lehkhabu Thianghlim, Common Language 1995** —
-  © 1995 Bible Society of India, all rights reserved. **Written permission
-  from BSI is required before publishing to any app store.** Translations are
-  stored as data rows, so substituting a different Mizo text is a data change,
-  not a code change.
+- **Mizo**: Mizo-English Parallel Bible (2010/2011/2015/2017 revisions), a
+  product of the Christian Research Centre, Aizawl — © Dr. P.C. Biaksiama,
+  translator. **Rights confirmed** via the pastor, one of the named rights
+  holders.
+- **English**: King James Version blended with New King James Version, "used
+  by permission of Thomas Nelson" per the source PDF's copyright page — not
+  plain public-domain KJV. NKJV is administered today by HarperCollins
+  Christian Publishing, whose gratis-use policy caps free quotation at 500
+  verses / 25% of the work / 50% of any one book. Shipping the full text
+  exceeds that, so this is tracked as **rights pending** (see
+  `translations.rights_status` in `content.*`) — **written permission from
+  HarperCollins Christian Publishing is required before wide release or any
+  Premium billing.**
+
+Translations are stored as data rows (`content.translations`), so
+substituting or removing a text is a data change, not a code change.
 
 ## Fonts
 
