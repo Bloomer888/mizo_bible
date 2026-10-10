@@ -1,10 +1,26 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../../core/env.dart';
 import 'premium_repository.dart';
+
+/// Debug-only override so Premium can be exercised end-to-end (paywall,
+/// sync unlocking, etc.) before a real RevenueCat project + Play Console
+/// products exist. isPremiumProvider below only ever reads this behind a
+/// `kDebugMode` check, which the Dart compiler strips out of release
+/// builds entirely -- this can't leak "free Premium" into a real build,
+/// not even as dead code someone could re-enable by flipping a flag.
+class DebugMockPremiumNotifier extends Notifier<bool> {
+  @override
+  bool build() => false;
+
+  void set(bool value) => state = value;
+}
+
+final debugMockPremiumProvider = NotifierProvider<DebugMockPremiumNotifier, bool>(DebugMockPremiumNotifier.new);
 
 /// Live customer info, bridging RevenueCat's callback-style listener
 /// into a stream Riverpod can watch. The listener fires immediately with
@@ -33,6 +49,7 @@ final customerInfoProvider = StreamProvider<CustomerInfo>((ref) {
 /// must fail closed (unavailable), never fail open (free access) while
 /// status is unknown.
 final isPremiumProvider = Provider<bool>((ref) {
+  if (kDebugMode && ref.watch(debugMockPremiumProvider)) return true;
   if (!Env.hasRevenueCat) return false;
   final customerInfo = ref.watch(customerInfoProvider).value;
   return customerInfo?.entitlements.active.containsKey(premiumEntitlementId) ?? false;
