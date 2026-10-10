@@ -142,6 +142,58 @@ void main() {
     });
   });
 
+  group('deleteAllUserData', () {
+    test('wipes every table for this user, regardless of the (failing, no-backend-in-tests) push', () async {
+      await db.into(db.bookmarks).insert(
+            BookmarksCompanion.insert(id: 'b1', bookId: 1, chapter: 1, verse: 1, userId: const Value('u1')),
+          );
+      await db.into(db.highlights).insert(
+            HighlightsCompanion.insert(id: 'h1', bookId: 1, chapter: 1, verse: 1, color: 'yellow', userId: const Value('u1')),
+          );
+      await db.into(db.notes).insert(
+            NotesCompanion.insert(id: 'n1', bookId: 1, chapter: 1, verse: 1, content: 'hi', userId: const Value('u1')),
+          );
+      await db.into(db.readingHistory).insert(
+            ReadingHistoryCompanion.insert(id: 'rh1', bookId: 1, chapter: 1, userId: const Value('u1')),
+          );
+      await db.into(db.readingProgress).insert(
+            ReadingProgressCompanion.insert(id: 'rp1', bookId: 1, chapter: 1, verse: 1, userId: const Value('u1')),
+          );
+      await db.into(db.settings).insert(
+            SettingsCompanion.insert(id: 's1', key: 'k', value: 'v', userId: const Value('u1')),
+          );
+
+      // The push half of this call hits Supabase.instance.client, which
+      // was never initialized in a plain `flutter test` run -- that's
+      // expected to throw and be swallowed (see deleteAllUserData's own
+      // doc comment: the local wipe is unconditional), not a reason for
+      // this test to fail.
+      await deleteAllUserData(db, 'u1');
+
+      expect(await db.select(db.bookmarks).get(), isEmpty);
+      expect(await db.select(db.highlights).get(), isEmpty);
+      expect(await db.select(db.notes).get(), isEmpty);
+      expect(await db.select(db.readingHistory).get(), isEmpty);
+      expect(await db.select(db.readingProgress).get(), isEmpty);
+      expect(await db.select(db.settings).get(), isEmpty);
+    });
+
+    test('does not touch another user\'s rows', () async {
+      await db.into(db.bookmarks).insert(
+            BookmarksCompanion.insert(id: 'mine', bookId: 1, chapter: 1, verse: 1, userId: const Value('u1')),
+          );
+      await db.into(db.bookmarks).insert(
+            BookmarksCompanion.insert(id: 'someone-elses', bookId: 2, chapter: 2, verse: 2, userId: const Value('u2')),
+          );
+
+      await deleteAllUserData(db, 'u1');
+
+      final remaining = await db.select(db.bookmarks).get();
+      expect(remaining, hasLength(1));
+      expect(remaining.single.id, 'someone-elses');
+    });
+  });
+
   group('applyPulledReadingProgress', () {
     test('converges on one row per book, adopting the remote id', () async {
       await db.into(db.readingProgress).insert(

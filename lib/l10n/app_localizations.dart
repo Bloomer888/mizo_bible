@@ -399,6 +399,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Synced just now'**
   String get syncedJustNow;
+
+  /// No description provided for @about.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get about;
+
+  /// No description provided for @bibleTextSectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Bible Text'**
+  String get bibleTextSectionTitle;
+
+  /// No description provided for @bibleTextRights.
+  ///
+  /// In en, this message translates to:
+  /// **'Mizo: Mizo-English Parallel Bible (2010/2011/2015/2017), a product of the Christian Research Centre, Aizawl — rights confirmed for use in this app. English: King James Version blended with New King James Version, used by permission of Thomas Nelson. Full-text use of the English side is still pending written permission from the current rights holder, HarperCollins Christian Publishing.'**
+  String get bibleTextRights;
+
+  /// No description provided for @privacyPolicy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy Policy'**
+  String get privacyPolicy;
+
+  /// No description provided for @termsOfService.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms of Service'**
+  String get termsOfService;
+
+  /// No description provided for @openSourceLicenses.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Source Licenses'**
+  String get openSourceLicenses;
+
+  /// No description provided for @deleteMyData.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete my data'**
+  String get deleteMyData;
+
+  /// No description provided for @deleteMyDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all your data?'**
+  String get deleteMyDataTitle;
+
+  /// No description provided for @deleteMyDataConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'This permanently deletes your bookmarks, highlights, notes, reading history, and reading progress from this device and from our servers, and signs you out. This can\'t be undone.'**
+  String get deleteMyDataConfirmation;
 }
 
 class _AppLocalizationsDelegate

@@ -48,6 +48,7 @@ class _SignedInViewState extends ConsumerState<_SignedInView> {
   bool _isSyncing = false;
   String? _syncError;
   bool _justSynced = false;
+  bool _isDeleting = false;
 
   Future<void> _sync() async {
     setState(() {
@@ -62,6 +63,32 @@ class _SignedInViewState extends ConsumerState<_SignedInView> {
     } finally {
       if (mounted) setState(() => _isSyncing = false);
     }
+  }
+
+  Future<void> _confirmAndDelete() async {
+    final l10n = context.l10n;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.deleteMyDataTitle),
+        content: Text(l10n.deleteMyDataConfirmation),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(l10n.cancel)),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.delete, style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isDeleting = true);
+    await deleteAllUserData(ref.read(userDatabaseProvider), widget.user.id);
+    await signOut();
+    // No further setState -- signOut's auth-state event rebuilds
+    // AccountPage itself into the sign-in form, which unmounts this
+    // widget; setting local state on the way out would be pointless.
   }
 
   @override
@@ -97,6 +124,21 @@ class _SignedInViewState extends ConsumerState<_SignedInView> {
           ],
           const SizedBox(height: 24),
           FilledButton(onPressed: signOut, child: Text(l10n.signOut)),
+          const SizedBox(height: 32),
+          const Divider(),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            onPressed: _isDeleting ? null : _confirmAndDelete,
+            icon: _isDeleting
+                ? const SizedBox(
+                    height: 16,
+                    width: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.delete_outline),
+            label: Text(l10n.deleteMyData),
+            style: TextButton.styleFrom(foregroundColor: Theme.of(context).colorScheme.error),
+          ),
         ],
       ),
     );

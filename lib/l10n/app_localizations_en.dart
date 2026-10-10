@@ -163,4 +163,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get syncedJustNow => 'Synced just now';
+
+  @override
+  String get about => 'About';
+
+  @override
+  String get bibleTextSectionTitle => 'Bible Text';
+
+  @override
+  String get bibleTextRights =>
+      'Mizo: Mizo-English Parallel Bible (2010/2011/2015/2017), a product of the Christian Research Centre, Aizawl — rights confirmed for use in this app. English: King James Version blended with New King James Version, used by permission of Thomas Nelson. Full-text use of the English side is still pending written permission from the current rights holder, HarperCollins Christian Publishing.';
+
+  @override
+  String get privacyPolicy => 'Privacy Policy';
+
+  @override
+  String get termsOfService => 'Terms of Service';
+
+  @override
+  String get openSourceLicenses => 'Open Source Licenses';
+
+  @override
+  String get deleteMyData => 'Delete my data';
+
+  @override
+  String get deleteMyDataTitle => 'Delete all your data?';
+
+  @override
+  String get deleteMyDataConfirmation =>
+      'This permanently deletes your bookmarks, highlights, notes, reading history, and reading progress from this device and from our servers, and signs you out. This can\'t be undone.';
 }

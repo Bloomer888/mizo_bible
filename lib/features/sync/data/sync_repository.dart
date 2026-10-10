@@ -38,6 +38,65 @@ Future<void> syncUserData(UserDatabase db, String userId) async {
   await _pullSettings(db, client);
 }
 
+/// Tombstones every row for this user, best-effort pushes those
+/// tombstones to the server, then hard-deletes this user's rows (and
+/// only this user's rows -- see the second test below) from the local
+/// database. Called from the Account screen's "Delete my data" action.
+///
+/// Tombstoning (not a real DELETE) is all the server push can ever do:
+/// the Phase 8 migration only grants `authenticated` select/insert/
+/// update on user_data.* -- deliberately no delete, the same "only
+/// ever soft-delete" rule every other table in this app already
+/// follows. A full, permanent purge of tombstoned rows needs an
+/// elevated-privilege process this app doesn't have (there's no admin
+/// panel or server-side function yet) -- the Privacy Policy is worded
+/// to reflect that two-step reality rather than promise something this
+/// code can't actually do.
+///
+/// The local wipe happens regardless of whether the push succeeded --
+/// if there's no network right now, the user still asked for their
+/// data gone from *this* device immediately, and local rows marked
+/// dirty would otherwise just sit there forever with no further sync
+/// ever triggered to retry them (there's no background retry queue).
+Future<void> deleteAllUserData(UserDatabase db, String userId) async {
+  await db.transaction(() async {
+    const tombstone = true;
+    await (db.update(db.bookmarks)..where((t) => t.userId.equals(userId)))
+        .write(const BookmarksCompanion(deleted: Value(tombstone), dirty: Value(true)));
+    await (db.update(db.highlights)..where((t) => t.userId.equals(userId)))
+        .write(const HighlightsCompanion(deleted: Value(tombstone), dirty: Value(true)));
+    await (db.update(db.notes)..where((t) => t.userId.equals(userId)))
+        .write(const NotesCompanion(deleted: Value(tombstone), dirty: Value(true)));
+    await (db.update(db.readingHistory)..where((t) => t.userId.equals(userId)))
+        .write(const ReadingHistoryCompanion(deleted: Value(tombstone), dirty: Value(true)));
+    await (db.update(db.readingProgress)..where((t) => t.userId.equals(userId)))
+        .write(const ReadingProgressCompanion(deleted: Value(tombstone), dirty: Value(true)));
+    await (db.update(db.settings)..where((t) => t.userId.equals(userId)))
+        .write(const SettingsCompanion(deleted: Value(tombstone), dirty: Value(true)));
+  });
+
+  try {
+    final client = Supabase.instance.client;
+    await _pushBookmarks(db, client);
+    await _pushHighlights(db, client);
+    await _pushNotes(db, client);
+    await _pushReadingHistory(db, client);
+    await _pushReadingProgress(db, client);
+    await _pushSettings(db, client);
+  } catch (_) {
+    // Best effort -- the local wipe below happens unconditionally.
+  }
+
+  await db.transaction(() async {
+    await (db.delete(db.bookmarks)..where((t) => t.userId.equals(userId))).go();
+    await (db.delete(db.highlights)..where((t) => t.userId.equals(userId))).go();
+    await (db.delete(db.notes)..where((t) => t.userId.equals(userId))).go();
+    await (db.delete(db.readingHistory)..where((t) => t.userId.equals(userId))).go();
+    await (db.delete(db.readingProgress)..where((t) => t.userId.equals(userId))).go();
+    await (db.delete(db.settings)..where((t) => t.userId.equals(userId))).go();
+  });
+}
+
 // --- Bookmarks -------------------------------------------------------
 
 Future<void> _pushBookmarks(UserDatabase db, SupabaseClient client) async {

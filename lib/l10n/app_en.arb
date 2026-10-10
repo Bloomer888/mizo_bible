@@ -60,5 +60,16 @@
   "alreadyHaveAccount": "Already have an account? Sign in",
   "cloudSyncUnavailable": "Cloud sync isn't set up for this build. Bookmarks, highlights, notes, and history are still saved on this device.",
   "syncNow": "Sync now",
-  "syncedJustNow": "Synced just now"
+  "syncedJustNow": "Synced just now",
+
+  "about": "About",
+  "bibleTextSectionTitle": "Bible Text",
+  "bibleTextRights": "Mizo: Mizo-English Parallel Bible (2010/2011/2015/2017), a product of the Christian Research Centre, Aizawl — rights confirmed for use in this app. English: King James Version blended with New King James Version, used by permission of Thomas Nelson. Full-text use of the English side is still pending written permission from the current rights holder, HarperCollins Christian Publishing.",
+  "privacyPolicy": "Privacy Policy",
+  "termsOfService": "Terms of Service",
+  "openSourceLicenses": "Open Source Licenses",
+
+  "deleteMyData": "Delete my data",
+  "deleteMyDataTitle": "Delete all your data?",
+  "deleteMyDataConfirmation": "This permanently deletes your bookmarks, highlights, notes, reading history, and reading progress from this device and from our servers, and signs you out. This can't be undone."
 }
