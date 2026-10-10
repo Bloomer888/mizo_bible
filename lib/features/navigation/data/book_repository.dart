@@ -39,6 +39,14 @@ Future<List<BookInfo>> loadAllBooks(BibleDatabase db) async {
   ];
 }
 
+/// bookId -> English name, for list screens (bookmarks/highlights/notes/
+/// history) that need to label many rows from different books at once
+/// without a separate query per row.
+Future<Map<int, String>> loadBookNamesMap(BibleDatabase db) async {
+  final books = await loadAllBooks(db);
+  return {for (final b in books) b.id: b.name};
+}
+
 Future<BookInfo> loadBookInfo(BibleDatabase db, int bookId) async {
   final book = await (db.select(db.books)..where((b) => b.id.equals(bookId))).getSingle();
   final nameRow = await (db.select(db.bookNames)

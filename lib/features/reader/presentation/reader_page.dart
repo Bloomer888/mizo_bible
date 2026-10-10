@@ -5,14 +5,21 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../core/db/bible_database.dart';
 import '../../../core/db/user_database.dart';
 import '../../../core/l10n_extension.dart';
+import '../../library/presentation/bookmarks_page.dart';
+import '../../library/presentation/highlights_page.dart';
+import '../../library/presentation/history_page.dart';
+import '../../library/presentation/notes_page.dart';
 import '../../navigation/data/book_repository.dart';
 import '../../navigation/presentation/book_list_page.dart';
 import '../../search/presentation/search_page.dart';
 import '../data/reader_repository.dart';
+import '../data/reading_history_repository.dart';
 import '../data/reading_progress_repository.dart';
+import '../data/verse_annotations_repository.dart';
 import '../domain/reader_item.dart';
 import 'reader_settings.dart';
 import 'reader_settings_sheet.dart';
+import 'verse_actions_sheet.dart';
 
 /// Loads one book's reader items, keyed by canonical book id. autoDispose
 /// since there's no reason to keep a book's whole verse list in memory
@@ -137,6 +144,10 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
   void _maybeScrollToTarget(List<ReaderItem> items, int chapter, int? verse) {
     if (_didInitialScroll) return;
     _didInitialScroll = true;
+    // Once per page visit, logging whichever chapter this visit actually
+    // settles on (restored, searched-to, or the plain default) -- not
+    // every chapter scrolled past within the same visit.
+    logChapterVisit(_userDb, bookId: widget.bookId, chapter: chapter).catchError((_) {});
     final index = _targetIndex(items, chapter, verse);
     if (index == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -183,6 +194,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
     }
 
     return Scaffold(
+      drawer: const _ReaderDrawer(),
       appBar: AppBar(
         title: InkWell(
           onTap: () => Navigator.of(context).push(
@@ -222,6 +234,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
               items: value,
               scrollController: _scrollController,
               positionsListener: _positionsListener,
+              bookId: widget.bookId,
+              bookName: bookInfo?.name ?? '',
             ),
           AsyncError(:final error) => Center(child: Text('Failed to load: $error')),
           _ => const Center(child: CircularProgressIndicator()),
@@ -255,6 +269,49 @@ int? _targetIndex(List<ReaderItem> items, int chapter, int? verse) {
     }
   }
   return _chapterIndex(items)[chapter];
+}
+
+class _ReaderDrawer extends StatelessWidget {
+  const _ReaderDrawer();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    void openPage(Widget page) {
+      Navigator.of(context).pop(); // close the drawer first
+      Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+    }
+
+    return Drawer(
+      child: SafeArea(
+        child: ListView(
+          children: [
+            ListTile(
+              leading: const Icon(Icons.bookmark),
+              title: Text(l10n.bookmarks),
+              onTap: () => openPage(const BookmarksPage()),
+            ),
+            ListTile(
+              leading: const Icon(Icons.format_color_fill),
+              title: Text(l10n.highlights),
+              onTap: () => openPage(const HighlightsPage()),
+            ),
+            ListTile(
+              leading: const Icon(Icons.edit_note),
+              title: Text(l10n.notes),
+              onTap: () => openPage(const NotesPage()),
+            ),
+            ListTile(
+              leading: const Icon(Icons.history),
+              title: Text(l10n.history),
+              onTap: () => openPage(const HistoryPage()),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _ChapterGrid extends StatelessWidget {
@@ -293,7 +350,15 @@ class _ReaderList extends StatelessWidget {
   final List<ReaderItem> items;
   final ItemScrollController scrollController;
   final ItemPositionsListener positionsListener;
-  const _ReaderList({required this.items, required this.scrollController, required this.positionsListener});
+  final int bookId;
+  final String bookName;
+  const _ReaderList({
+    required this.items,
+    required this.scrollController,
+    required this.positionsListener,
+    required this.bookId,
+    required this.bookName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -301,14 +366,16 @@ class _ReaderList extends StatelessWidget {
       itemScrollController: scrollController,
       itemPositionsListener: positionsListener,
       itemCount: items.length,
-      itemBuilder: (context, index) => _ReaderItemTile(item: items[index]),
+      itemBuilder: (context, index) => _ReaderItemTile(item: items[index], bookId: bookId, bookName: bookName),
     );
   }
 }
 
 class _ReaderItemTile extends ConsumerWidget {
   final ReaderItem item;
-  const _ReaderItemTile({required this.item});
+  final int bookId;
+  final String bookName;
+  const _ReaderItemTile({required this.item, required this.bookId, required this.bookName});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -337,14 +404,74 @@ class _ReaderItemTile extends ConsumerWidget {
             ),
           ),
         ),
-      VerseRow(:final label, :final a, :final b) => Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-          child: _ParallelRow(
-            a: _VerseText(label: label, text: a),
-            b: _VerseText(label: label, text: b),
-          ),
+      VerseRow(:final chapter, :final label, :final a, :final b) => _VerseRowTile(
+          bookId: bookId,
+          bookName: bookName,
+          chapter: chapter,
+          label: label,
+          a: a,
+          b: b,
         ),
     };
+  }
+}
+
+/// The one reader row type that's interactive: long-press opens bookmark/
+/// highlight/note/copy/share (verse_actions_sheet.dart). Watches its own
+/// annotation state directly rather than the whole book's at once --
+/// cheap per-row local SQLite reads, and avoids rebuilding every visible
+/// row whenever any single verse's annotations change.
+class _VerseRowTile extends ConsumerWidget {
+  final int bookId;
+  final String bookName;
+  final int chapter;
+  final String label;
+  final String? a;
+  final String? b;
+
+  const _VerseRowTile({
+    required this.bookId,
+    required this.bookName,
+    required this.chapter,
+    required this.label,
+    required this.a,
+    required this.b,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final verse = int.tryParse(label);
+    final annotationsAsync =
+        verse == null ? null : ref.watch(verseAnnotationsProvider((bookId, chapter, verse)));
+    final annotations = switch (annotationsAsync) {
+      AsyncData(:final value) => value,
+      _ => VerseAnnotations.none,
+    };
+    final highlightColor = annotations.highlightColor == null
+        ? null
+        : highlightColors[annotations.highlightColor]?.withValues(alpha: 0.35);
+
+    return GestureDetector(
+      onLongPress: verse == null
+          ? null
+          : () => openVerseActions(
+                context,
+                bookId: bookId,
+                bookName: bookName,
+                chapter: chapter,
+                verse: verse,
+                mizoText: a,
+                englishText: b,
+              ),
+      child: Container(
+        color: highlightColor,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: _ParallelRow(
+          a: _VerseText(label: label, text: a, annotations: annotations),
+          b: _VerseText(label: label, text: b, annotations: null),
+        ),
+      ),
+    );
   }
 }
 
@@ -384,7 +511,11 @@ class _ParallelRow extends ConsumerWidget {
 class _VerseText extends ConsumerWidget {
   final String label;
   final String? text;
-  const _VerseText({required this.label, required this.text});
+  // Non-null only on the side that should actually render the bookmark/
+  // note indicators -- showing them on both columns would just duplicate
+  // the same two icons next to every verse.
+  final VerseAnnotations? annotations;
+  const _VerseText({required this.label, required this.text, this.annotations});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -393,12 +524,26 @@ class _VerseText extends ConsumerWidget {
 
     final lineHeight = ref.watch(readerSettingsProvider.select((s) => s.lineHeightScale));
     final baseStyle = DefaultTextStyle.of(context).style.copyWith(height: lineHeight);
+    final labelStyle = Theme.of(context).textTheme.labelSmall;
+    final iconColor = labelStyle?.color ?? Theme.of(context).iconTheme.color;
+    final markers = annotations;
 
     return Text.rich(
       TextSpan(
         style: baseStyle,
         children: [
-          TextSpan(text: '$label  ', style: Theme.of(context).textTheme.labelSmall),
+          TextSpan(text: '$label  ', style: labelStyle),
+          if (markers?.bookmarked ?? false)
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Icon(Icons.bookmark, size: 14, color: iconColor),
+            ),
+          if (markers?.hasNote ?? false)
+            WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Icon(Icons.edit_note, size: 14, color: iconColor),
+            ),
+          if ((markers?.bookmarked ?? false) || (markers?.hasNote ?? false)) const TextSpan(text: ' '),
           TextSpan(text: content),
         ],
       ),

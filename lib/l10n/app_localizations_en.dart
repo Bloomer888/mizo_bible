@@ -62,4 +62,52 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noResults => 'No results found';
+
+  @override
+  String get addBookmark => 'Add bookmark';
+
+  @override
+  String get removeBookmark => 'Remove bookmark';
+
+  @override
+  String get highlight => 'Highlight';
+
+  @override
+  String get removeHighlight => 'Remove highlight';
+
+  @override
+  String get addNote => 'Add note';
+
+  @override
+  String get editNote => 'Edit note';
+
+  @override
+  String get deleteNote => 'Delete note';
+
+  @override
+  String get noteHint => 'Write a note for this verse';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get copy => 'Copy';
+
+  @override
+  String get share => 'Share';
+
+  @override
+  String get noBookmarksYet => 'No bookmarks yet';
+
+  @override
+  String get noHighlightsYet => 'No highlights yet';
+
+  @override
+  String get noNotesYet => 'No notes yet';
 }

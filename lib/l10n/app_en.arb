@@ -25,5 +25,22 @@
   "books": "Books",
   "chapters": "Chapters",
   "textSettings": "Text Settings",
-  "noResults": "No results found"
+  "noResults": "No results found",
+
+  "addBookmark": "Add bookmark",
+  "removeBookmark": "Remove bookmark",
+  "highlight": "Highlight",
+  "removeHighlight": "Remove highlight",
+  "addNote": "Add note",
+  "editNote": "Edit note",
+  "deleteNote": "Delete note",
+  "noteHint": "Write a note for this verse",
+  "save": "Save",
+  "delete": "Delete",
+  "cancel": "Cancel",
+  "copy": "Copy",
+  "share": "Share",
+  "noBookmarksYet": "No bookmarks yet",
+  "noHighlightsYet": "No highlights yet",
+  "noNotesYet": "No notes yet"
 }
