@@ -15,15 +15,20 @@ class AboutPage extends StatelessWidget {
       appBar: AppBar(title: Text(l10n.about)),
       body: ListView(
         children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 24, 16, 8),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 28, 16, 12),
             child: Column(
               children: [
-                Text('Mizo Bible', style: TextStyle(fontSize: 20)),
-                SizedBox(height: 4),
+                const Text('Mizo Bible', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                Text(
+                  'Dr. P.C. Biaksiama',
+                  style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
                 // Keep in sync with pubspec.yaml's version -- no
                 // package_info_plus dependency for one display line.
-                Text('Version 1.0.0', style: TextStyle(color: Colors.grey)),
+                const Text('Version 1.0.0', style: TextStyle(color: Colors.grey)),
               ],
             ),
           ),
