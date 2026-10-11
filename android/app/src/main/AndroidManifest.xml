@@ -2,6 +2,13 @@
     <!-- Required for Supabase (auth, sync, Premium). Flutter only adds this to the
          debug manifest, so without it here every network call fails in release. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Runtime-requested (Android 13+) before the daily verse reminder is
+         scheduled; see requestNotificationPermission in
+         lib/features/notifications/data/daily_verse_notifications.dart. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Lets flutter_local_notifications' own boot receiver re-register the
+         daily reminder's alarm after a device restart. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
 
     <application
         android:label="Mizo-English Parallel Bible"

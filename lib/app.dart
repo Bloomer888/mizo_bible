@@ -8,6 +8,7 @@ import 'core/db/user_database.dart';
 import 'core/env.dart';
 import 'core/l10n_extension.dart';
 import 'core/theme/app_theme.dart';
+import 'features/notifications/data/daily_verse_notifications.dart';
 import 'features/premium/data/premium_providers.dart';
 import 'features/sync/data/sync_repository.dart';
 import 'l10n/app_localizations.dart';
@@ -20,17 +21,46 @@ class MizoBibleApp extends ConsumerStatefulWidget {
 }
 
 class _MizoBibleAppState extends ConsumerState<MizoBibleApp> with WidgetsBindingObserver {
+  late final ProviderSubscription<bool> _premiumSubscription;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _syncIfSignedIn();
+    _applyNotificationState(ref.read(isPremiumProvider)).catchError((_) {});
+    // listenManual, not ref.listen -- this needs to fire once at
+    // startup regardless of build(), and keep firing for the rest of
+    // the app's life, not just while some widget happens to be
+    // watching isPremiumProvider in its build method.
+    _premiumSubscription = ref.listenManual<bool>(isPremiumProvider, (previous, next) {
+      if (previous != next) _applyNotificationState(next).catchError((_) {});
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _premiumSubscription.close();
     super.dispose();
+  }
+
+  // Best-effort and silent, same reasoning as _syncIfSignedIn: Premium
+  // members who deny the OS notification prompt simply don't get the
+  // reminder, same as anyone on a build without RevenueCat configured --
+  // never a crash or a blocking dialog.
+  Future<void> _applyNotificationState(bool isPremium) async {
+    try {
+      if (!isPremium) {
+        await cancelDailyVerseNotification();
+        return;
+      }
+      final granted = await requestNotificationPermission();
+      if (!granted) return;
+      await scheduleDailyVerseNotification();
+    } catch (_) {
+      // Swallowed deliberately -- see doc comment above.
+    }
   }
 
   @override
