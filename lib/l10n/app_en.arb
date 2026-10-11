@@ -1,7 +1,7 @@
 {
   "@@locale": "en",
 
-  "appTitle": "Mizo Bible",
+  "appTitle": "Mizo-English Parallel Bible",
   "@appTitle": {
     "description": "Application name, shown in the app bar and task switcher"
   },

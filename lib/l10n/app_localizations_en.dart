@@ -10,7 +10,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'Mizo Bible';
+  String get appTitle => 'Mizo-English Parallel Bible';
 
   @override
   String get settings => 'Settings';

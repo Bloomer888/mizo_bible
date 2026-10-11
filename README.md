@@ -1,4 +1,4 @@
-# Mizo Bible
+# Mizo-English Parallel Bible
 
 Offline-first Mizo/English parallel Bible reader. Mizo and English side by
 side, synchronised by verse, continuous scroll within a book. The Bible is

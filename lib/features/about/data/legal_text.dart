@@ -10,9 +10,9 @@ library;
 const String privacyPolicyText = '''
 Last updated: October 2026
 
-Mizo Bible is built to work fully offline, with no account required to
-read, search, bookmark, highlight, or take notes. Everything below
-only applies if you choose to create an account.
+Mizo-English Parallel Bible is built to work fully offline, with no
+account required to read, search, bookmark, highlight, or take notes.
+Everything below only applies if you choose to create an account.
 
 WHAT WE COLLECT
 
@@ -62,14 +62,14 @@ Questions about this policy: larc1406@gmail.com
 const String termsOfServiceText = '''
 Last updated: October 2026
 
-By using Mizo Bible, you agree to these terms.
+By using Mizo-English Parallel Bible, you agree to these terms.
 
 THE APP
 
-Mizo Bible is free to use. The Bible text itself, its licensing, and
-its source are described separately on the Bible Text screen -- these
-terms don't change or expand what you're allowed to do with that text
-beyond what's stated there.
+Mizo-English Parallel Bible is free to use. The Bible text itself, its
+licensing, and its source are described separately on the Bible Text
+screen -- these terms don't change or expand what you're allowed to do
+with that text beyond what's stated there.
 
 ACCOUNTS
 

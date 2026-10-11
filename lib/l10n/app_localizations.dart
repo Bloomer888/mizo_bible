@@ -97,7 +97,7 @@ abstract class AppLocalizations {
   /// Application name, shown in the app bar and task switcher
   ///
   /// In en, this message translates to:
-  /// **'Mizo Bible'**
+  /// **'Mizo-English Parallel Bible'**
   String get appTitle;
 
   /// No description provided for @settings.

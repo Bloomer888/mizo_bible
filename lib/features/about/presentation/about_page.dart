@@ -19,7 +19,7 @@ class AboutPage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 28, 16, 12),
             child: Column(
               children: [
-                const Text('Mizo Bible', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+                Text(l10n.appTitle, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
                 const SizedBox(height: 6),
                 Text(
                   'Dr. P.C. Biaksiama',
@@ -65,7 +65,7 @@ class AboutPage extends StatelessWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => showLicensePage(
               context: context,
-              applicationName: 'Mizo Bible',
+              applicationName: l10n.appTitle,
               applicationVersion: '1.0.0',
             ),
           ),
