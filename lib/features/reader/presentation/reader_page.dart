@@ -529,6 +529,24 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
     final verses = _versesInChapter(_chapter);
     final verseSelection = verses.contains(_verse) ? _verse : (verses.isEmpty ? null : verses.first);
     final scheme = Theme.of(context).colorScheme;
+    // Overrides the app-wide borderless/filled InputDecorationTheme
+    // (app_theme.dart) for just these three fields -- each one needs
+    // its own visible outline, not only the shared tint, so the picker
+    // still reads as three distinct controls inside the outer box.
+    final fieldDecoration = InputDecorationTheme(
+      filled: true,
+      fillColor: scheme.surface,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: scheme.outlineVariant)),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: scheme.outlineVariant),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide(color: scheme.primary, width: 2),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+    );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
@@ -553,6 +571,7 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
               AsyncData(:final value) => DropdownMenu<int>(
                   initialSelection: widget.bookId,
                   label: Text(context.l10n.books),
+                  inputDecorationTheme: fieldDecoration,
                   expandedInsets: EdgeInsets.zero,
                   menuHeight: 420,
                   dropdownMenuEntries: [
@@ -575,6 +594,7 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
               key: ValueKey('chapter-${widget.bookId}-$_chapter'),
               initialSelection: _chapter,
               label: Text(context.l10n.chapters),
+              inputDecorationTheme: fieldDecoration,
               expandedInsets: EdgeInsets.zero,
               menuHeight: 420,
               dropdownMenuEntries: [
@@ -597,6 +617,7 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
               key: ValueKey('verse-${widget.bookId}-$_chapter'),
               initialSelection: verseSelection,
               label: Text(context.l10n.verse),
+              inputDecorationTheme: fieldDecoration,
               expandedInsets: EdgeInsets.zero,
               menuHeight: 420,
               dropdownMenuEntries: [
