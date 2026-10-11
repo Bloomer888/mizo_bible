@@ -26,22 +26,26 @@ Future<void> syncUserData(UserDatabase db, String userId) async {
   await _pushBookmarks(db, client);
   await _pushHighlights(db, client);
   await _pushNotes(db, client);
-  await _pushReadingHistory(db, client);
   await _pushReadingProgress(db, client);
   await _pushSettings(db, client);
 
   await _pullBookmarks(db, client);
   await _pullHighlights(db, client);
   await _pullNotes(db, client);
-  await _pullReadingHistory(db, client);
   await _pullReadingProgress(db, client);
   await _pullSettings(db, client);
 }
 
-/// Tombstones every row for this user, best-effort pushes those
-/// tombstones to the server, then hard-deletes this user's rows (and
-/// only this user's rows -- see the second test below) from the local
-/// database. Called from the Account screen's "Delete my data" action.
+/// Tombstones every synced table's rows for this user, best-effort
+/// pushes those tombstones to the server, then hard-deletes this
+/// user's rows (and only this user's rows -- see the second test
+/// below) from every table, synced or not, in the local database.
+/// Called from the Account screen's "Delete my data" action.
+///
+/// reading_history is hard-deleted locally like everything else, but
+/// skips the tombstone/push step entirely -- it's never synced in the
+/// first place (see the "Reading history" section below), so there is
+/// nothing on the server to tombstone.
 ///
 /// Tombstoning (not a real DELETE) is all the server push can ever do:
 /// the Phase 8 migration only grants `authenticated` select/insert/
@@ -67,8 +71,6 @@ Future<void> deleteAllUserData(UserDatabase db, String userId) async {
         .write(const HighlightsCompanion(deleted: Value(tombstone), dirty: Value(true)));
     await (db.update(db.notes)..where((t) => t.userId.equals(userId)))
         .write(const NotesCompanion(deleted: Value(tombstone), dirty: Value(true)));
-    await (db.update(db.readingHistory)..where((t) => t.userId.equals(userId)))
-        .write(const ReadingHistoryCompanion(deleted: Value(tombstone), dirty: Value(true)));
     await (db.update(db.readingProgress)..where((t) => t.userId.equals(userId)))
         .write(const ReadingProgressCompanion(deleted: Value(tombstone), dirty: Value(true)));
     await (db.update(db.settings)..where((t) => t.userId.equals(userId)))
@@ -80,7 +82,6 @@ Future<void> deleteAllUserData(UserDatabase db, String userId) async {
     await _pushBookmarks(db, client);
     await _pushHighlights(db, client);
     await _pushNotes(db, client);
-    await _pushReadingHistory(db, client);
     await _pushReadingProgress(db, client);
     await _pushSettings(db, client);
   } catch (_) {
@@ -287,58 +288,16 @@ Future<void> applyPulledNotes(UserDatabase db, List<Map<String, dynamic>> remote
   }
 }
 
-// --- Reading history -------------------------------------------------
-
-Future<void> _pushReadingHistory(UserDatabase db, SupabaseClient client) async {
-  final dirty = await (db.select(db.readingHistory)..where((h) => h.dirty.equals(true))).get();
-  if (dirty.isEmpty) return;
-  // Plain id upsert, not a business-key one -- reading_history is an
-  // append-only log by design (see user_database.dart), so there's no
-  // business key to converge on, only the row's own immutable id.
-  await client.schema(_schema).from('reading_history').upsert(
-        [for (final r in dirty) _historyToRemote(r)],
-        onConflict: 'id',
-      );
-  await (db.update(db.readingHistory)..where((h) => h.id.isIn(dirty.map((r) => r.id))))
-      .write(const ReadingHistoryCompanion(dirty: Value(false)));
-}
-
-Map<String, dynamic> _historyToRemote(ReadingHistoryData r) => {
-      'id': r.id,
-      'user_id': r.userId,
-      'book_id': r.bookId,
-      'chapter': r.chapter,
-      'created_at': r.createdAt.toIso8601String(),
-      'updated_at': r.updatedAt.toIso8601String(),
-      'deleted': r.deleted,
-    };
-
-Future<void> _pullReadingHistory(UserDatabase db, SupabaseClient client) async {
-  final remote = await client.schema(_schema).from('reading_history').select();
-  await applyPulledReadingHistory(db, remote);
-}
-
-/// No business-key reconciliation needed here, unlike the per-verse
-/// tables -- an append-only log has no business key to converge on,
-/// so this is a plain upsert by id (a visit logged on two devices
-/// before either synced just ends up as two entries, which is already
-/// correct: the log is explicitly not deduped across visits, only
-/// immediate same-chapter repeats on one device -- see
-/// reading_history_repository.dart's logChapterVisit).
-Future<void> applyPulledReadingHistory(UserDatabase db, List<Map<String, dynamic>> remote) async {
-  for (final row in remote) {
-    await db.into(db.readingHistory).insertOnConflictUpdate(ReadingHistoryCompanion(
-          id: Value(row['id'] as String),
-          userId: Value(row['user_id'] as String),
-          bookId: Value(row['book_id'] as int),
-          chapter: Value(row['chapter'] as int),
-          createdAt: Value(DateTime.parse(row['created_at'] as String)),
-          updatedAt: Value(DateTime.parse(row['updated_at'] as String)),
-          deleted: Value(row['deleted'] as bool),
-          dirty: const Value(false),
-        ));
-  }
-}
+// reading_history has no sync section, deliberately, unlike the other
+// five local tables -- it stays phone-only for every user, free or
+// Premium, signed in or not. It still gets claimed/stamped with a
+// user_id like everything else (claimLocalRows doesn't distinguish),
+// but nothing ever pushes or pulls it, and there's no
+// user_data.reading_history table left on the server to sync against
+// (see the migration that dropped it). The one thing that *does* still
+// touch it from this file is deleteAllUserData, which hard-deletes it
+// locally along with everything else -- that's a device-level "forget
+// my data" action, not sync, so it applies regardless.
 
 // --- Reading progress --------------------------------------------------
 

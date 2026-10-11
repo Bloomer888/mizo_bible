@@ -79,44 +79,6 @@ void main() {
     });
   });
 
-  group('applyPulledReadingHistory', () {
-    test('inserts remote entries without needing a business-key match', () async {
-      await applyPulledReadingHistory(db, [
-        {
-          'id': 'h1',
-          'user_id': 'u1',
-          'book_id': 1,
-          'chapter': 1,
-          'created_at': '2026-01-01T00:00:00.000Z',
-          'updated_at': '2026-01-01T00:00:00.000Z',
-          'deleted': false,
-        },
-      ]);
-
-      final rows = await db.select(db.readingHistory).get();
-      expect(rows, hasLength(1));
-      expect(rows.single.id, 'h1');
-    });
-
-    test('pulling the same entry twice does not duplicate it', () async {
-      final entry = {
-        'id': 'h1',
-        'user_id': 'u1',
-        'book_id': 1,
-        'chapter': 1,
-        'created_at': '2026-01-01T00:00:00.000Z',
-        'updated_at': '2026-01-01T00:00:00.000Z',
-        'deleted': false,
-      };
-
-      await applyPulledReadingHistory(db, [entry]);
-      await applyPulledReadingHistory(db, [entry]);
-
-      final rows = await db.select(db.readingHistory).get();
-      expect(rows, hasLength(1));
-    });
-  });
-
   group('applyPulledSettings', () {
     test('converges on one row per key, adopting the remote id', () async {
       await db.into(db.settings).insert(

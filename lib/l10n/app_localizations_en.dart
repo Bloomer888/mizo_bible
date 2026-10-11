@@ -220,7 +220,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get deleteMyDataConfirmation =>
-      'This permanently deletes your bookmarks, highlights, notes, reading history, and reading progress from this device and from our servers, and signs you out. This can\'t be undone.';
+      'This permanently deletes your bookmarks, highlights, notes, reading history, and reading progress from this device, and everything except reading history (which is never uploaded) from our servers too, and signs you out. This can\'t be undone.';
 
   @override
   String get premium => 'Premium';

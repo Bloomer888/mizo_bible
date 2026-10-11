@@ -505,7 +505,7 @@ abstract class AppLocalizations {
   /// No description provided for @deleteMyDataConfirmation.
   ///
   /// In en, this message translates to:
-  /// **'This permanently deletes your bookmarks, highlights, notes, reading history, and reading progress from this device and from our servers, and signs you out. This can\'t be undone.'**
+  /// **'This permanently deletes your bookmarks, highlights, notes, reading history, and reading progress from this device, and everything except reading history (which is never uploaded) from our servers too, and signs you out. This can\'t be undone.'**
   String get deleteMyDataConfirmation;
 
   /// No description provided for @premium.

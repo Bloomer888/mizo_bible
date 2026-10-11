@@ -24,10 +24,11 @@ Your password is handled entirely by our authentication provider,
 Supabase -- the app itself never stores or sees it after sign-in.
 
 If you create an account and stay signed in: your bookmarks,
-highlights, notes, reading history, reading progress, and app
-preferences are synced to Supabase's servers so they're available on
-your other devices. This same data is always stored on your own
-device regardless of whether you're signed in.
+highlights, notes, reading progress, and app preferences are synced to
+Supabase's servers so they're available on your other devices. This
+same data is always stored on your own device regardless of whether
+you're signed in. Your reading history is the one exception: it stays
+on your device only and is never uploaded, signed in or not.
 
 If you subscribe to Premium: your purchase and subscription status is
 managed by RevenueCat, so your entitlement is recognised across your
@@ -42,8 +43,8 @@ The app contains no ads and no third-party trackers.
 HOW IT'S USED
 
 Solely to provide the app's own features: signing you in, and syncing
-your bookmarks/highlights/notes/history/progress across your devices.
-We don't sell, rent, or share this data with anyone else.
+your bookmarks/highlights/notes/progress across your devices. We
+don't sell, rent, or share this data with anyone else.
 
 WHERE IT'S STORED
 
@@ -62,9 +63,11 @@ longer than needed to provide the app's own features.
 
 DELETING YOUR DATA
 
-You can permanently erase your bookmarks, highlights, notes, history,
-and progress -- both on your device and from our servers -- from the
-Account screen at any time, without needing to contact anyone. Signing
+You can permanently erase your data from the Account screen at any
+time, without needing to contact anyone: your bookmarks, highlights,
+notes, reading history, and progress are erased from your device, and
+all of that except reading history (which was never uploaded) is also
+erased from our servers. Signing
 out on its own does not delete anything; it only ends your session.
 
 CHILDREN
@@ -98,8 +101,9 @@ with that text beyond what's stated there.
 ACCOUNTS
 
 Creating an account is optional and only needed for syncing your
-bookmarks, highlights, notes, and reading history/progress across
-devices. You're responsible for keeping your password safe. You can
+bookmarks, highlights, notes, and reading progress across devices
+(your reading history always stays on your device). You're
+responsible for keeping your password safe. You can
 delete your account's synced data at any time from the Account screen.
 
 ACCEPTABLE USE
