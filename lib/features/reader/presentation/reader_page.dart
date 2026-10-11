@@ -591,14 +591,12 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
     final scheme = Theme.of(context).colorScheme;
     // Overrides the app-wide borderless/filled InputDecorationTheme
     // (app_theme.dart) for just these three fields -- each one needs
-    // its own visible outline, not only the shared tint, so the picker
-    // still reads as three distinct controls inside the outer box.
+    // its own visible outline AND its own clearly distinct fill, so
+    // the three read as boxes sitting on the (uniformly-colored) outer
+    // area, not blended into it.
     final fieldDecoration = InputDecorationTheme(
-      // Matches the outer box's own fill exactly (not a lighter tint)
-      // so each field reads as an outline on a shared background, not
-      // a visibly different-colored box of its own.
       filled: true,
-      fillColor: scheme.surfaceContainerLow,
+      fillColor: scheme.surfaceContainerHighest,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: scheme.outlineVariant)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -614,10 +612,12 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
       decoration: BoxDecoration(
-        // Same surface/radius language as CardThemeData (app_theme.dart),
-        // so the picker reads as one grouped control instead of three
-        // separate fields floating on the app bar.
-        color: scheme.surfaceContainerLow,
+        // No fill of its own -- stays the exact same color as the app
+        // bar behind it (the one uniform background), with a border
+        // instead of a tint doing the work of reading as "a box."
+        // Contrast lives entirely in the three fields below, which do
+        // each get their own distinct fillColor via fieldDecoration.
+        border: Border.all(color: scheme.outlineVariant),
         borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
