@@ -21,16 +21,12 @@ import 'verse_actions_sheet.dart';
 /// once nothing is reading it -- switching books (the book list) always
 /// replaces this family's parameter rather than juggling several books'
 /// data at once.
-final readerItemsProvider = FutureProvider.autoDispose
-    .family<List<ReaderItem>, int>((ref, bookId) {
-      final db = ref.watch(bibleDatabaseProvider);
-      return loadBookReaderItems(db, bookId);
-    });
+final readerItemsProvider = FutureProvider.autoDispose.family<List<ReaderItem>, int>((ref, bookId) {
+  final db = ref.watch(bibleDatabaseProvider);
+  return loadBookReaderItems(db, bookId);
+});
 
-final bookInfoProvider = FutureProvider.autoDispose.family<BookInfo, int>((
-  ref,
-  bookId,
-) {
+final bookInfoProvider = FutureProvider.autoDispose.family<BookInfo, int>((ref, bookId) {
   final db = ref.watch(bibleDatabaseProvider);
   return loadBookInfo(db, bookId);
 });
@@ -39,19 +35,13 @@ class ReaderPage extends ConsumerStatefulWidget {
   final int bookId;
   final int? targetChapter;
   final int? targetVerse;
-  const ReaderPage({
-    super.key,
-    required this.bookId,
-    this.targetChapter,
-    this.targetVerse,
-  });
+  const ReaderPage({super.key, required this.bookId, this.targetChapter, this.targetVerse});
 
   @override
   ConsumerState<ReaderPage> createState() => _ReaderPageState();
 }
 
-class _ReaderPageState extends ConsumerState<ReaderPage>
-    with WidgetsBindingObserver {
+class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObserver {
   final _scrollController = ItemScrollController();
   final _positionsListener = ItemPositionsListener.create();
   List<ReaderItem>? _items;
@@ -90,8 +80,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused ||
-        state == AppLifecycleState.detached) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.detached) {
       _saveCurrentPosition();
     }
   }
@@ -116,9 +105,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   void _onPositionsChanged() {
     final positions = _positionsListener.itemPositions.value;
     if (positions.isEmpty) return;
-    _visibleTopIndex = positions
-        .map((p) => p.index)
-        .reduce((a, b) => a < b ? a : b);
+    _visibleTopIndex = positions.map((p) => p.index).reduce((a, b) => a < b ? a : b);
   }
 
   /// Fires once per page visit (back button, switching books via the
@@ -141,12 +128,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
           // write lands -- losing the very last position update then is
           // an imperceptible cost, not a reason to let the exception
           // propagate and crash whatever's unwinding the widget tree.
-          saveReadingProgress(
-            _userDb,
-            bookId: widget.bookId,
-            chapter: item.chapter,
-            verse: verse,
-          ).catchError((_) {});
+          saveReadingProgress(_userDb, bookId: widget.bookId, chapter: item.chapter, verse: verse)
+              .catchError((_) {});
         }
         return;
       }
@@ -159,11 +142,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
     // Once per page visit, logging whichever chapter this visit actually
     // settles on (restored, searched-to, or the plain default) -- not
     // every chapter scrolled past within the same visit.
-    logChapterVisit(
-      _userDb,
-      bookId: widget.bookId,
-      chapter: chapter,
-    ).catchError((_) {});
+    logChapterVisit(_userDb, bookId: widget.bookId, chapter: chapter).catchError((_) {});
     final index = _targetIndex(items, chapter, verse);
     if (index == null) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -177,9 +156,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
   Widget build(BuildContext context) {
     final itemsAsync = ref.watch(readerItemsProvider(widget.bookId));
     final bookInfoAsync = ref.watch(bookInfoProvider(widget.bookId));
-    final fontScale = ref.watch(
-      readerSettingsProvider.select((s) => s.fontScale),
-    );
+    final fontScale = ref.watch(readerSettingsProvider.select((s) => s.fontScale));
 
     BookInfo? bookInfo;
     if (bookInfoAsync case AsyncData(:final value)) bookInfo = value;
@@ -189,11 +166,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
 
     final targetChapter = widget.targetChapter ?? _restoredChapter;
     if (items != null && targetChapter != null) {
-      _maybeScrollToTarget(
-        items,
-        targetChapter,
-        widget.targetVerse ?? _restoredVerse,
-      );
+      _maybeScrollToTarget(items, targetChapter, widget.targetVerse ?? _restoredVerse);
     }
 
     return Scaffold(
@@ -225,19 +198,13 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
                     onChapterSelected: (chapter) {
                       final index = _chapterIndex(items!)[chapter];
                       if (index != null && _scrollController.isAttached) {
-                        _scrollController.scrollTo(
-                          index: index,
-                          duration: const Duration(milliseconds: 300),
-                        );
+                        _scrollController.scrollTo(index: index, duration: const Duration(milliseconds: 300));
                       }
                     },
                     onVerseSelected: (chapter, verse) {
                       final index = _targetIndex(items!, chapter, verse);
                       if (index != null && _scrollController.isAttached) {
-                        _scrollController.scrollTo(
-                          index: index,
-                          duration: const Duration(milliseconds: 300),
-                        );
+                        _scrollController.scrollTo(index: index, duration: const Duration(milliseconds: 300));
                       }
                     },
                   ),
@@ -246,19 +213,16 @@ class _ReaderPageState extends ConsumerState<ReaderPage>
             : null,
       ),
       body: MediaQuery(
-        data: MediaQuery.of(context)
-            .copyWith(textScaler: TextScaler.linear(fontScale)),
+        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(fontScale)),
         child: switch (itemsAsync) {
           AsyncData(:final value) => _ReaderList(
-            items: value,
-            scrollController: _scrollController,
-            positionsListener: _positionsListener,
-            bookId: widget.bookId,
-            bookName: bookInfo?.name ?? '',
-          ),
-          AsyncError(:final error) => Center(
-            child: Text('Failed to load: $error'),
-          ),
+              items: value,
+              scrollController: _scrollController,
+              positionsListener: _positionsListener,
+              bookId: widget.bookId,
+              bookName: bookInfo?.name ?? '',
+            ),
+          AsyncError(:final error) => Center(child: Text('Failed to load: $error')),
           _ => const Center(child: CircularProgressIndicator()),
         },
       ),
@@ -284,9 +248,7 @@ int? _targetIndex(List<ReaderItem> items, int chapter, int? verse) {
   if (verse != null) {
     for (var i = 0; i < items.length; i++) {
       final item = items[i];
-      if (item is VerseRow &&
-          item.chapter == chapter &&
-          int.tryParse(item.label) == verse) {
+      if (item is VerseRow && item.chapter == chapter && int.tryParse(item.label) == verse) {
         return i;
       }
     }
@@ -314,11 +276,7 @@ class _ReaderList extends StatelessWidget {
       itemScrollController: scrollController,
       itemPositionsListener: positionsListener,
       itemCount: items.length,
-      itemBuilder: (context, index) => _ReaderItemTile(
-        item: items[index],
-        bookId: bookId,
-        bookName: bookName,
-      ),
+      itemBuilder: (context, index) => _ReaderItemTile(item: items[index], bookId: bookId, bookName: bookName),
     );
   }
 }
@@ -327,49 +285,36 @@ class _ReaderItemTile extends ConsumerWidget {
   final ReaderItem item;
   final int bookId;
   final String bookName;
-  const _ReaderItemTile({
-    required this.item,
-    required this.bookId,
-    required this.bookName,
-  });
+  const _ReaderItemTile({required this.item, required this.bookId, required this.bookName});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final lineHeight = ref.watch(
-      readerSettingsProvider.select((s) => s.lineHeightScale),
-    );
+    final lineHeight = ref.watch(readerSettingsProvider.select((s) => s.lineHeightScale));
     return switch (item) {
       ChapterHeader(:final chapter) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-        child: Center(
-          child: Text(
-            '$chapter',
-            style: theme.textTheme.headlineMedium?.copyWith(height: lineHeight),
+          padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          child: Center(
+            child: Text(
+              '$chapter',
+              style: theme.textTheme.headlineMedium?.copyWith(height: lineHeight),
+            ),
           ),
         ),
-      ),
       SectionHeading(:final a, :final b) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-        child: _ParallelRow(
-          a: Text(
-            a ?? '',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontStyle: FontStyle.italic,
-              height: lineHeight,
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+          child: _ParallelRow(
+            a: Text(
+              a ?? '',
+              style: theme.textTheme.titleMedium?.copyWith(fontStyle: FontStyle.italic, height: lineHeight),
             ),
-          ),
-          b: Text(
-            b ?? '',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontStyle: FontStyle.italic,
-              height: lineHeight,
+            b: Text(
+              b ?? '',
+              style: theme.textTheme.titleMedium?.copyWith(fontStyle: FontStyle.italic, height: lineHeight),
             ),
           ),
         ),
-      ),
-      VerseRow(:final chapter, :final label, :final a, :final b) =>
-        _VerseRowTile(
+      VerseRow(:final chapter, :final label, :final a, :final b) => _VerseRowTile(
           bookId: bookId,
           bookName: bookName,
           chapter: chapter,
@@ -406,9 +351,8 @@ class _VerseRowTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final verse = int.tryParse(label);
-    final annotationsAsync = verse == null
-        ? null
-        : ref.watch(verseAnnotationsProvider((bookId, chapter, verse)));
+    final annotationsAsync =
+        verse == null ? null : ref.watch(verseAnnotationsProvider((bookId, chapter, verse)));
     final annotations = switch (annotationsAsync) {
       AsyncData(:final value) => value,
       _ => VerseAnnotations.none,
@@ -421,26 +365,20 @@ class _VerseRowTile extends ConsumerWidget {
       onLongPress: verse == null
           ? null
           : () => openVerseActions(
-              context,
-              bookId: bookId,
-              bookName: bookName,
-              chapter: chapter,
-              verse: verse,
-              mizoText: a,
-              englishText: b,
-            ),
+                context,
+                bookId: bookId,
+                bookName: bookName,
+                chapter: chapter,
+                verse: verse,
+                mizoText: a,
+                englishText: b,
+              ),
       borderRadius: BorderRadius.circular(14),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         curve: Curves.easeOut,
-        margin: EdgeInsets.symmetric(
-          horizontal: highlightColor == null ? 0 : 6,
-          vertical: highlightColor == null ? 0 : 2,
-        ),
-        padding: EdgeInsets.symmetric(
-          horizontal: highlightColor == null ? 16 : 10,
-          vertical: 4,
-        ),
+        margin: EdgeInsets.symmetric(horizontal: highlightColor == null ? 0 : 6, vertical: highlightColor == null ? 0 : 2),
+        padding: EdgeInsets.symmetric(horizontal: highlightColor == null ? 16 : 10, vertical: 4),
         decoration: BoxDecoration(
           color: highlightColor,
           borderRadius: BorderRadius.circular(14),
@@ -501,11 +439,8 @@ class _VerseText extends ConsumerWidget {
     final content = text;
     if (content == null) return const SizedBox.shrink();
 
-    final lineHeight = ref.watch(
-      readerSettingsProvider.select((s) => s.lineHeightScale),
-    );
-    final baseStyle = DefaultTextStyle.of(context).style
-        .copyWith(height: lineHeight);
+    final lineHeight = ref.watch(readerSettingsProvider.select((s) => s.lineHeightScale));
+    final baseStyle = DefaultTextStyle.of(context).style.copyWith(height: lineHeight);
     final labelStyle = Theme.of(context).textTheme.labelSmall;
     final iconColor = labelStyle?.color ?? Theme.of(context).iconTheme.color;
     final markers = annotations;
@@ -525,8 +460,7 @@ class _VerseText extends ConsumerWidget {
               alignment: PlaceholderAlignment.middle,
               child: Icon(Icons.edit_note, size: 14, color: iconColor),
             ),
-          if ((markers?.bookmarked ?? false) || (markers?.hasNote ?? false))
-            const TextSpan(text: ' '),
+          if ((markers?.bookmarked ?? false) || (markers?.hasNote ?? false)) const TextSpan(text: ' '),
           TextSpan(text: content),
         ],
       ),
@@ -561,12 +495,10 @@ class _BookChapterVersePicker extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<_BookChapterVersePicker> createState() =>
-      _BookChapterVersePickerState();
+  ConsumerState<_BookChapterVersePicker> createState() => _BookChapterVersePickerState();
 }
 
-class _BookChapterVersePickerState
-    extends ConsumerState<_BookChapterVersePicker> {
+class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker> {
   late int _chapter;
   late int _verse;
 
@@ -595,9 +527,7 @@ class _BookChapterVersePickerState
   Widget build(BuildContext context) {
     final booksAsync = ref.watch(bookListProvider);
     final verses = _versesInChapter(_chapter);
-    final verseSelection = verses.contains(_verse)
-        ? _verse
-        : (verses.isEmpty ? null : verses.first);
+    final verseSelection = verses.contains(_verse) ? _verse : (verses.isEmpty ? null : verses.first);
     final scheme = Theme.of(context).colorScheme;
 
     return Container(
@@ -621,23 +551,20 @@ class _BookChapterVersePickerState
             flex: 5,
             child: switch (booksAsync) {
               AsyncData(:final value) => DropdownMenu<int>(
-                initialSelection: widget.bookId,
-                label: Text(context.l10n.books),
-                expandedInsets: EdgeInsets.zero,
-                menuHeight: 420,
-                dropdownMenuEntries: [
-                  for (final book in value)
-                    DropdownMenuEntry(value: book.id, label: book.name),
-                ],
-                onSelected: (bookId) {
-                  if (bookId == null || bookId == widget.bookId) return;
-                  Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(
-                      builder: (_) => ReaderPage(bookId: bookId),
-                    ),
-                  );
-                },
-              ),
+                  initialSelection: widget.bookId,
+                  label: Text(context.l10n.books),
+                  expandedInsets: EdgeInsets.zero,
+                  menuHeight: 420,
+                  dropdownMenuEntries: [
+                    for (final book in value) DropdownMenuEntry(value: book.id, label: book.name),
+                  ],
+                  onSelected: (bookId) {
+                    if (bookId == null || bookId == widget.bookId) return;
+                    Navigator.of(context).pushReplacement(
+                      MaterialPageRoute(builder: (_) => ReaderPage(bookId: bookId)),
+                    );
+                  },
+                ),
               _ => const SizedBox.shrink(),
             },
           ),
@@ -651,8 +578,7 @@ class _BookChapterVersePickerState
               expandedInsets: EdgeInsets.zero,
               menuHeight: 420,
               dropdownMenuEntries: [
-                for (var c = 1; c <= widget.chapterCount; c++)
-                  DropdownMenuEntry(value: c, label: '$c'),
+                for (var c = 1; c <= widget.chapterCount; c++) DropdownMenuEntry(value: c, label: '$c'),
               ],
               onSelected: (chapter) {
                 if (chapter == null || chapter == _chapter) return;
@@ -674,8 +600,7 @@ class _BookChapterVersePickerState
               expandedInsets: EdgeInsets.zero,
               menuHeight: 420,
               dropdownMenuEntries: [
-                for (final v in verses)
-                  DropdownMenuEntry(value: v, label: '$v'),
+                for (final v in verses) DropdownMenuEntry(value: v, label: '$v'),
               ],
               onSelected: (verse) {
                 if (verse == null || verse == _verse) return;
