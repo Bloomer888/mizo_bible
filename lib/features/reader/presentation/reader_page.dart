@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
@@ -49,6 +50,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
   bool _didInitialScroll = false;
   int? _restoredChapter;
   int? _restoredVerse;
+  bool _topBarVisible = true;
 
   // Read once up front and kept, not re-read via ref.read from
   // dispose() -- ref becomes unsafe to use once a widget is unmounting,
@@ -169,62 +171,113 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
       _maybeScrollToTarget(items, targetChapter, widget.targetVerse ?? _restoredVerse);
     }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(bookInfo?.name ?? ''),
-        actions: [
-          IconButton.filledTonal(
-            icon: const Icon(Icons.text_fields_rounded),
-            tooltip: context.l10n.textSettings,
-            onPressed: () => showModalBottomSheet(
-              context: context,
-              builder: (_) => const ReaderSettingsSheet(),
-            ),
+    final topBar = AppBar(
+      title: Text(bookInfo?.name ?? ''),
+      actions: [
+        IconButton.filledTonal(
+          icon: const Icon(Icons.text_fields_rounded),
+          tooltip: context.l10n.textSettings,
+          onPressed: () => showModalBottomSheet(
+            context: context,
+            builder: (_) => const ReaderSettingsSheet(),
           ),
-          const SizedBox(width: 8),
-        ],
-        bottom: (bookInfo != null && items != null)
-            ? PreferredSize(
-                preferredSize: const Size.fromHeight(96),
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                  child: _BookChapterVersePicker(
-                    bookId: widget.bookId,
-                    bookName: bookInfo.name,
-                    chapterCount: bookInfo.chapterCount,
-                    items: items,
-                    initialChapter: targetChapter ?? 1,
-                    initialVerse: widget.targetVerse ?? _restoredVerse ?? 1,
-                    onChapterSelected: (chapter) {
-                      final index = _chapterIndex(items!)[chapter];
-                      if (index != null && _scrollController.isAttached) {
-                        _scrollController.scrollTo(index: index, duration: const Duration(milliseconds: 300));
-                      }
-                    },
-                    onVerseSelected: (chapter, verse) {
-                      final index = _targetIndex(items!, chapter, verse);
-                      if (index != null && _scrollController.isAttached) {
-                        _scrollController.scrollTo(index: index, duration: const Duration(milliseconds: 300));
-                      }
-                    },
-                  ),
+        ),
+        const SizedBox(width: 8),
+      ],
+      bottom: (bookInfo != null && items != null)
+          ? PreferredSize(
+              preferredSize: const Size.fromHeight(96),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                child: _BookChapterVersePicker(
+                  bookId: widget.bookId,
+                  bookName: bookInfo.name,
+                  chapterCount: bookInfo.chapterCount,
+                  items: items,
+                  initialChapter: targetChapter ?? 1,
+                  initialVerse: widget.targetVerse ?? _restoredVerse ?? 1,
+                  onChapterSelected: (chapter) {
+                    final index = _chapterIndex(items!)[chapter];
+                    if (index != null && _scrollController.isAttached) {
+                      _scrollController.scrollTo(index: index, duration: const Duration(milliseconds: 300));
+                    }
+                  },
+                  onVerseSelected: (chapter, verse) {
+                    final index = _targetIndex(items!, chapter, verse);
+                    if (index != null && _scrollController.isAttached) {
+                      _scrollController.scrollTo(index: index, duration: const Duration(milliseconds: 300));
+                    }
+                  },
                 ),
-              )
-            : null,
-      ),
-      body: MediaQuery(
-        data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(fontScale)),
-        child: switch (itemsAsync) {
-          AsyncData(:final value) => _ReaderList(
-              items: value,
-              scrollController: _scrollController,
-              positionsListener: _positionsListener,
-              bookId: widget.bookId,
-              bookName: bookInfo?.name ?? '',
-            ),
-          AsyncError(:final error) => Center(child: Text('Failed to load: $error')),
-          _ => const Center(child: CircularProgressIndicator()),
+              ),
+            )
+          : null,
+    );
+    // AppBar's own toolbarHeight (kToolbarHeight, 56) plus the picker's
+    // declared bottom height, plus the status bar inset -- reserved as
+    // the list's own top padding (not a wrapping Padding around it) so
+    // this scrolls away WITH the content instead of leaving a dead gap
+    // once the bar itself has slid out of view.
+    final topBarHeight =
+        MediaQuery.of(context).padding.top + kToolbarHeight + (topBar.bottom?.preferredSize.height ?? 0);
+
+    return Scaffold(
+      // SliverAppBar(floating/snap) doesn't work here: it relies on the
+      // sliver geometry protocol for its scroll position, but
+      // ScrollablePositionedList manages its own internal Scrollable
+      // rather than being a sliver, so it never feeds that protocol --
+      // confirmed empirically (content scrolled, the bar never moved).
+      // UserScrollNotification is a different, higher-level signal that
+      // this list does bubble correctly (already proven by the bottom
+      // nav bar's identical hide/show in app_shell.dart), so that's what
+      // drives this instead.
+      body: NotificationListener<UserScrollNotification>(
+        onNotification: (notification) {
+          final direction = notification.direction;
+          if (direction == ScrollDirection.reverse && _topBarVisible) {
+            setState(() => _topBarVisible = false);
+          } else if (direction == ScrollDirection.forward && !_topBarVisible) {
+            setState(() => _topBarVisible = true);
+          }
+          return false;
         },
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: MediaQuery(
+                data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(fontScale)),
+                child: switch (itemsAsync) {
+                  AsyncData(:final value) => _ReaderList(
+                      items: value,
+                      scrollController: _scrollController,
+                      positionsListener: _positionsListener,
+                      bookId: widget.bookId,
+                      bookName: bookInfo?.name ?? '',
+                      topPadding: topBarHeight,
+                    ),
+                  AsyncError(:final error) => Center(child: Text('Failed to load: $error')),
+                  _ => const Center(child: CircularProgressIndicator()),
+                },
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              // AppBar needs a bounded height here -- Scaffold.appBar
+              // normally supplies one implicitly; a bare Positioned with
+              // no height (just top/left/right) gives it unbounded
+              // height instead, which breaks AppBar's internal layout.
+              height: topBarHeight,
+              child: AnimatedSlide(
+                duration: const Duration(milliseconds: 200),
+                curve: Curves.easeOut,
+                offset: _topBarVisible ? Offset.zero : const Offset(0, -1),
+                child: topBar,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -262,12 +315,18 @@ class _ReaderList extends StatelessWidget {
   final ItemPositionsListener positionsListener;
   final int bookId;
   final String bookName;
+  // Reserves space for the overlaid top bar (reader_page.dart's build())
+  // as this list's own top padding, not an ancestor Padding -- so it
+  // scrolls away together with the content behind the bar once the bar
+  // has slid out of view, instead of leaving a fixed dead gap.
+  final double topPadding;
   const _ReaderList({
     required this.items,
     required this.scrollController,
     required this.positionsListener,
     required this.bookId,
     required this.bookName,
+    required this.topPadding,
   });
 
   @override
@@ -276,6 +335,7 @@ class _ReaderList extends StatelessWidget {
       itemScrollController: scrollController,
       itemPositionsListener: positionsListener,
       itemCount: items.length,
+      padding: EdgeInsets.only(top: topPadding),
       itemBuilder: (context, index) => _ReaderItemTile(item: items[index], bookId: bookId, bookName: bookName),
     );
   }
