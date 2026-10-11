@@ -590,13 +590,13 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
     final verseSelection = verses.contains(_verse) ? _verse : (verses.isEmpty ? null : verses.first);
     final scheme = Theme.of(context).colorScheme;
     // Overrides the app-wide borderless/filled InputDecorationTheme
-    // (app_theme.dart) for just these three fields -- each one needs
-    // its own visible outline AND its own clearly distinct fill, so
-    // the three read as boxes sitting on the (uniformly-colored) outer
-    // area, not blended into it.
+    // (app_theme.dart) for just these three fields -- no wrapping box
+    // around the group at all, just each field as its own outlined
+    // control sitting directly on the app bar, matching its fill
+    // exactly (scheme.surface) so only the border defines each one.
     final fieldDecoration = InputDecorationTheme(
       filled: true,
-      fillColor: scheme.surfaceContainerHighest,
+      fillColor: scheme.surface,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: scheme.outlineVariant)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -609,92 +609,80 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
       contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
     );
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 10),
-      decoration: BoxDecoration(
-        // No fill of its own -- stays the exact same color as the app
-        // bar behind it (the one uniform background), with a border
-        // instead of a tint doing the work of reading as "a box."
-        // Contrast lives entirely in the three fields below, which do
-        // each get their own distinct fillColor via fieldDecoration.
-        border: Border.all(color: scheme.outlineVariant),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            // Book names run far longer than chapter/verse numbers ever
-            // do (up to "1 Thessalonians"), so this field needs the
-            // lion's share of the row -- 4:3:3 clipped common names like
-            // "Numbers" once the box's own padding started eating into
-            // the available width.
-            flex: 5,
-            child: switch (booksAsync) {
-              AsyncData(:final value) => DropdownMenu<int>(
-                  initialSelection: widget.bookId,
-                  label: Text(context.l10n.books),
-                  inputDecorationTheme: fieldDecoration,
-                  expandedInsets: EdgeInsets.zero,
-                  menuHeight: 420,
-                  dropdownMenuEntries: [
-                    for (final book in value) DropdownMenuEntry(value: book.id, label: book.name),
-                  ],
-                  onSelected: (bookId) {
-                    if (bookId == null || bookId == widget.bookId) return;
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => ReaderPage(bookId: bookId)),
-                    );
-                  },
-                ),
-              _ => const SizedBox.shrink(),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          // Book names run far longer than chapter/verse numbers ever
+          // do (up to "1 Thessalonians"), so this field needs the
+          // lion's share of the row -- 4:3:3 clipped common names like
+          // "Numbers" once the box's own padding started eating into
+          // the available width.
+          flex: 5,
+          child: switch (booksAsync) {
+            AsyncData(:final value) => DropdownMenu<int>(
+                initialSelection: widget.bookId,
+                label: Text(context.l10n.books),
+                inputDecorationTheme: fieldDecoration,
+                expandedInsets: EdgeInsets.zero,
+                menuHeight: 420,
+                dropdownMenuEntries: [
+                  for (final book in value) DropdownMenuEntry(value: book.id, label: book.name),
+                ],
+                onSelected: (bookId) {
+                  if (bookId == null || bookId == widget.bookId) return;
+                  Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (_) => ReaderPage(bookId: bookId)),
+                  );
+                },
+              ),
+            _ => const SizedBox.shrink(),
+          },
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          flex: 3,
+          child: DropdownMenu<int>(
+            key: ValueKey('chapter-${widget.bookId}-$_chapter'),
+            initialSelection: _chapter,
+            label: Text(context.l10n.chapters),
+            inputDecorationTheme: fieldDecoration,
+            expandedInsets: EdgeInsets.zero,
+            menuHeight: 420,
+            dropdownMenuEntries: [
+              for (var c = 1; c <= widget.chapterCount; c++) DropdownMenuEntry(value: c, label: '$c'),
+            ],
+            onSelected: (chapter) {
+              if (chapter == null || chapter == _chapter) return;
+              setState(() {
+                _chapter = chapter;
+                _verse = 1;
+              });
+              widget.onChapterSelected(chapter);
             },
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 3,
-            child: DropdownMenu<int>(
-              key: ValueKey('chapter-${widget.bookId}-$_chapter'),
-              initialSelection: _chapter,
-              label: Text(context.l10n.chapters),
-              inputDecorationTheme: fieldDecoration,
-              expandedInsets: EdgeInsets.zero,
-              menuHeight: 420,
-              dropdownMenuEntries: [
-                for (var c = 1; c <= widget.chapterCount; c++) DropdownMenuEntry(value: c, label: '$c'),
-              ],
-              onSelected: (chapter) {
-                if (chapter == null || chapter == _chapter) return;
-                setState(() {
-                  _chapter = chapter;
-                  _verse = 1;
-                });
-                widget.onChapterSelected(chapter);
-              },
-            ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          flex: 3,
+          child: DropdownMenu<int>(
+            key: ValueKey('verse-${widget.bookId}-$_chapter'),
+            initialSelection: verseSelection,
+            label: Text(context.l10n.verse),
+            inputDecorationTheme: fieldDecoration,
+            expandedInsets: EdgeInsets.zero,
+            menuHeight: 420,
+            dropdownMenuEntries: [
+              for (final v in verses) DropdownMenuEntry(value: v, label: '$v'),
+            ],
+            onSelected: (verse) {
+              if (verse == null || verse == _verse) return;
+              setState(() => _verse = verse);
+              widget.onVerseSelected(_chapter, verse);
+            },
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            flex: 3,
-            child: DropdownMenu<int>(
-              key: ValueKey('verse-${widget.bookId}-$_chapter'),
-              initialSelection: verseSelection,
-              label: Text(context.l10n.verse),
-              inputDecorationTheme: fieldDecoration,
-              expandedInsets: EdgeInsets.zero,
-              menuHeight: 420,
-              dropdownMenuEntries: [
-                for (final v in verses) DropdownMenuEntry(value: v, label: '$v'),
-              ],
-              onSelected: (verse) {
-                if (verse == null || verse == _verse) return;
-                setState(() => _verse = verse);
-                widget.onVerseSelected(_chapter, verse);
-              },
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
