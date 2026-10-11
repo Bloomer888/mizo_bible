@@ -112,3 +112,37 @@ Future<int> loadReadingStreak(UserDatabase db) async {
   }
   return streak;
 }
+
+/// Which days in the current Monday-start calendar week (through
+/// today) have at least one reading_history entry -- powers the
+/// streak week-strip on Home. Never contains a day after today: a
+/// day that hasn't happened yet can't have been read, so the caller
+/// doesn't need to special-case "future" by checking this set, only
+/// by comparing the date itself.
+///
+/// A separate, smaller query from [loadReadingStreak] rather than
+/// sharing one -- both read the same table, but at this app's scale a
+/// second cheap query is simpler than threading one shared result
+/// through two different shapes of "which days" logic.
+Future<Set<DateTime>> loadReadingDaysThisWeek(UserDatabase db) async {
+  final rows = await db
+      .customSelect(
+        'select created_at from reading_history where deleted = 0 order by rowid desc limit 200',
+        readsFrom: {db.readingHistory},
+      )
+      .get();
+
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final weekStart = today.subtract(Duration(days: today.weekday - 1));
+
+  final days = <DateTime>{};
+  for (final row in rows) {
+    final local = row.read<DateTime>('created_at').toLocal();
+    final day = DateTime(local.year, local.month, local.day);
+    if (!day.isBefore(weekStart) && !day.isAfter(today)) {
+      days.add(day);
+    }
+  }
+  return days;
+}

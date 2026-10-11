@@ -10,6 +10,22 @@ void main() {
   setUp(() => db = UserDatabase(NativeDatabase.memory()));
   tearDown(() => db.close());
 
+  Future<void> visitOn(DateTime day) {
+    return db.into(db.readingHistory).insert(
+          ReadingHistoryCompanion.insert(
+            id: '${day.toIso8601String()}-${day.hashCode}',
+            bookId: 1,
+            chapter: 1,
+            createdAt: Value(day),
+          ),
+        );
+  }
+
+  DateTime daysAgo(int n) {
+    final now = DateTime.now();
+    return DateTime(now.year, now.month, now.day - n, 12);
+  }
+
   test('empty history loads as an empty list', () async {
     expect(await loadHistory(db, const {}), isEmpty);
   });
@@ -50,22 +66,6 @@ void main() {
   });
 
   group('loadReadingStreak', () {
-    Future<void> visitOn(DateTime day) {
-      return db.into(db.readingHistory).insert(
-            ReadingHistoryCompanion.insert(
-              id: '${day.toIso8601String()}-${day.hashCode}',
-              bookId: 1,
-              chapter: 1,
-              createdAt: Value(day),
-            ),
-          );
-    }
-
-    DateTime daysAgo(int n) {
-      final now = DateTime.now();
-      return DateTime(now.year, now.month, now.day - n, 12);
-    }
-
     test('no history at all is a zero streak', () async {
       expect(await loadReadingStreak(db), 0);
     });
@@ -106,6 +106,46 @@ void main() {
       await visitOn(daysAgo(0));
       await visitOn(DateTime.now());
       expect(await loadReadingStreak(db), 1);
+    });
+  });
+
+  group('loadReadingDaysThisWeek', () {
+    // Computed the same way the production code derives it, so these
+    // tests pin to actual week boundaries regardless of which day of
+    // the week the suite happens to run on, rather than hardcoding
+    // "days ago" numbers that would only be correct some days.
+    DateTime currentWeekStart() {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      return today.subtract(Duration(days: today.weekday - 1));
+    }
+
+    test('no history at all is an empty set', () async {
+      expect(await loadReadingDaysThisWeek(db), isEmpty);
+    });
+
+    test('a visit today is included', () async {
+      await visitOn(daysAgo(0));
+      final today = DateTime.now();
+      expect(await loadReadingDaysThisWeek(db), contains(DateTime(today.year, today.month, today.day)));
+    });
+
+    test('a visit on the first day of this week is included', () async {
+      final weekStart = currentWeekStart();
+      await visitOn(weekStart.add(const Duration(hours: 12)));
+      expect(await loadReadingDaysThisWeek(db), contains(weekStart));
+    });
+
+    test('a visit the day before this week started is excluded', () async {
+      final weekStart = currentWeekStart();
+      await visitOn(weekStart.subtract(const Duration(hours: 12)));
+      expect(await loadReadingDaysThisWeek(db), isEmpty);
+    });
+
+    test('multiple visits on the same day still only count once', () async {
+      await visitOn(daysAgo(0));
+      await visitOn(DateTime.now());
+      expect(await loadReadingDaysThisWeek(db), hasLength(1));
     });
   });
 }
