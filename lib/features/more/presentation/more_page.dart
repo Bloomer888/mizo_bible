@@ -11,7 +11,6 @@ import '../../library/presentation/notes_page.dart';
 import '../../premium/data/premium_providers.dart';
 import '../../premium/presentation/paywall_page.dart';
 import '../../reader/presentation/reader_settings_sheet.dart';
-import '../../search/presentation/search_page.dart';
 
 /// The More tab -- everything that isn't "read the Bible right now":
 /// the library views, reading preferences, account, and the legal/
@@ -40,11 +39,6 @@ class MorePage extends ConsumerWidget {
           ),
           const Divider(indent: 16, endIndent: 16),
           _SectionLabel(l10n.yourBible),
-          ListTile(
-            leading: const Icon(Icons.search_rounded),
-            title: Text(l10n.search),
-            onTap: () => openPage(const SearchPage()),
-          ),
           ListTile(
             leading: const Icon(Icons.bookmark_rounded),
             title: Text(l10n.bookmarks),

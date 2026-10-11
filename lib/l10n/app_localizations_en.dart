@@ -34,9 +34,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startReading => 'Start in Genesis';
 
   @override
-  String get search => 'Search';
-
-  @override
   String get bookmarks => 'Bookmarks';
 
   @override
@@ -80,9 +77,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get textSettings => 'Text Settings';
-
-  @override
-  String get noResults => 'No results found';
 
   @override
   String get addBookmark => 'Add bookmark';

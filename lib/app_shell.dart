@@ -59,9 +59,21 @@ class _AppShellState extends State<AppShell> {
           selectedIndex: _tabIndex,
           onDestinationSelected: (index) => setState(() => _tabIndex = index),
           destinations: [
-            NavigationDestination(icon: const Icon(Icons.home_rounded), label: l10n.home),
-            NavigationDestination(icon: const Icon(Icons.menu_book_rounded), label: l10n.bible),
-            NavigationDestination(icon: const Icon(Icons.more_horiz_rounded), label: l10n.more),
+            NavigationDestination(
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home_rounded),
+              label: l10n.home,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.menu_book_outlined),
+              selectedIcon: const Icon(Icons.menu_book_rounded),
+              label: l10n.bible,
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.more_horiz_outlined),
+              selectedIcon: const Icon(Icons.more_horiz_rounded),
+              label: l10n.more,
+            ),
           ],
         ),
       ),

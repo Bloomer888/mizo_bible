@@ -142,12 +142,6 @@ abstract class AppLocalizations {
   /// **'Start in Genesis'**
   String get startReading;
 
-  /// No description provided for @search.
-  ///
-  /// In en, this message translates to:
-  /// **'Search'**
-  String get search;
-
   /// No description provided for @bookmarks.
   ///
   /// In en, this message translates to:
@@ -237,12 +231,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Text Settings'**
   String get textSettings;
-
-  /// No description provided for @noResults.
-  ///
-  /// In en, this message translates to:
-  /// **'No results found'**
-  String get noResults;
 
   /// No description provided for @addBookmark.
   ///
