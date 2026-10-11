@@ -3,13 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/db/user_database.dart';
+import '../../../core/env.dart';
 import '../../premium/data/premium_repository.dart';
 
 /// Every auth event (sign in, sign out, token refresh). supabase_flutter
 /// persists the session to disk itself and restores it before this
 /// stream's first event, so a cold start that was previously signed in
 /// comes up already-signed-in, not signed-out-then-in.
+///
+/// Same Env.hasSupabase guard as customerInfoProvider in
+/// premium_providers.dart -- Supabase.instance throws if main() never
+/// called Supabase.initialize (no credentials configured), and reading
+/// a signed-out user must fail closed, not crash whatever screen
+/// happens to watch this first.
 final authStateProvider = StreamProvider<AuthState>((ref) {
+  if (!Env.hasSupabase) return const Stream.empty();
   return Supabase.instance.client.auth.onAuthStateChange;
 });
 
@@ -18,6 +26,7 @@ final authStateProvider = StreamProvider<AuthState>((ref) {
 /// authStateProvider here is only to make this provider rebuild on every
 /// auth event, not to source the value itself.
 final currentUserProvider = Provider<User?>((ref) {
+  if (!Env.hasSupabase) return null;
   ref.watch(authStateProvider);
   return Supabase.instance.client.auth.currentUser;
 });
