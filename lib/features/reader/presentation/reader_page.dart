@@ -594,8 +594,11 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
     // its own visible outline, not only the shared tint, so the picker
     // still reads as three distinct controls inside the outer box.
     final fieldDecoration = InputDecorationTheme(
+      // Matches the outer box's own fill exactly (not a lighter tint)
+      // so each field reads as an outline on a shared background, not
+      // a visibly different-colored box of its own.
       filled: true,
-      fillColor: scheme.surface,
+      fillColor: scheme.surfaceContainerLow,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: scheme.outlineVariant)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
