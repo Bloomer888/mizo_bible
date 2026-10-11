@@ -172,6 +172,24 @@ abstract class AppLocalizations {
   /// **'Continue reading'**
   String get continueReading;
 
+  /// No description provided for @verseOfTheDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Verse of the Day'**
+  String get verseOfTheDay;
+
+  /// No description provided for @readingStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading streak'**
+  String get readingStreak;
+
+  /// No description provided for @dayStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} day streak'**
+  String dayStreak(int count);
+
   /// No description provided for @readingModeParallel.
   ///
   /// In en, this message translates to:

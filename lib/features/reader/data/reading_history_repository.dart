@@ -71,3 +71,44 @@ Future<List<HistoryEntry>> loadHistory(UserDatabase db, Map<int, String> bookNam
       ),
   ];
 }
+
+/// Current daily reading streak: consecutive calendar days (local
+/// time) with at least one reading_history entry, counting back from
+/// today. One grace day built in -- if the most recent entry was
+/// yesterday rather than today, the streak still shows (today isn't
+/// over yet) rather than dropping to zero the moment a new day starts
+/// before they've opened the app.
+///
+/// No new table or column: this is a read over data reading_history
+/// already stores for the history list, so a per-user streak costs
+/// nothing beyond what's already there. .toLocal() is deliberate, not
+/// defensive dead code -- a streak must count calendar days as this
+/// device's owner experiences them, not whatever timezone the stored
+/// timestamp's raw value happens to be in.
+Future<int> loadReadingStreak(UserDatabase db) async {
+  final rows = await db
+      .customSelect(
+        'select created_at from reading_history where deleted = 0 order by rowid desc limit 2000',
+        readsFrom: {db.readingHistory},
+      )
+      .get();
+
+  final days = <DateTime>{};
+  for (final row in rows) {
+    final local = row.read<DateTime>('created_at').toLocal();
+    days.add(DateTime(local.year, local.month, local.day));
+  }
+  if (days.isEmpty) return 0;
+
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  var cursor = days.contains(today) ? today : today.subtract(const Duration(days: 1));
+  if (!days.contains(cursor)) return 0;
+
+  var streak = 0;
+  while (days.contains(cursor)) {
+    streak++;
+    cursor = cursor.subtract(const Duration(days: 1));
+  }
+  return streak;
+}

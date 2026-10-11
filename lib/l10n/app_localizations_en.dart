@@ -49,6 +49,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continueReading => 'Continue reading';
 
   @override
+  String get verseOfTheDay => 'Verse of the Day';
+
+  @override
+  String get readingStreak => 'Reading streak';
+
+  @override
+  String dayStreak(int count) {
+    return '$count day streak';
+  }
+
+  @override
   String get readingModeParallel => 'Parallel';
 
   @override

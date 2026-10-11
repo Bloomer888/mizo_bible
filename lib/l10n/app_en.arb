@@ -18,6 +18,14 @@
   "highlights": "Highlights",
   "history": "History",
   "continueReading": "Continue reading",
+  "verseOfTheDay": "Verse of the Day",
+  "readingStreak": "Reading streak",
+  "dayStreak": "{count} day streak",
+  "@dayStreak": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
 
   "readingModeParallel": "Parallel",
   "readingModeMizoOnly": "Mizo only",
