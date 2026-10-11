@@ -6,32 +6,69 @@ import 'package:mizo_bible/core/db/bible_database.dart';
 import 'package:mizo_bible/features/home/data/verse_of_the_day.dart';
 
 void main() {
-  group('verseReferenceForDay', () {
-    test('is deterministic -- the same day always picks the same reference', () {
-      final day = DateTime(2026, 3, 15);
-      expect(verseReferenceForDay(day), verseReferenceForDay(day));
+  // The Unix epoch is period index 0 by construction (see
+  // verseReferenceForInstant's doc comment) -- a clean, reproducible
+  // anchor for these tests rather than depending on today's real date.
+  final epoch = DateTime.utc(1970);
+
+  group('verseReferenceForInstant', () {
+    test('is deterministic -- the same instant always picks the same reference', () {
+      final instant = DateTime.utc(2026, 3, 15);
+      expect(verseReferenceForInstant(instant), verseReferenceForInstant(instant));
     });
 
-    test('January 1st picks the first reference in the list (Genesis 1:1)', () {
-      expect(verseReferenceForDay(DateTime(2026, 1, 1)), (1, 1, 1));
+    test('the Unix epoch picks the first reference in the list (Genesis 1:1)', () {
+      expect(verseReferenceForInstant(epoch), (1, 1, 1));
     });
 
-    test('different days of year can pick different references', () {
-      final jan1 = verseReferenceForDay(DateTime(2026, 1, 1));
-      final jan2 = verseReferenceForDay(DateTime(2026, 1, 2));
-      expect(jan1, isNot(jan2));
+    test('two instants in the same 60-hour period pick the same reference', () {
+      final start = verseReferenceForInstant(epoch);
+      final almostThere = verseReferenceForInstant(epoch.add(const Duration(hours: 59, minutes: 59)));
+      expect(almostThere, start);
     });
 
-    test('wraps around rather than going out of range for a full year', () {
-      // 366 to cover a leap year too -- every call must return a valid
-      // reference, not throw a range error once the day count exceeds
-      // the curated list's length.
-      for (var d = 0; d < 366; d++) {
-        final (bookId, chapter, verse) = verseReferenceForDay(DateTime(2026, 1, 1).add(Duration(days: d)));
+    test('crossing a period boundary picks a different reference', () {
+      final before = verseReferenceForInstant(epoch.add(const Duration(hours: 59, minutes: 59)));
+      final after = verseReferenceForInstant(epoch.add(const Duration(hours: 60)));
+      expect(after, isNot(before));
+    });
+
+    test('wraps around rather than going out of range past the curated list length', () {
+      // 70 periods comfortably passes the 64-entry list length, so this
+      // exercises the wrap without hardcoding the list's exact size.
+      for (var p = 0; p < 70; p++) {
+        final (bookId, chapter, verse) = verseReferenceForInstant(epoch.add(verseRotationPeriod * p));
         expect(bookId, greaterThan(0));
         expect(chapter, greaterThan(0));
         expect(verse, greaterThan(0));
       }
+    });
+
+    test('the period index wraps back to the same reference after a full cycle', () {
+      // 64 periods later lands back on index 0 in a 64-entry list.
+      expect(verseReferenceForInstant(epoch.add(verseRotationPeriod * 64)), verseReferenceForInstant(epoch));
+    });
+  });
+
+  group('periodStartFor / nextRotationAfter', () {
+    test('periodStartFor returns the exact period start unchanged', () {
+      expect(periodStartFor(epoch), epoch);
+    });
+
+    test('periodStartFor rounds an instant mid-period down to that period\'s start', () {
+      final midPeriod = epoch.add(const Duration(hours: 30));
+      expect(periodStartFor(midPeriod), epoch);
+    });
+
+    test('nextRotationAfter is exactly one period after the current period\'s start', () {
+      final midPeriod = epoch.add(const Duration(hours: 30));
+      expect(nextRotationAfter(midPeriod), epoch.add(verseRotationPeriod));
+    });
+
+    test('the instant returned by nextRotationAfter is in a different period than the original', () {
+      final now = epoch.add(const Duration(hours: 10));
+      final next = nextRotationAfter(now);
+      expect(verseReferenceForInstant(next), isNot(verseReferenceForInstant(now)));
     });
   });
 
@@ -42,9 +79,9 @@ void main() {
     tearDown(() => db.close());
 
     test('loads the real verse text for a reference present in the database', () async {
-      // January 1st maps to (1, 1, 1) -- Genesis 1:1, which the small
+      // The Unix epoch maps to (1, 1, 1) -- Genesis 1:1, which the small
       // test fixture actually contains (see bible_database_test.dart).
-      final result = await loadVerseOfTheDay(db, {1: 'Genesis'}, now: DateTime(2026, 1, 1));
+      final result = await loadVerseOfTheDay(db, {1: 'Genesis'}, now: epoch);
 
       expect(result, isNotNull);
       expect(result!.bookName, 'Genesis');
@@ -55,11 +92,12 @@ void main() {
     });
 
     test('returns null rather than throwing when the reference is not in this database', () async {
-      // The test fixture only has Genesis 1 -- any day whose curated
-      // reference isn't Genesis 1:1 exercises the missing-verse path
-      // that a real build should never hit, but must still degrade
-      // safely from if it somehow did.
-      final result = await loadVerseOfTheDay(db, {1: 'Genesis'}, now: DateTime(2026, 1, 3));
+      // One period after the epoch maps to the second curated
+      // reference (Psalm 23:1), which the Genesis-only test fixture
+      // doesn't contain -- exercises the missing-verse path that a
+      // real build should never hit, but must still degrade safely
+      // from if it somehow did.
+      final result = await loadVerseOfTheDay(db, {1: 'Genesis'}, now: DateTime.utc(1970).add(verseRotationPeriod));
       expect(result, isNull);
     });
   });

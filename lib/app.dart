@@ -52,12 +52,13 @@ class _MizoBibleAppState extends ConsumerState<MizoBibleApp> with WidgetsBinding
   Future<void> _applyNotificationState(bool isPremium) async {
     try {
       if (!isPremium) {
-        await cancelDailyVerseNotification();
+        await cancelAllDailyVerseNotifications();
         return;
       }
       final granted = await requestNotificationPermission();
       if (!granted) return;
-      await scheduleDailyVerseNotification();
+      await scheduleDailyQuoteNotification();
+      await scheduleVerseChangeNotification();
     } catch (_) {
       // Swallowed deliberately -- see doc comment above.
     }
@@ -65,7 +66,17 @@ class _MizoBibleAppState extends ConsumerState<MizoBibleApp> with WidgetsBinding
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _syncIfSignedIn();
+    if (state != AppLifecycleState.resumed) return;
+    _syncIfSignedIn();
+    // The verse-changed notification is one-shot, not a native repeat
+    // (see its own doc comment in daily_verse_notifications.dart), so
+    // it needs refreshing here to stay aligned with the next rotation
+    // for anyone who keeps the app around across many resumes rather
+    // than relaunching it. Cheap and idempotent -- always replaces the
+    // same notification id, never stacks up duplicates.
+    if (ref.read(isPremiumProvider)) {
+      scheduleVerseChangeNotification().catchError((_) {});
+    }
   }
 
   // Launch and resume only -- not a timer or a realtime subscription,

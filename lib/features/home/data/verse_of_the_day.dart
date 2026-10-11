@@ -30,15 +30,38 @@ const _curatedReferences = <(int bookId, int chapter, int verse)>[
   (19, 73, 26), (19, 126, 5), (19, 147, 3), (23, 43, 2),
 ]; // 64 references
 
-/// Deterministic, not random: the same calendar day always picks the
-/// same reference, for every user on every device -- "verse of the
-/// day" means everyone sees the same one, the way a print devotional
-/// would. day-of-year % list length, so it cycles through the whole
-/// list roughly every two months and the exact pairing shifts by a day
-/// across a leap year rather than needing a leap-year special case.
-(int bookId, int chapter, int verse) verseReferenceForDay(DateTime day) {
-  final dayOfYear = day.difference(DateTime(day.year)).inDays;
-  return _curatedReferences[dayOfYear % _curatedReferences.length];
+/// How long one reference stays current -- 2.5 days, the user's
+/// explicit choice, not a daily rotation despite the "verse of the
+/// day" name staying put in the UI. Paired with a Premium notification
+/// that fires right when a period boundary is crossed (see
+/// scheduleVerseChangeNotification in daily_verse_notifications.dart).
+const verseRotationPeriod = Duration(hours: 60);
+
+/// Which 60-hour period [instant] falls in, counted from the Unix
+/// epoch (not "day of year") -- a fixed, globally-shared grid every
+/// user's device agrees on regardless of timezone or calendar year, so
+/// "verse of the day" still means everyone sees the same one at the
+/// same real-world moment, the way the old day-based version did.
+int _periodIndexFor(DateTime instant) {
+  return instant.toUtc().difference(DateTime.utc(1970)).inHours ~/ verseRotationPeriod.inHours;
+}
+
+/// Deterministic, not random: the same 60-hour period always picks the
+/// same reference, for every user on every device.
+(int bookId, int chapter, int verse) verseReferenceForInstant(DateTime instant) {
+  return _curatedReferences[_periodIndexFor(instant) % _curatedReferences.length];
+}
+
+/// The exact instant the period containing [instant] began.
+DateTime periodStartFor(DateTime instant) {
+  return DateTime.utc(1970).add(verseRotationPeriod * _periodIndexFor(instant));
+}
+
+/// The exact instant the *next* period (and so the next reference)
+/// begins -- what the Premium "verse changed" notification schedules
+/// against.
+DateTime nextRotationAfter(DateTime instant) {
+  return periodStartFor(instant).add(verseRotationPeriod);
 }
 
 class VerseOfTheDay {
@@ -69,7 +92,7 @@ Future<VerseOfTheDay?> loadVerseOfTheDay(
   Map<int, String> bookNames, {
   DateTime? now,
 }) async {
-  final (bookId, chapter, verse) = verseReferenceForDay(now ?? DateTime.now());
+  final (bookId, chapter, verse) = verseReferenceForInstant(now ?? DateTime.now());
 
   final rows = await (db.select(db.verses)
         ..where((v) => v.bookId.equals(bookId) & v.chapter.equals(chapter) & v.verse.equals(verse)))
