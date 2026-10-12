@@ -5,10 +5,12 @@ import '../../../core/db/bible_database.dart';
 import '../../../core/l10n_extension.dart';
 import '../../reader/presentation/reader_page.dart';
 import '../data/book_repository.dart';
+import 'book_language_settings.dart';
 
 final bookListProvider = FutureProvider.autoDispose<List<BookInfo>>((ref) {
   final db = ref.watch(bibleDatabaseProvider);
-  return loadAllBooks(db);
+  final language = ref.watch(bookNameLanguageProvider);
+  return loadAllBooks(db, translationId: translationIdFor(language));
 });
 
 class BookListPage extends ConsumerWidget {
@@ -17,9 +19,10 @@ class BookListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final booksAsync = ref.watch(bookListProvider);
+    final language = ref.watch(bookNameLanguageProvider);
 
     return Scaffold(
-      appBar: AppBar(title: Text(context.l10n.books)),
+      appBar: AppBar(title: Text(language.booksLabel(context.l10n))),
       body: switch (booksAsync) {
         AsyncData(:final value) => _BookList(books: value),
         AsyncError(:final error) => Center(child: Text('Failed to load: $error')),

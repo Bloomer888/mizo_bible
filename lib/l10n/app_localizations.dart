@@ -238,11 +238,35 @@ abstract class AppLocalizations {
   /// **'Verse'**
   String get verse;
 
+  /// No description provided for @booksMizo.
+  ///
+  /// In en, this message translates to:
+  /// **'Bu Hming'**
+  String get booksMizo;
+
+  /// No description provided for @chaptersMizo.
+  ///
+  /// In en, this message translates to:
+  /// **'Bung'**
+  String get chaptersMizo;
+
+  /// No description provided for @verseMizo.
+  ///
+  /// In en, this message translates to:
+  /// **'Chang'**
+  String get verseMizo;
+
   /// No description provided for @textSettings.
   ///
   /// In en, this message translates to:
   /// **'Text Settings'**
   String get textSettings;
+
+  /// No description provided for @bookNamesInEnglish.
+  ///
+  /// In en, this message translates to:
+  /// **'Book names in English'**
+  String get bookNamesInEnglish;
 
   /// No description provided for @addBookmark.
   ///

@@ -84,7 +84,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get verse => 'Verse';
 
   @override
+  String get booksMizo => 'Bu Hming';
+
+  @override
+  String get chaptersMizo => 'Bung';
+
+  @override
+  String get verseMizo => 'Chang';
+
+  @override
   String get textSettings => 'Text Settings';
+
+  @override
+  String get bookNamesInEnglish => 'Book names in English';
 
   @override
   String get addBookmark => 'Add bookmark';

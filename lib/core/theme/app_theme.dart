@@ -30,7 +30,11 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: scheme.surface,
 
       appBarTheme: AppBarTheme(
-        backgroundColor: scheme.surface,
+        // Matches NavigationBar's own M3 default (ColorScheme.surfaceContainer,
+        // set by Flutter itself since app_shell.dart's bottom bar has no
+        // explicit theme) -- left as scheme.surface here instead, the top and
+        // bottom bars read as two visibly different tones of the same app.
+        backgroundColor: scheme.surfaceContainer,
         surfaceTintColor: scheme.surfaceTint,
         scrolledUnderElevation: 3,
         shadowColor: scheme.shadow.withValues(alpha: 0.2),

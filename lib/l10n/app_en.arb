@@ -37,7 +37,11 @@
   "books": "Books",
   "chapters": "Chapters",
   "verse": "Verse",
+  "booksMizo": "Bu Hming",
+  "chaptersMizo": "Bung",
+  "verseMizo": "Chang",
   "textSettings": "Text Settings",
+  "bookNamesInEnglish": "Book names in English",
 
   "addBookmark": "Add bookmark",
   "removeBookmark": "Remove bookmark",

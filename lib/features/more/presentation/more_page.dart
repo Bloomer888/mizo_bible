@@ -7,6 +7,7 @@ import '../../auth/presentation/account_page.dart';
 import '../../library/presentation/bookmarks_page.dart';
 import '../../library/presentation/highlights_page.dart';
 import '../../library/presentation/notes_page.dart';
+import '../../navigation/presentation/book_language_settings.dart';
 import '../../premium/data/premium_providers.dart';
 import '../../premium/presentation/paywall_page.dart';
 import '../../reader/presentation/reader_settings_sheet.dart';
@@ -23,6 +24,7 @@ class MorePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final isPremium = ref.watch(isPremiumProvider);
+    final bookNameLanguage = ref.watch(bookNameLanguageProvider);
 
     void openPage(Widget page) {
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
@@ -73,6 +75,14 @@ class MorePage extends ConsumerWidget {
               context: context,
               builder: (_) => const ReaderSettingsSheet(),
             ),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.translate_rounded),
+            title: Text(l10n.bookNamesInEnglish),
+            value: bookNameLanguage == BookNameLanguage.english,
+            onChanged: (value) => ref.read(bookNameLanguageProvider.notifier).setLanguage(
+                  value ? BookNameLanguage.english : BookNameLanguage.mizo,
+                ),
           ),
           ListTile(
             leading: const Icon(Icons.account_circle_rounded),

@@ -7,6 +7,7 @@ import '../../../core/db/bible_database.dart';
 import '../../../core/db/user_database.dart';
 import '../../../core/l10n_extension.dart';
 import '../../navigation/data/book_repository.dart';
+import '../../navigation/presentation/book_language_settings.dart';
 import '../../navigation/presentation/book_list_page.dart';
 import '../data/reader_repository.dart';
 import '../data/reading_history_repository.dart';
@@ -29,7 +30,8 @@ final readerItemsProvider = FutureProvider.autoDispose.family<List<ReaderItem>, 
 
 final bookInfoProvider = FutureProvider.autoDispose.family<BookInfo, int>((ref, bookId) {
   final db = ref.watch(bibleDatabaseProvider);
-  return loadBookInfo(db, bookId);
+  final language = ref.watch(bookNameLanguageProvider);
+  return loadBookInfo(db, bookId, translationId: translationIdFor(language));
 });
 
 class ReaderPage extends ConsumerStatefulWidget {
@@ -586,6 +588,7 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
   @override
   Widget build(BuildContext context) {
     final booksAsync = ref.watch(bookListProvider);
+    final language = ref.watch(bookNameLanguageProvider);
     final verses = _versesInChapter(_chapter);
     final verseSelection = verses.contains(_verse) ? _verse : (verses.isEmpty ? null : verses.first);
     final scheme = Theme.of(context).colorScheme;
@@ -593,10 +596,11 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
     // (app_theme.dart) for just these three fields -- no wrapping box
     // around the group at all, just each field as its own outlined
     // control sitting directly on the app bar, matching its fill
-    // exactly (scheme.surface) so only the border defines each one.
+    // exactly (scheme.surfaceContainer, same as AppBarTheme.backgroundColor)
+    // so only the border defines each one.
     final fieldDecoration = InputDecorationTheme(
       filled: true,
-      fillColor: scheme.surface,
+      fillColor: scheme.surfaceContainer,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: scheme.outlineVariant)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -622,7 +626,7 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
           child: switch (booksAsync) {
             AsyncData(:final value) => DropdownMenu<int>(
                 initialSelection: widget.bookId,
-                label: Text(context.l10n.books),
+                label: Text(language.booksLabel(context.l10n)),
                 inputDecorationTheme: fieldDecoration,
                 expandedInsets: EdgeInsets.zero,
                 menuHeight: 420,
@@ -645,7 +649,7 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
           child: DropdownMenu<int>(
             key: ValueKey('chapter-${widget.bookId}-$_chapter'),
             initialSelection: _chapter,
-            label: Text(context.l10n.chapters),
+            label: Text(language.chaptersLabel(context.l10n)),
             inputDecorationTheme: fieldDecoration,
             expandedInsets: EdgeInsets.zero,
             menuHeight: 420,
@@ -668,7 +672,7 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
           child: DropdownMenu<int>(
             key: ValueKey('verse-${widget.bookId}-$_chapter'),
             initialSelection: verseSelection,
-            label: Text(context.l10n.verse),
+            label: Text(language.verseLabel(context.l10n)),
             inputDecorationTheme: fieldDecoration,
             expandedInsets: EdgeInsets.zero,
             menuHeight: 420,
