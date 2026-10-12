@@ -6,6 +6,7 @@ import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../../../core/env.dart';
 import '../../../core/l10n_extension.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../auth/data/auth_repository.dart';
 import '../../auth/presentation/account_page.dart';
 import '../data/premium_providers.dart';
@@ -384,7 +385,10 @@ class _OfferingsViewState extends ConsumerState<_OfferingsView> {
                     Text(
                       l10n.premiumHeadline,
                       textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            fontVariations: AppTypography.variations(FontWeight.w700),
+                          ),
                     ),
                   ],
                 ),
@@ -477,7 +481,7 @@ class _FeatureRow extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                Text(title, style: AppTypography.weight(const TextStyle(), FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text(description, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.3)),
               ],
@@ -513,7 +517,10 @@ class _TestModeBanner extends StatelessWidget {
               const SizedBox(width: 8),
               Text(
                 'TEST MODE',
-                style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.6, color: scheme.onErrorContainer),
+                style: AppTypography.weight(
+                  TextStyle(letterSpacing: 0.6, color: scheme.onErrorContainer),
+                  FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -539,7 +546,7 @@ class _Badge extends StatelessWidget {
       decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)),
       child: Text(
         label,
-        style: TextStyle(color: onColor, fontWeight: FontWeight.w700, fontSize: 11, letterSpacing: 0.3),
+        style: AppTypography.weight(TextStyle(color: onColor, fontSize: 11, letterSpacing: 0.3), FontWeight.w700),
       ),
     );
   }
@@ -606,7 +613,7 @@ class _PackageCard extends StatelessWidget {
                 isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
                 color: isSelected ? scheme.primary : scheme.outline,
               ),
-              title: Text(display.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+              title: Text(display.title, style: AppTypography.weight(const TextStyle(), FontWeight.w600)),
               subtitle: freeTrialDays != null
                   ? Text(l10n.freeTrialThen(freeTrialDays, display.priceString))
                   : Text(display.priceString),

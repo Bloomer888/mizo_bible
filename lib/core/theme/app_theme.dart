@@ -6,6 +6,40 @@ abstract final class AppTheme {
   static ThemeData light() => _build(Brightness.light);
   static ThemeData dark() => _build(Brightness.dark);
 
+  // Material 3's default TextTheme already varies weight by style --
+  // titleMedium/titleSmall/labelLarge/labelMedium/labelSmall all come back
+  // at w500, not w400. On a normal static-weight font that's enough on its
+  // own, but on this app's variable NotoSans/NotoSerif (see
+  // app_typography.dart's doc comment) a bare `fontWeight` never actually
+  // selects a heavier glyph unless `fontVariations` drives the `wght` axis
+  // too -- so every one of those styles was silently rendering at the same
+  // visual weight everywhere they're used via Theme.of(context).textTheme.*
+  // (reader_page's verse references, reader_settings_sheet's heading, and
+  // more). This re-derives fontVariations from each style's own fontWeight
+  // once, here, instead of needing every call site to remember to do it.
+  static TextTheme _withVariableWeights(TextTheme theme) {
+    TextStyle? fix(TextStyle? style) =>
+        style?.copyWith(fontVariations: AppTypography.variations(style.fontWeight ?? FontWeight.w400));
+
+    return theme.copyWith(
+      displayLarge: fix(theme.displayLarge),
+      displayMedium: fix(theme.displayMedium),
+      displaySmall: fix(theme.displaySmall),
+      headlineLarge: fix(theme.headlineLarge),
+      headlineMedium: fix(theme.headlineMedium),
+      headlineSmall: fix(theme.headlineSmall),
+      titleLarge: fix(theme.titleLarge),
+      titleMedium: fix(theme.titleMedium),
+      titleSmall: fix(theme.titleSmall),
+      bodyLarge: fix(theme.bodyLarge),
+      bodyMedium: fix(theme.bodyMedium),
+      bodySmall: fix(theme.bodySmall),
+      labelLarge: fix(theme.labelLarge),
+      labelMedium: fix(theme.labelMedium),
+      labelSmall: fix(theme.labelSmall),
+    );
+  }
+
   static ThemeData _build(Brightness brightness) {
     // `vibrant` over Material 3's default tonal-spot algorithm -- the
     // default reads as muted/pastel at this seed's chroma, which is a
@@ -23,9 +57,10 @@ abstract final class AppTheme {
     return base.copyWith(
       // Default every text style to the bundled font, so no string anywhere
       // in the app can fall back to a system font that lacks the Mizo
-      // alphabet.
-      textTheme: base.textTheme.apply(fontFamily: AppTypography.sans),
-      primaryTextTheme: base.primaryTextTheme.apply(fontFamily: AppTypography.sans),
+      // alphabet. Wrapped in _withVariableWeights so that font actually
+      // varies by weight too -- see its doc comment.
+      textTheme: _withVariableWeights(base.textTheme.apply(fontFamily: AppTypography.sans)),
+      primaryTextTheme: _withVariableWeights(base.primaryTextTheme.apply(fontFamily: AppTypography.sans)),
 
       scaffoldBackgroundColor: scheme.surface,
 
@@ -79,7 +114,7 @@ abstract final class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
           elevation: 1,
           shadowColor: scheme.shadow.withValues(alpha: 0.35),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15.5),
+          textStyle: AppTypography.weight(const TextStyle(fontSize: 15.5), FontWeight.w600),
         ),
       ),
 
@@ -88,7 +123,7 @@ abstract final class AppTheme {
           shape: RoundedRectangleBorder(borderRadius: radius),
           padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
           side: BorderSide(color: scheme.outlineVariant, width: 1.5),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15.5),
+          textStyle: AppTypography.weight(const TextStyle(fontSize: 15.5), FontWeight.w600),
         ),
       ),
 
@@ -96,7 +131,7 @@ abstract final class AppTheme {
         style: TextButton.styleFrom(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+          textStyle: AppTypography.weight(const TextStyle(), FontWeight.w600),
         ),
       ),
 

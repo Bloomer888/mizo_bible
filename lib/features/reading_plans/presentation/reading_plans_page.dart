@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/db/user_database.dart';
 import '../../../core/l10n_extension.dart';
+import '../../../core/theme/app_typography.dart';
 import '../data/reading_plan.dart';
 import '../data/reading_plan_progress_repository.dart';
 import 'reading_plan_providers.dart';
@@ -60,7 +61,7 @@ class _PlanCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(plan.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+            Text(plan.name, style: AppTypography.weight(const TextStyle(fontSize: 18), FontWeight.w700)),
             const SizedBox(height: 6),
             Text(plan.description, style: TextStyle(color: scheme.onSurfaceVariant, height: 1.4)),
             const SizedBox(height: 14),
@@ -77,7 +78,7 @@ class _PlanCard extends ConsumerWidget {
                 children: [
                   Icon(Icons.check_circle_rounded, color: scheme.primary, size: 20),
                   const SizedBox(width: 8),
-                  Text(l10n.planComplete, style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w600)),
+                  Text(l10n.planComplete, style: AppTypography.weight(TextStyle(color: scheme.primary), FontWeight.w600)),
                 ],
               )
             else ...[

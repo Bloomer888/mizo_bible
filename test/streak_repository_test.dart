@@ -106,7 +106,7 @@ void main() {
     DateTime currentWeekStart() {
       final now = DateTime.now();
       final today = DateTime(now.year, now.month, now.day);
-      return today.subtract(Duration(days: today.weekday - 1));
+      return today.subtract(Duration(days: today.weekday % 7));
     }
 
     test('no check-ins at all is an empty set', () async {

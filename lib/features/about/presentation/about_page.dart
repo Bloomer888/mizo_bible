@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/l10n_extension.dart';
+import '../../../core/theme/app_typography.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -17,11 +18,11 @@ class AboutPage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 28, 16, 12),
             child: Column(
               children: [
-                Text(l10n.appTitle, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700)),
+                Text(l10n.appTitle, style: AppTypography.weight(const TextStyle(fontSize: 22), FontWeight.w700)),
                 const SizedBox(height: 6),
                 Text(
                   'Dr. P.C. Biaksiama',
-                  style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.w600),
+                  style: AppTypography.weight(TextStyle(color: Theme.of(context).colorScheme.primary), FontWeight.w600),
                 ),
                 const SizedBox(height: 4),
                 // Keep in sync with pubspec.yaml's version -- no

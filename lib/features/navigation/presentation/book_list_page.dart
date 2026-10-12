@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/db/bible_database.dart';
 import '../../../core/l10n_extension.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../reader/presentation/reader_page.dart';
 import '../data/book_repository.dart';
 import 'book_language_settings.dart';
@@ -63,11 +64,9 @@ class _TestamentHeader extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
       child: Text(
         title.toUpperCase(),
-        style: TextStyle(
-          color: scheme.primary,
-          fontWeight: FontWeight.w700,
-          fontSize: 13,
-          letterSpacing: 0.8,
+        style: AppTypography.weight(
+          TextStyle(color: scheme.primary, fontSize: 13, letterSpacing: 0.8),
+          FontWeight.w700,
         ),
       ),
     );
@@ -83,7 +82,7 @@ class _BookTile extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Card(
       child: ListTile(
-        title: Text(book.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(book.name, style: AppTypography.weight(const TextStyle(), FontWeight.w600)),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
@@ -92,7 +91,7 @@ class _BookTile extends StatelessWidget {
           ),
           child: Text(
             '${book.chapterCount}',
-            style: TextStyle(color: scheme.onSecondaryContainer, fontWeight: FontWeight.w600, fontSize: 13),
+            style: AppTypography.weight(TextStyle(color: scheme.onSecondaryContainer, fontSize: 13), FontWeight.w600),
           ),
         ),
         onTap: () {

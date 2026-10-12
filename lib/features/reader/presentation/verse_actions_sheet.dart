@@ -5,6 +5,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../../core/db/user_database.dart';
 import '../../../core/l10n_extension.dart';
+import '../../../core/theme/app_typography.dart';
 import '../data/verse_annotations_repository.dart';
 
 /// Keyed by (bookId, chapter, verse) -- autoDispose since there's no
@@ -103,7 +104,10 @@ class VerseActionsSheet extends ConsumerWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 '$bookName $chapter:$verse',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      fontVariations: AppTypography.variations(FontWeight.w700),
+                    ),
               ),
             ),
           ),

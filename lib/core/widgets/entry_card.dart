@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_typography.dart';
+
 /// A verse-reference row used by the library list pages (bookmarks/
 /// highlights/notes/history) and search results -- a Card instead of a
 /// bare ListTile so each entry reads as a distinct, tappable item
@@ -35,7 +37,7 @@ class EntryCard extends StatelessWidget {
           backgroundColor: solid ? iconColor : scheme.primary.withValues(alpha: 0.14),
           child: Icon(icon, color: solid ? Colors.black54 : scheme.primary, size: 20),
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        title: Text(title, style: AppTypography.weight(const TextStyle(), FontWeight.w600)),
         subtitle: subtitle == null ? null : Text(subtitle!, maxLines: 2, overflow: TextOverflow.ellipsis),
         trailing: Icon(Icons.chevron_right_rounded, color: scheme.outlineVariant),
         onTap: onTap,

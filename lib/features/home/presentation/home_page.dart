@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/db/bible_database.dart';
 import '../../../core/db/user_database.dart';
 import '../../../core/l10n_extension.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../library/presentation/library_providers.dart';
 import '../../premium/data/premium_providers.dart';
 import '../../reader/data/reading_progress_repository.dart';
@@ -234,7 +235,7 @@ class _HomeCard extends StatelessWidget {
             children: [
               Text(label, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)),
               const SizedBox(height: 4),
-              Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+              Text(value, style: AppTypography.weight(const TextStyle(fontSize: 20), FontWeight.w700)),
             ],
           ),
           trailing: Row(
@@ -298,11 +299,9 @@ class _VerseOfTheDayCard extends StatelessWidget {
                     const SizedBox(width: 7),
                     Text(
                       l10n.verseOfTheDay.toUpperCase(),
-                      style: TextStyle(
-                        color: scheme.primary,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13,
-                        letterSpacing: 0.7,
+                      style: AppTypography.weight(
+                        TextStyle(color: scheme.primary, fontSize: 13, letterSpacing: 0.7),
+                        FontWeight.w700,
                       ),
                     ),
                   ],
@@ -310,7 +309,7 @@ class _VerseOfTheDayCard extends StatelessWidget {
                 const SizedBox(height: 10),
                 Text(
                   '${verse.bookName} ${verse.chapter}:${verse.verse}',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: scheme.primary),
+                  style: AppTypography.weight(TextStyle(fontSize: 16, color: scheme.primary), FontWeight.w700),
                 ),
                 SizedBox(height: screenHeight * 0.10),
                 Text(verse.englishText, style: const TextStyle(fontSize: 17, height: 1.5)),
@@ -364,17 +363,15 @@ class _ReadingPlanCard extends ConsumerWidget {
                   const SizedBox(width: 6),
                   Text(
                     l10n.readingPlan.toUpperCase(),
-                    style: TextStyle(
-                      color: scheme.primary,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 12,
-                      letterSpacing: 0.6,
+                    style: AppTypography.weight(
+                      TextStyle(color: scheme.primary, fontSize: 12, letterSpacing: 0.6),
+                      FontWeight.w700,
                     ),
                   ),
                 ],
               ),
               const SizedBox(height: 10),
-              Text(state.plan.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              Text(state.plan.name, style: AppTypography.weight(const TextStyle(fontSize: 18), FontWeight.w700)),
               const SizedBox(height: 2),
               Text(
                 l10n.dayOfTotal(state.currentDay!, state.plan.totalDays),
@@ -383,7 +380,7 @@ class _ReadingPlanCard extends ConsumerWidget {
               const SizedBox(height: 10),
               Text(
                 namesAsync.value == null ? '' : formatPlanDayReading(today, namesAsync.value!),
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                style: AppTypography.weight(const TextStyle(fontSize: 16), FontWeight.w600),
               ),
               const SizedBox(height: 14),
               Align(
@@ -409,7 +406,7 @@ class _ReadingPlanCard extends ConsumerWidget {
 }
 
 /// The streak card: a flickering flame, a count-up streak number, a
-/// personal-best stat, and a Monday-start week strip -- now a manual
+/// personal-best stat, and a Sunday-start week strip -- now a manual
 /// daily check-in (tap today's circle to mark it) instead of a passive
 /// log of any chapter visited, per the user's explicit request
 /// (2026-10-13). Two things changed together on purpose, not just a
@@ -447,7 +444,7 @@ class _StreakCard extends ConsumerWidget {
           children: [
             Row(
               children: [
-                _FlickeringFlame(color: scheme.primary),
+                _FlickeringFlame(color: scheme.primary, streak: streak),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
@@ -455,11 +452,9 @@ class _StreakCard extends ConsumerWidget {
                     children: [
                       Text(
                         l10n.readingStreak.toUpperCase(),
-                        style: TextStyle(
-                          color: scheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                          letterSpacing: 0.6,
+                        style: AppTypography.weight(
+                          TextStyle(color: scheme.onSurfaceVariant, fontSize: 12, letterSpacing: 0.6),
+                          FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -490,7 +485,7 @@ class _StreakCard extends ConsumerWidget {
               Text(
                 streak > 0 ? l10n.continueStreakPrompt : l10n.startStreakPrompt,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w600, fontSize: 13),
+                style: AppTypography.weight(TextStyle(color: scheme.primary, fontSize: 13), FontWeight.w600),
               ),
             ],
           ],
@@ -525,7 +520,10 @@ class _CountUpStreakText extends StatelessWidget {
       builder: (context, value, child) {
         return Text(
           l10n.dayStreak(value),
-          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.3, height: 1.1),
+          style: AppTypography.weight(
+            const TextStyle(fontSize: 26, letterSpacing: -0.3, height: 1.1),
+            FontWeight.w800,
+          ),
         );
       },
     );
@@ -536,9 +534,17 @@ class _CountUpStreakText extends StatelessWidget {
 /// back down -- not a literal flicker (that reads as jittery/broken at
 /// icon size), just enough motion that the streak card doesn't look
 /// static next to the newly-animated number beside it.
+///
+/// Five days running earns a visibly hotter flame -- a warmer color, a
+/// bigger breathe, and a second, larger, fainter flame layered behind
+/// the main one -- per the user's explicit ask ("more fire on that or
+/// something") for the streak to feel more alive at a real milestone.
+/// Deliberately just the one threshold rather than an ever-escalating
+/// ladder of them: the same message said this shouldn't be overkill.
 class _FlickeringFlame extends StatefulWidget {
   final Color color;
-  const _FlickeringFlame({required this.color});
+  final int streak;
+  const _FlickeringFlame({required this.color, required this.streak});
 
   @override
   State<_FlickeringFlame> createState() => _FlickeringFlameState();
@@ -546,6 +552,8 @@ class _FlickeringFlame extends StatefulWidget {
 
 class _FlickeringFlameState extends State<_FlickeringFlame> with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
+
+  static const _milestoneStreak = 5;
 
   @override
   void initState() {
@@ -561,34 +569,53 @@ class _FlickeringFlameState extends State<_FlickeringFlame> with SingleTickerPro
 
   @override
   Widget build(BuildContext context) {
+    final hot = widget.streak >= _milestoneStreak;
+    final flameColor = hot ? Color.lerp(widget.color, Colors.deepOrange, 0.55)! : widget.color;
+
     return AnimatedBuilder(
       animation: _controller,
-      // child is built once, not on every tick -- only the Transform/
-      // Opacity wrapper around it needs to rebuild each frame.
-      child: CircleAvatar(
-        radius: 26,
-        backgroundColor: widget.color.withValues(alpha: 0.14),
-        child: Icon(Icons.local_fire_department_rounded, color: widget.color),
-      ),
       builder: (context, child) {
         final t = Curves.easeInOut.transform(_controller.value);
-        return Opacity(
-          opacity: 0.88 + (t * 0.12),
-          child: Transform.scale(scale: 1.0 + (t * 0.08), child: child),
+        return Stack(
+          alignment: Alignment.center,
+          children: [
+            if (hot)
+              Opacity(
+                opacity: 0.3 + t * 0.25,
+                child: Transform.scale(
+                  scale: 1.3 + t * 0.2,
+                  child: Icon(Icons.local_fire_department_rounded, size: 34, color: flameColor),
+                ),
+              ),
+            Opacity(
+              opacity: 0.88 + (t * 0.12),
+              child: Transform.scale(
+                scale: 1.0 + (t * (hot ? 0.14 : 0.08)),
+                child: CircleAvatar(
+                  radius: hot ? 28 : 26,
+                  backgroundColor: flameColor.withValues(alpha: 0.14),
+                  child: Icon(Icons.local_fire_department_rounded, color: flameColor),
+                ),
+              ),
+            ),
+          ],
         );
       },
     );
   }
 }
 
-/// Monday-start to match the ISO week convention, same as the
-/// production streak math in streak_repository.dart. Days after today
-/// render as a faint, unfilled placeholder -- not an empty/"missed"
-/// circle -- so the strip doesn't visually accuse the user of having
-/// skipped a day that hasn't happened yet. Today's slot is the one
-/// genuinely interactive element: _TodayCheckInCircle owns its own tap
-/// and animation, separate from the plain _DayCircle every other day
-/// uses, since only today can ever actually be tapped.
+/// Sunday-start, per the user's explicit request -- a deliberate
+/// deviation from the ISO week convention (and from the Monday-start
+/// this card used before), matched by loadStreakDaysThisWeek in
+/// streak_repository.dart so the two stay in agreement about which 7
+/// days are "this week." Days after today render as a faint, unfilled
+/// placeholder -- not an empty/"missed" circle -- so the strip doesn't
+/// visually accuse the user of having skipped a day that hasn't
+/// happened yet. Today's slot is the one genuinely interactive element:
+/// _TodayCheckInCircle owns its own tap and animation, separate from
+/// the plain _DayCircle every other day uses, since only today can
+/// ever actually be tapped.
 class _WeekStrip extends StatelessWidget {
   final Set<DateTime> checkedDays;
   final bool checkedInToday;
@@ -596,14 +623,14 @@ class _WeekStrip extends StatelessWidget {
 
   const _WeekStrip({required this.checkedDays, required this.checkedInToday, required this.onCheckIn});
 
-  static const _dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  static const _dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final weekStart = today.subtract(Duration(days: today.weekday - 1));
+    final weekStart = today.subtract(Duration(days: today.weekday % 7));
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -616,10 +643,9 @@ class _WeekStrip extends StatelessWidget {
           children: [
             Text(
               _dayLabels[i],
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
-                color: isToday ? scheme.primary : scheme.onSurfaceVariant,
+              style: AppTypography.weight(
+                TextStyle(fontSize: 11, color: isToday ? scheme.primary : scheme.onSurfaceVariant),
+                isToday ? FontWeight.w700 : FontWeight.w500,
               ),
             ),
             const SizedBox(height: 6),

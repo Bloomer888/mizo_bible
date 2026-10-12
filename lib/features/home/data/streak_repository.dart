@@ -77,14 +77,16 @@ Future<int> loadBestStreak(UserDatabase db) async {
   return best;
 }
 
-/// Which days in the current Monday-start calendar week (through
-/// today) were checked in -- powers the streak card's week strip. Never
+/// Which days in the current Sunday-start calendar week (through
+/// today) were checked in -- powers the streak card's week strip, which
+/// renders Sunday first per the user's explicit request (so this
+/// counts weekday 7 as day 0 of the week, not weekday 1). Never
 /// contains a day after today, same reasoning as the old
 /// loadReadingDaysThisWeek this replaces: a day that hasn't happened
 /// yet can't have been checked in.
 Future<Set<DateTime>> loadStreakDaysThisWeek(UserDatabase db) async {
   final days = await _allCheckinDays(db);
   final today = _today();
-  final weekStart = today.subtract(Duration(days: today.weekday - 1));
+  final weekStart = today.subtract(Duration(days: today.weekday % 7));
   return days.where((d) => !d.isBefore(weekStart) && !d.isAfter(today)).toSet();
 }

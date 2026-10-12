@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/l10n_extension.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../about/presentation/about_page.dart';
 import '../../auth/presentation/account_page.dart';
 import '../../library/presentation/bookmarks_page.dart';
@@ -77,7 +78,11 @@ class MorePage extends ConsumerWidget {
             ),
           ),
           SwitchListTile(
-            secondary: const Icon(Icons.translate_rounded),
+            // Not Icons.translate -- that icon depicts two different
+            // scripts, which misrepresents this toggle: Mizo and English
+            // are both Latin-alphabet here, this just picks which
+            // language's book names to show, not a script change.
+            secondary: const Icon(Icons.abc_rounded),
             title: Text(l10n.bookNamesInEnglish),
             value: bookNameLanguage == BookNameLanguage.english,
             onChanged: (value) => ref.read(bookNameLanguageProvider.notifier).setLanguage(
@@ -111,11 +116,9 @@ class _SectionLabel extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 4),
       child: Text(
         label.toUpperCase(),
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.primary,
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
-          letterSpacing: 0.8,
+        style: AppTypography.weight(
+          TextStyle(color: Theme.of(context).colorScheme.primary, fontSize: 12, letterSpacing: 0.8),
+          FontWeight.w700,
         ),
       ),
     );
