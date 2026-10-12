@@ -66,7 +66,9 @@ class _SignInPrompt extends StatelessWidget {
             Text(l10n.signInToSubscribe, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 24),
             FilledButton(
-              onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const AccountPage())),
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const AccountPage(popOnSuccess: true)),
+              ),
               child: Text(l10n.signIn),
             ),
           ],
@@ -169,19 +171,19 @@ int? _savingsPercent({required double basePrice, required int baseMultiplier, re
   return percent > 0 ? percent : null;
 }
 
-final _mockMonthlyPrice = 29.0;
-final _mockAnnualPrice = 290.0;
+final _mockMonthlyPrice = 39.0;
+final _mockAnnualPrice = 409.0;
 final _mockPackages = [
-  _PackageDisplay(id: 'mock_monthly', title: 'Monthly', priceString: '₹29/month', price: _mockMonthlyPrice, freeTrialDays: 7),
+  _PackageDisplay(id: 'mock_monthly', title: 'Monthly', priceString: '₹39/month', price: _mockMonthlyPrice, freeTrialDays: 7),
   _PackageDisplay(
     id: 'mock_annual',
     title: 'Annual',
-    priceString: '₹290/year',
+    priceString: '₹409/year',
     price: _mockAnnualPrice,
     isRecommended: true,
     savingsPercent: _savingsPercent(basePrice: _mockMonthlyPrice, baseMultiplier: 12, comparedPrice: _mockAnnualPrice),
   ),
-  const _PackageDisplay(id: 'mock_lifetime', title: 'Lifetime', priceString: '₹699 one-time', price: 699),
+  const _PackageDisplay(id: 'mock_lifetime', title: 'Lifetime', priceString: '₹2000 one-time', price: 2000),
 ];
 
 class _OfferingsView extends ConsumerStatefulWidget {
@@ -202,7 +204,14 @@ class _OfferingsViewState extends ConsumerState<_OfferingsView> {
   Offering? _offering;
   bool _isLoading = true;
   String? _loadError;
-  String? _purchasingPackageId;
+  // Which card is highlighted, chosen by tapping -- separate from
+  // actually buying it, which only happens when Continue is pressed.
+  // Pre-selected to the recommended tier (or whatever's first if there
+  // isn't one) so there's always something to Continue with straight
+  // away, same reasoning as every paywall that defaults to its own
+  // suggested plan rather than leaving the choice fully blank.
+  String? _selectedPackageId;
+  bool _isPurchasing = false;
   bool _isRestoring = false;
   String? _actionMessage;
 
@@ -211,9 +220,18 @@ class _OfferingsViewState extends ConsumerState<_OfferingsView> {
     super.initState();
     if (_useMockOfferings) {
       _isLoading = false;
+      _selectedPackageId = _defaultSelectionId(_mockPackages);
     } else {
       _loadOfferings();
     }
+  }
+
+  String? _defaultSelectionId(List<_PackageDisplay> displays) {
+    if (displays.isEmpty) return null;
+    for (final display in displays) {
+      if (display.isRecommended) return display.id;
+    }
+    return displays.first.id;
   }
 
   Future<void> _loadOfferings() async {
@@ -223,7 +241,12 @@ class _OfferingsViewState extends ConsumerState<_OfferingsView> {
     });
     try {
       final offerings = await Purchases.getOfferings();
-      if (mounted) setState(() => _offering = offerings.current);
+      if (mounted) {
+        setState(() {
+          _offering = offerings.current;
+          _selectedPackageId = _defaultSelectionId(_displaysFor(offerings.current));
+        });
+      }
     } catch (error) {
       if (mounted) setState(() => _loadError = error.toString());
     } finally {
@@ -234,7 +257,7 @@ class _OfferingsViewState extends ConsumerState<_OfferingsView> {
   Future<void> _purchase(_PackageDisplay display) async {
     final l10n = context.l10n;
     setState(() {
-      _purchasingPackageId = display.id;
+      _isPurchasing = true;
       _actionMessage = null;
     });
 
@@ -244,7 +267,7 @@ class _OfferingsViewState extends ConsumerState<_OfferingsView> {
       await Future<void>.delayed(const Duration(milliseconds: 600));
       if (mounted) {
         ref.read(debugMockPremiumProvider.notifier).set(true);
-        setState(() => _purchasingPackageId = null);
+        setState(() => _isPurchasing = false);
       }
       return;
     }
@@ -256,7 +279,7 @@ class _OfferingsViewState extends ConsumerState<_OfferingsView> {
       final cancelled = PurchasesErrorHelper.getErrorCode(error) == PurchasesErrorCode.purchaseCancelledError;
       if (mounted && !cancelled) setState(() => _actionMessage = l10n.purchaseError);
     } finally {
-      if (mounted) setState(() => _purchasingPackageId = null);
+      if (mounted) setState(() => _isPurchasing = false);
     }
   }
 
@@ -275,6 +298,29 @@ class _OfferingsViewState extends ConsumerState<_OfferingsView> {
     } finally {
       if (mounted) setState(() => _isRestoring = false);
     }
+  }
+
+  /// The same real-Package-to-_PackageDisplay mapping used by both
+  /// build() (to render) and _loadOfferings (to pick the default
+  /// selection as soon as offerings land, not a frame later) -- kept in
+  /// one place so those two can't quietly drift apart.
+  List<_PackageDisplay> _displaysFor(Offering? offering) {
+    if (offering == null) return const [];
+    final monthlyPackage = offering.monthly;
+    final annualPackage = offering.annual;
+    final annualSavings = (monthlyPackage != null && annualPackage != null)
+        ? _savingsPercent(
+            basePrice: monthlyPackage.storeProduct.price,
+            baseMultiplier: 12,
+            comparedPrice: annualPackage.storeProduct.price,
+          )
+        : null;
+    return [
+      if (monthlyPackage != null) _PackageDisplay.fromPackage(monthlyPackage),
+      if (annualPackage != null)
+        _PackageDisplay.fromPackage(annualPackage, isRecommended: true, savingsPercent: annualSavings),
+      if (offering.lifetime case final lifetimePackage?) _PackageDisplay.fromPackage(lifetimePackage),
+    ];
   }
 
   @override
@@ -303,88 +349,103 @@ class _OfferingsViewState extends ConsumerState<_OfferingsView> {
       );
     }
 
-    final offering = _offering!;
-    final monthlyPackage = offering.monthly;
-    final annualPackage = offering.annual;
-    final annualSavings = (monthlyPackage != null && annualPackage != null)
-        ? _savingsPercent(
-            basePrice: monthlyPackage.storeProduct.price,
-            baseMultiplier: 12,
-            comparedPrice: annualPackage.storeProduct.price,
-          )
-        : null;
-
-    final displays = <_PackageDisplay>[
-      if (monthlyPackage != null) _PackageDisplay.fromPackage(monthlyPackage),
-      if (annualPackage != null)
-        _PackageDisplay.fromPackage(annualPackage, isRecommended: true, savingsPercent: annualSavings),
-      if (offering.lifetime case final lifetimePackage?) _PackageDisplay.fromPackage(lifetimePackage),
-    ];
-    return _buildList(context, displays, showTestBanner: false);
+    return _buildList(context, _displaysFor(_offering), showTestBanner: false);
   }
 
   Widget _buildList(BuildContext context, List<_PackageDisplay> displays, {required bool showTestBanner}) {
     final l10n = context.l10n;
-    return ListView(
-      padding: const EdgeInsets.all(16),
+    _PackageDisplay? selected;
+    for (final display in displays) {
+      if (display.id == _selectedPackageId) {
+        selected = display;
+        break;
+      }
+    }
+
+    return Column(
       children: [
-        if (showTestBanner) ...[
-          const _TestModeBanner(
-            label: 'No RevenueCat project yet -- these are fake tiers for '
-                'trying out the paywall. "Purchasing" one just flips a local '
-                'flag, no real payment happens.',
-          ),
-          const SizedBox(height: 16),
-        ],
-        Center(
-          child: Column(
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
             children: [
-              const _HeroIcon(),
+              if (showTestBanner) ...[
+                const _TestModeBanner(
+                  label: 'No RevenueCat project yet -- these are fake tiers for '
+                      'trying out the paywall. "Purchasing" one just flips a local '
+                      'flag, no real payment happens.',
+                ),
+                const SizedBox(height: 16),
+              ],
+              Center(
+                child: Column(
+                  children: [
+                    const _HeroIcon(),
+                    const SizedBox(height: 16),
+                    Text(
+                      l10n.premiumHeadline,
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              _FeatureRow(
+                icon: Icons.sync_rounded,
+                title: l10n.premiumFeatureSyncTitle,
+                description: l10n.premiumTagline,
+              ),
+              _FeatureRow(
+                icon: Icons.calendar_month_rounded,
+                title: l10n.readingPlans,
+                description: l10n.premiumFeatureReadingPlansDescription,
+              ),
+              _FeatureRow(
+                icon: Icons.notifications_active_rounded,
+                title: l10n.premiumFeatureNotificationsTitle,
+                description: l10n.premiumFeatureNotificationsDescription,
+              ),
+              const SizedBox(height: 12),
+              for (final display in displays) ...[
+                _PackageCard(
+                  display: display,
+                  isSelected: display.id == _selectedPackageId,
+                  onTap: () => setState(() => _selectedPackageId = display.id),
+                ),
+                const SizedBox(height: 12),
+              ],
+              if (_actionMessage != null) ...[
+                const SizedBox(height: 8),
+                Text(_actionMessage!, textAlign: TextAlign.center),
+              ],
               const SizedBox(height: 16),
-              Text(
-                l10n.premiumHeadline,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+              Center(
+                child: TextButton(
+                  onPressed: _isRestoring ? null : _restore,
+                  child: _isRestoring
+                      ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                      : Text(l10n.restorePurchases),
+                ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 24),
-        _FeatureRow(
-          icon: Icons.sync_rounded,
-          title: l10n.premiumFeatureSyncTitle,
-          description: l10n.premiumTagline,
-        ),
-        _FeatureRow(
-          icon: Icons.calendar_month_rounded,
-          title: l10n.readingPlans,
-          description: l10n.premiumFeatureReadingPlansDescription,
-        ),
-        _FeatureRow(
-          icon: Icons.notifications_active_rounded,
-          title: l10n.premiumFeatureNotificationsTitle,
-          description: l10n.premiumFeatureNotificationsDescription,
-        ),
-        const SizedBox(height: 12),
-        for (final display in displays) ...[
-          _PackageCard(
-            display: display,
-            isPurchasing: _purchasingPackageId == display.id,
-            onTap: _purchasingPackageId != null ? null : () => _purchase(display),
-          ),
-          const SizedBox(height: 12),
-        ],
-        if (_actionMessage != null) ...[
-          const SizedBox(height: 8),
-          Text(_actionMessage!, textAlign: TextAlign.center),
-        ],
-        const SizedBox(height: 16),
-        Center(
-          child: TextButton(
-            onPressed: _isRestoring ? null : _restore,
-            child: _isRestoring
-                ? const SizedBox(height: 16, width: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                : Text(l10n.restorePurchases),
+        // Pinned below the scrollable content, not just the last list
+        // item -- the one action this whole screen exists to lead to
+        // should never be something you have to scroll to find.
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: (_isPurchasing || selected == null) ? null : () => _purchase(selected!),
+                child: _isPurchasing
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                    : Text(selected != null ? l10n.continueWithPrice(selected.priceString) : l10n.continueButton),
+              ),
+            ),
           ),
         ),
       ],
@@ -486,10 +547,15 @@ class _Badge extends StatelessWidget {
 
 class _PackageCard extends StatelessWidget {
   final _PackageDisplay display;
-  final bool isPurchasing;
-  final VoidCallback? onTap;
+  // Whether this is the card currently highlighted for purchase --
+  // distinct from display.isRecommended, which is a static fact about
+  // the tier (drives the badges below) and doesn't move when the user
+  // taps a different card. isSelected is what drives the border/radio,
+  // and starts on the recommended tier but can land on any of them.
+  final bool isSelected;
+  final VoidCallback onTap;
 
-  const _PackageCard({required this.display, required this.isPurchasing, required this.onTap});
+  const _PackageCard({required this.display, required this.isSelected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -499,48 +565,54 @@ class _PackageCard extends StatelessWidget {
     final recommended = display.isRecommended;
     final savingsPercent = display.savingsPercent;
 
-    return Card(
-      margin: EdgeInsets.zero,
-      // A flat alphaBlend against the theme's own card color, not a
-      // runtime-transparent overlay -- predictable regardless of
-      // what's behind it, and subtle enough not to fight the app's
-      // generally muted palette.
-      color: recommended ? Color.alphaBlend(scheme.primary.withValues(alpha: 0.08), scheme.surfaceContainerLow) : null,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(color: recommended ? scheme.primary : Colors.transparent, width: 2),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (recommended || savingsPercent != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Row(
-                children: [
-                  if (recommended) _Badge(label: l10n.bestValue, color: scheme.primary, onColor: scheme.onPrimary),
-                  if (recommended && savingsPercent != null) const SizedBox(width: 8),
-                  if (savingsPercent != null)
-                    _Badge(
-                      label: l10n.saveBadge(savingsPercent),
-                      color: scheme.secondaryContainer,
-                      onColor: scheme.onSecondaryContainer,
-                    ),
-                ],
+    return AnimatedScale(
+      scale: isSelected ? 1.02 : 1.0,
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOut,
+      child: Card(
+        margin: EdgeInsets.zero,
+        // A flat alphaBlend against the theme's own card color, not a
+        // runtime-transparent overlay -- predictable regardless of
+        // what's behind it, and subtle enough not to fight the app's
+        // generally muted palette.
+        color: isSelected ? Color.alphaBlend(scheme.primary.withValues(alpha: 0.08), scheme.surfaceContainerLow) : null,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+          side: BorderSide(color: isSelected ? scheme.primary : Colors.transparent, width: 2),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (recommended || savingsPercent != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: Row(
+                  children: [
+                    if (recommended) _Badge(label: l10n.bestValue, color: scheme.primary, onColor: scheme.onPrimary),
+                    if (recommended && savingsPercent != null) const SizedBox(width: 8),
+                    if (savingsPercent != null)
+                      _Badge(
+                        label: l10n.saveBadge(savingsPercent),
+                        color: scheme.secondaryContainer,
+                        onColor: scheme.onSecondaryContainer,
+                      ),
+                  ],
+                ),
               ),
+            ListTile(
+              contentPadding: const EdgeInsets.all(16),
+              onTap: onTap,
+              leading: Icon(
+                isSelected ? Icons.radio_button_checked_rounded : Icons.radio_button_unchecked_rounded,
+                color: isSelected ? scheme.primary : scheme.outline,
+              ),
+              title: Text(display.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+              subtitle: freeTrialDays != null
+                  ? Text(l10n.freeTrialThen(freeTrialDays, display.priceString))
+                  : Text(display.priceString),
             ),
-          ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            onTap: onTap,
-            title: Text(display.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: freeTrialDays != null
-                ? Text(l10n.freeTrialThen(freeTrialDays, display.priceString))
-                : Text(display.priceString),
-            trailing: isPurchasing
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                : const Icon(Icons.chevron_right_rounded),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -580,6 +580,18 @@ abstract class AppLocalizations {
   /// **'Save {percent}%'**
   String saveBadge(int percent);
 
+  /// No description provided for @continueButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continueButton;
+
+  /// No description provided for @continueWithPrice.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue — {price}'**
+  String continueWithPrice(String price);
+
   /// No description provided for @premiumActive.
   ///
   /// In en, this message translates to:

@@ -104,6 +104,13 @@
       "percent": { "type": "int" }
     }
   },
+  "continueButton": "Continue",
+  "continueWithPrice": "Continue — {price}",
+  "@continueWithPrice": {
+    "placeholders": {
+      "price": { "type": "String" }
+    }
+  },
   "premiumActive": "You're a Premium member",
   "signInToSubscribe": "Sign in to subscribe to Premium",
   "syncRequiresPremium": "Cloud sync is a Premium feature",

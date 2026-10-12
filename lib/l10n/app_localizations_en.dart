@@ -264,6 +264,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get continueButton => 'Continue';
+
+  @override
+  String continueWithPrice(String price) {
+    return 'Continue — $price';
+  }
+
+  @override
   String get premiumActive => 'You\'re a Premium member';
 
   @override

@@ -11,7 +11,15 @@ import '../../sync/data/sync_repository.dart';
 import '../data/auth_repository.dart';
 
 class AccountPage extends ConsumerWidget {
-  const AccountPage({super.key});
+  // True from the paywall's sign-in prompt specifically: once sign-in
+  // succeeds, this page pops itself so the caller (PaywallPage, already
+  // watching currentUserProvider) is immediately visible showing the
+  // plans instead of leaving the user stranded here needing a manual
+  // back-tap. False (the default) for the standalone More > Account
+  // entry point, which should stay put after signing in -- that's
+  // where "signed in as ..." and the rest of the account view live.
+  final bool popOnSuccess;
+  const AccountPage({super.key, this.popOnSuccess = false});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -33,7 +41,7 @@ class AccountPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.account)),
-      body: user == null ? const _SignInForm() : _SignedInView(user: user),
+      body: user == null ? _SignInForm(popOnSuccess: popOnSuccess) : _SignedInView(user: user),
     );
   }
 }
@@ -162,7 +170,8 @@ class _SignedInViewState extends ConsumerState<_SignedInView> {
 }
 
 class _SignInForm extends ConsumerStatefulWidget {
-  const _SignInForm();
+  final bool popOnSuccess;
+  const _SignInForm({required this.popOnSuccess});
 
   @override
   ConsumerState<_SignInForm> createState() => _SignInFormState();
@@ -210,6 +219,8 @@ class _SignInFormState extends ConsumerState<_SignInForm> {
       // feedback they'd otherwise get that anything happened at all.
       if (_isSignUp && response.session == null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.confirmEmailSent)));
+      } else if (widget.popOnSuccess && response.session != null && mounted) {
+        Navigator.of(context).pop();
       }
     } on AuthException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
