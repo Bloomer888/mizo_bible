@@ -124,6 +124,9 @@ void main() {
       await db.into(db.settings).insert(
             SettingsCompanion.insert(id: 's1', key: 'k', value: 'v', userId: const Value('u1')),
           );
+      await db.into(db.readingPlanProgress).insert(
+            ReadingPlanProgressCompanion.insert(id: 'rpp1', planId: 'nt_90_days', userId: const Value('u1')),
+          );
 
       // The push half of this call hits Supabase.instance.client, which
       // was never initialized in a plain `flutter test` run -- that's
@@ -138,6 +141,7 @@ void main() {
       expect(await db.select(db.readingHistory).get(), isEmpty);
       expect(await db.select(db.readingProgress).get(), isEmpty);
       expect(await db.select(db.settings).get(), isEmpty);
+      expect(await db.select(db.readingPlanProgress).get(), isEmpty);
     });
 
     test('does not touch another user\'s rows', () async {
@@ -179,6 +183,50 @@ void main() {
       expect(rows, hasLength(1));
       expect(rows.single.id, 'remote-id');
       expect(rows.single.chapter, 10);
+    });
+  });
+
+  group('applyPulledReadingPlanProgress', () {
+    Map<String, dynamic> remotePlanProgress({
+      required String id,
+      required String userId,
+      String planId = 'nt_90_days',
+      String completedDaysCsv = '1,2,3',
+      String updatedAt = '2026-01-01T00:00:00.000Z',
+    }) =>
+        {
+          'id': id,
+          'user_id': userId,
+          'plan_id': planId,
+          'started_at': updatedAt,
+          'completed_days_csv': completedDaysCsv,
+          'created_at': updatedAt,
+          'updated_at': updatedAt,
+          'deleted': false,
+        };
+
+    test('converges on one row per plan, adopting the remote id', () async {
+      await db.into(db.readingPlanProgress).insert(
+            ReadingPlanProgressCompanion.insert(id: 'local-id', planId: 'nt_90_days', userId: const Value('u1')),
+          );
+
+      await applyPulledReadingPlanProgress(db, [
+        remotePlanProgress(id: 'remote-id', userId: 'u1', completedDaysCsv: '1,2,3,4'),
+      ]);
+
+      final rows = await db.select(db.readingPlanProgress).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.id, 'remote-id');
+      expect(rows.single.completedDaysCsv, '1,2,3,4');
+    });
+
+    test('inserts a remote row with no local match', () async {
+      await applyPulledReadingPlanProgress(db, [remotePlanProgress(id: 'remote-1', userId: 'u1')]);
+
+      final rows = await db.select(db.readingPlanProgress).get();
+      expect(rows, hasLength(1));
+      expect(rows.single.planId, 'nt_90_days');
+      expect(rows.single.completedDaysCsv, '1,2,3');
     });
   });
 }

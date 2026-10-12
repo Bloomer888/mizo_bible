@@ -107,5 +107,19 @@
       "days": { "type": "int" },
       "price": { "type": "String" }
     }
-  }
+  },
+
+  "readingPlans": "Reading Plans",
+  "readingPlan": "Reading Plan",
+  "startPlan": "Start Plan",
+  "continuePlan": "Continue",
+  "dayOfTotal": "Day {day} of {total}",
+  "@dayOfTotal": {
+    "placeholders": {
+      "day": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "markAsRead": "Mark as read",
+  "planComplete": "Plan complete!"
 }

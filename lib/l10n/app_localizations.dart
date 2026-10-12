@@ -597,6 +597,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{days}-day free trial, then {price}'**
   String freeTrialThen(int days, String price);
+
+  /// No description provided for @readingPlans.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading Plans'**
+  String get readingPlans;
+
+  /// No description provided for @readingPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading Plan'**
+  String get readingPlan;
+
+  /// No description provided for @startPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Start Plan'**
+  String get startPlan;
+
+  /// No description provided for @continuePlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get continuePlan;
+
+  /// No description provided for @dayOfTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Day {day} of {total}'**
+  String dayOfTotal(int day, int total);
+
+  /// No description provided for @markAsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as read'**
+  String get markAsRead;
+
+  /// No description provided for @planComplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan complete!'**
+  String get planComplete;
 }
 
 class _AppLocalizationsDelegate

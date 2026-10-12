@@ -6,9 +6,13 @@ import '../../../core/db/user_database.dart';
 import '../../../core/l10n_extension.dart';
 import '../../library/presentation/history_page.dart';
 import '../../library/presentation/library_providers.dart';
+import '../../premium/data/premium_providers.dart';
 import '../../reader/data/reading_history_repository.dart';
 import '../../reader/data/reading_progress_repository.dart';
 import '../../reader/presentation/reader_page.dart';
+import '../../reading_plans/data/reading_plan.dart';
+import '../../reading_plans/data/reading_plan_progress_repository.dart';
+import '../../reading_plans/presentation/reading_plan_providers.dart';
 import '../data/verse_of_the_day.dart';
 
 final _mostRecentProgressProvider = FutureProvider.autoDispose<BookReadingPosition?>((ref) {
@@ -47,6 +51,8 @@ class HomePage extends ConsumerWidget {
     final verseAsync = ref.watch(_verseOfTheDayProvider);
     final streakAsync = ref.watch(_readingStreakProvider);
     final readingDaysAsync = ref.watch(_readingDaysThisWeekProvider);
+    final isPremium = ref.watch(isPremiumProvider);
+    final planAsync = ref.watch(activePlanProgressProvider);
 
     return Scaffold(
       appBar: AppBar(title: Text(l10n.appTitle)),
@@ -75,6 +81,15 @@ class HomePage extends ConsumerWidget {
             if (verseAsync case AsyncData(value: final verse?)) ...[
               const SizedBox(height: 12),
               _VerseOfTheDayCard(verse: verse),
+            ],
+            // Premium-gated and only once a plan is active and not yet
+            // finished -- never shown to free users regardless of what
+            // might be sitting in their local progress table (e.g. a
+            // lapsed subscriber), and stops appearing once the plan is
+            // done rather than lingering with nothing left to do.
+            if (planAsync case AsyncData(value: final planState?) when isPremium && !planState.isComplete) ...[
+              const SizedBox(height: 12),
+              _ReadingPlanCard(state: planState),
             ],
             if (streakAsync case AsyncData(value: final streak) when streak > 0) ...[
               const SizedBox(height: 12),
@@ -260,6 +275,86 @@ class _VerseOfTheDayCard extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Today's reading-plan assignment, a progress line, and a "mark as
+/// read" button -- a second, separate tap target nested inside the
+/// card's own _PressableScale. Material buttons claim their own taps
+/// before they'd bubble up to an ancestor GestureDetector, so the two
+/// coexist correctly: tapping the button marks the day done without
+/// triggering the card's own navigate-to-reader tap underneath it.
+class _ReadingPlanCard extends ConsumerWidget {
+  final ReadingPlanState state;
+  const _ReadingPlanCard({required this.state});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = context.l10n;
+    final scheme = Theme.of(context).colorScheme;
+    final namesAsync = ref.watch(bookNamesMapProvider);
+    final today = state.plan.days[state.currentDay! - 1];
+    final firstReading = today.first;
+
+    return _PressableScale(
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ReaderPage(bookId: firstReading.$1, targetChapter: firstReading.$2),
+        ),
+      ),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.calendar_month_rounded, size: 16, color: scheme.primary),
+                  const SizedBox(width: 6),
+                  Text(
+                    l10n.readingPlan.toUpperCase(),
+                    style: TextStyle(
+                      color: scheme.primary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      letterSpacing: 0.6,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Text(state.plan.name, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 2),
+              Text(
+                l10n.dayOfTotal(state.currentDay!, state.plan.totalDays),
+                style: TextStyle(color: scheme.onSurfaceVariant),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                namesAsync.value == null ? '' : formatPlanDayReading(today, namesAsync.value!),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 14),
+              Align(
+                alignment: Alignment.centerRight,
+                child: FilledButton.tonal(
+                  onPressed: () async {
+                    await markReadingPlanDayComplete(
+                      ref.read(userDatabaseProvider),
+                      planId: state.planId,
+                      day: state.currentDay!,
+                    );
+                    ref.invalidate(activePlanProgressProvider);
+                  },
+                  child: Text(l10n.markAsRead),
+                ),
+              ),
+            ],
           ),
         ),
       ),

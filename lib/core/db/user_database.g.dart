@@ -3301,6 +3301,565 @@ class SettingsCompanion extends UpdateCompanion<Setting> {
   }
 }
 
+class $ReadingPlanProgressTable extends ReadingPlanProgress
+    with TableInfo<$ReadingPlanProgressTable, ReadingPlanProgressData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ReadingPlanProgressTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _deletedMeta = const VerificationMeta(
+    'deleted',
+  );
+  @override
+  late final GeneratedColumn<bool> deleted = GeneratedColumn<bool>(
+    'deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _dirtyMeta = const VerificationMeta('dirty');
+  @override
+  late final GeneratedColumn<bool> dirty = GeneratedColumn<bool>(
+    'dirty',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("dirty" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _planIdMeta = const VerificationMeta('planId');
+  @override
+  late final GeneratedColumn<String> planId = GeneratedColumn<String>(
+    'plan_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _startedAtMeta = const VerificationMeta(
+    'startedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> startedAt = GeneratedColumn<DateTime>(
+    'started_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _completedDaysCsvMeta = const VerificationMeta(
+    'completedDaysCsv',
+  );
+  @override
+  late final GeneratedColumn<String> completedDaysCsv = GeneratedColumn<String>(
+    'completed_days_csv',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    createdAt,
+    updatedAt,
+    deleted,
+    dirty,
+    planId,
+    startedAt,
+    completedDaysCsv,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'reading_plan_progress';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ReadingPlanProgressData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted')) {
+      context.handle(
+        _deletedMeta,
+        deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta),
+      );
+    }
+    if (data.containsKey('dirty')) {
+      context.handle(
+        _dirtyMeta,
+        dirty.isAcceptableOrUnknown(data['dirty']!, _dirtyMeta),
+      );
+    }
+    if (data.containsKey('plan_id')) {
+      context.handle(
+        _planIdMeta,
+        planId.isAcceptableOrUnknown(data['plan_id']!, _planIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_planIdMeta);
+    }
+    if (data.containsKey('started_at')) {
+      context.handle(
+        _startedAtMeta,
+        startedAt.isAcceptableOrUnknown(data['started_at']!, _startedAtMeta),
+      );
+    }
+    if (data.containsKey('completed_days_csv')) {
+      context.handle(
+        _completedDaysCsvMeta,
+        completedDaysCsv.isAcceptableOrUnknown(
+          data['completed_days_csv']!,
+          _completedDaysCsvMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ReadingPlanProgressData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ReadingPlanProgressData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}deleted'],
+      )!,
+      dirty: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}dirty'],
+      )!,
+      planId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}plan_id'],
+      )!,
+      startedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}started_at'],
+      )!,
+      completedDaysCsv: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}completed_days_csv'],
+      )!,
+    );
+  }
+
+  @override
+  $ReadingPlanProgressTable createAlias(String alias) {
+    return $ReadingPlanProgressTable(attachedDatabase, alias);
+  }
+}
+
+class ReadingPlanProgressData extends DataClass
+    implements Insertable<ReadingPlanProgressData> {
+  final String id;
+  final String? userId;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool deleted;
+  final bool dirty;
+  final String planId;
+  final DateTime startedAt;
+  final String completedDaysCsv;
+  const ReadingPlanProgressData({
+    required this.id,
+    this.userId,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.deleted,
+    required this.dirty,
+    required this.planId,
+    required this.startedAt,
+    required this.completedDaysCsv,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['deleted'] = Variable<bool>(deleted);
+    map['dirty'] = Variable<bool>(dirty);
+    map['plan_id'] = Variable<String>(planId);
+    map['started_at'] = Variable<DateTime>(startedAt);
+    map['completed_days_csv'] = Variable<String>(completedDaysCsv);
+    return map;
+  }
+
+  ReadingPlanProgressCompanion toCompanion(bool nullToAbsent) {
+    return ReadingPlanProgressCompanion(
+      id: Value(id),
+      userId: userId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userId),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deleted: Value(deleted),
+      dirty: Value(dirty),
+      planId: Value(planId),
+      startedAt: Value(startedAt),
+      completedDaysCsv: Value(completedDaysCsv),
+    );
+  }
+
+  factory ReadingPlanProgressData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ReadingPlanProgressData(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String?>(json['userId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deleted: serializer.fromJson<bool>(json['deleted']),
+      dirty: serializer.fromJson<bool>(json['dirty']),
+      planId: serializer.fromJson<String>(json['planId']),
+      startedAt: serializer.fromJson<DateTime>(json['startedAt']),
+      completedDaysCsv: serializer.fromJson<String>(json['completedDaysCsv']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String?>(userId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deleted': serializer.toJson<bool>(deleted),
+      'dirty': serializer.toJson<bool>(dirty),
+      'planId': serializer.toJson<String>(planId),
+      'startedAt': serializer.toJson<DateTime>(startedAt),
+      'completedDaysCsv': serializer.toJson<String>(completedDaysCsv),
+    };
+  }
+
+  ReadingPlanProgressData copyWith({
+    String? id,
+    Value<String?> userId = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? deleted,
+    bool? dirty,
+    String? planId,
+    DateTime? startedAt,
+    String? completedDaysCsv,
+  }) => ReadingPlanProgressData(
+    id: id ?? this.id,
+    userId: userId.present ? userId.value : this.userId,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deleted: deleted ?? this.deleted,
+    dirty: dirty ?? this.dirty,
+    planId: planId ?? this.planId,
+    startedAt: startedAt ?? this.startedAt,
+    completedDaysCsv: completedDaysCsv ?? this.completedDaysCsv,
+  );
+  ReadingPlanProgressData copyWithCompanion(ReadingPlanProgressCompanion data) {
+    return ReadingPlanProgressData(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deleted: data.deleted.present ? data.deleted.value : this.deleted,
+      dirty: data.dirty.present ? data.dirty.value : this.dirty,
+      planId: data.planId.present ? data.planId.value : this.planId,
+      startedAt: data.startedAt.present ? data.startedAt.value : this.startedAt,
+      completedDaysCsv: data.completedDaysCsv.present
+          ? data.completedDaysCsv.value
+          : this.completedDaysCsv,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReadingPlanProgressData(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deleted: $deleted, ')
+          ..write('dirty: $dirty, ')
+          ..write('planId: $planId, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('completedDaysCsv: $completedDaysCsv')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    userId,
+    createdAt,
+    updatedAt,
+    deleted,
+    dirty,
+    planId,
+    startedAt,
+    completedDaysCsv,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ReadingPlanProgressData &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deleted == this.deleted &&
+          other.dirty == this.dirty &&
+          other.planId == this.planId &&
+          other.startedAt == this.startedAt &&
+          other.completedDaysCsv == this.completedDaysCsv);
+}
+
+class ReadingPlanProgressCompanion
+    extends UpdateCompanion<ReadingPlanProgressData> {
+  final Value<String> id;
+  final Value<String?> userId;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<bool> deleted;
+  final Value<bool> dirty;
+  final Value<String> planId;
+  final Value<DateTime> startedAt;
+  final Value<String> completedDaysCsv;
+  final Value<int> rowid;
+  const ReadingPlanProgressCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.dirty = const Value.absent(),
+    this.planId = const Value.absent(),
+    this.startedAt = const Value.absent(),
+    this.completedDaysCsv = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ReadingPlanProgressCompanion.insert({
+    required String id,
+    this.userId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.dirty = const Value.absent(),
+    required String planId,
+    this.startedAt = const Value.absent(),
+    this.completedDaysCsv = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       planId = Value(planId);
+  static Insertable<ReadingPlanProgressData> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? deleted,
+    Expression<bool>? dirty,
+    Expression<String>? planId,
+    Expression<DateTime>? startedAt,
+    Expression<String>? completedDaysCsv,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deleted != null) 'deleted': deleted,
+      if (dirty != null) 'dirty': dirty,
+      if (planId != null) 'plan_id': planId,
+      if (startedAt != null) 'started_at': startedAt,
+      if (completedDaysCsv != null) 'completed_days_csv': completedDaysCsv,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ReadingPlanProgressCompanion copyWith({
+    Value<String>? id,
+    Value<String?>? userId,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<bool>? deleted,
+    Value<bool>? dirty,
+    Value<String>? planId,
+    Value<DateTime>? startedAt,
+    Value<String>? completedDaysCsv,
+    Value<int>? rowid,
+  }) {
+    return ReadingPlanProgressCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deleted: deleted ?? this.deleted,
+      dirty: dirty ?? this.dirty,
+      planId: planId ?? this.planId,
+      startedAt: startedAt ?? this.startedAt,
+      completedDaysCsv: completedDaysCsv ?? this.completedDaysCsv,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deleted.present) {
+      map['deleted'] = Variable<bool>(deleted.value);
+    }
+    if (dirty.present) {
+      map['dirty'] = Variable<bool>(dirty.value);
+    }
+    if (planId.present) {
+      map['plan_id'] = Variable<String>(planId.value);
+    }
+    if (startedAt.present) {
+      map['started_at'] = Variable<DateTime>(startedAt.value);
+    }
+    if (completedDaysCsv.present) {
+      map['completed_days_csv'] = Variable<String>(completedDaysCsv.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ReadingPlanProgressCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deleted: $deleted, ')
+          ..write('dirty: $dirty, ')
+          ..write('planId: $planId, ')
+          ..write('startedAt: $startedAt, ')
+          ..write('completedDaysCsv: $completedDaysCsv, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$UserDatabase extends GeneratedDatabase {
   _$UserDatabase(QueryExecutor e) : super(e);
   $UserDatabaseManager get managers => $UserDatabaseManager(this);
@@ -3312,6 +3871,8 @@ abstract class _$UserDatabase extends GeneratedDatabase {
     this,
   );
   late final $SettingsTable settings = $SettingsTable(this);
+  late final $ReadingPlanProgressTable readingPlanProgress =
+      $ReadingPlanProgressTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3323,6 +3884,7 @@ abstract class _$UserDatabase extends GeneratedDatabase {
     readingHistory,
     readingProgress,
     settings,
+    readingPlanProgress,
   ];
 }
 
@@ -5028,6 +5590,312 @@ typedef $$SettingsTableProcessedTableManager =
       Setting,
       PrefetchHooks Function()
     >;
+typedef $$ReadingPlanProgressTableCreateCompanionBuilder =
+    ReadingPlanProgressCompanion Function({
+      required String id,
+      Value<String?> userId,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<bool> deleted,
+      Value<bool> dirty,
+      required String planId,
+      Value<DateTime> startedAt,
+      Value<String> completedDaysCsv,
+      Value<int> rowid,
+    });
+typedef $$ReadingPlanProgressTableUpdateCompanionBuilder =
+    ReadingPlanProgressCompanion Function({
+      Value<String> id,
+      Value<String?> userId,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<bool> deleted,
+      Value<bool> dirty,
+      Value<String> planId,
+      Value<DateTime> startedAt,
+      Value<String> completedDaysCsv,
+      Value<int> rowid,
+    });
+
+class $$ReadingPlanProgressTableFilterComposer
+    extends Composer<_$UserDatabase, $ReadingPlanProgressTable> {
+  $$ReadingPlanProgressTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get dirty => $composableBuilder(
+    column: $table.dirty,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get planId => $composableBuilder(
+    column: $table.planId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get completedDaysCsv => $composableBuilder(
+    column: $table.completedDaysCsv,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$ReadingPlanProgressTableOrderingComposer
+    extends Composer<_$UserDatabase, $ReadingPlanProgressTable> {
+  $$ReadingPlanProgressTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get dirty => $composableBuilder(
+    column: $table.dirty,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get planId => $composableBuilder(
+    column: $table.planId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get startedAt => $composableBuilder(
+    column: $table.startedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get completedDaysCsv => $composableBuilder(
+    column: $table.completedDaysCsv,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ReadingPlanProgressTableAnnotationComposer
+    extends Composer<_$UserDatabase, $ReadingPlanProgressTable> {
+  $$ReadingPlanProgressTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => column);
+
+  GeneratedColumn<bool> get dirty =>
+      $composableBuilder(column: $table.dirty, builder: (column) => column);
+
+  GeneratedColumn<String> get planId =>
+      $composableBuilder(column: $table.planId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get startedAt =>
+      $composableBuilder(column: $table.startedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get completedDaysCsv => $composableBuilder(
+    column: $table.completedDaysCsv,
+    builder: (column) => column,
+  );
+}
+
+class $$ReadingPlanProgressTableTableManager
+    extends
+        RootTableManager<
+          _$UserDatabase,
+          $ReadingPlanProgressTable,
+          ReadingPlanProgressData,
+          $$ReadingPlanProgressTableFilterComposer,
+          $$ReadingPlanProgressTableOrderingComposer,
+          $$ReadingPlanProgressTableAnnotationComposer,
+          $$ReadingPlanProgressTableCreateCompanionBuilder,
+          $$ReadingPlanProgressTableUpdateCompanionBuilder,
+          (
+            ReadingPlanProgressData,
+            BaseReferences<
+              _$UserDatabase,
+              $ReadingPlanProgressTable,
+              ReadingPlanProgressData
+            >,
+          ),
+          ReadingPlanProgressData,
+          PrefetchHooks Function()
+        > {
+  $$ReadingPlanProgressTableTableManager(
+    _$UserDatabase db,
+    $ReadingPlanProgressTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ReadingPlanProgressTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ReadingPlanProgressTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ReadingPlanProgressTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<bool> dirty = const Value.absent(),
+                Value<String> planId = const Value.absent(),
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<String> completedDaysCsv = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReadingPlanProgressCompanion(
+                id: id,
+                userId: userId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deleted: deleted,
+                dirty: dirty,
+                planId: planId,
+                startedAt: startedAt,
+                completedDaysCsv: completedDaysCsv,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<String?> userId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<bool> dirty = const Value.absent(),
+                required String planId,
+                Value<DateTime> startedAt = const Value.absent(),
+                Value<String> completedDaysCsv = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ReadingPlanProgressCompanion.insert(
+                id: id,
+                userId: userId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deleted: deleted,
+                dirty: dirty,
+                planId: planId,
+                startedAt: startedAt,
+                completedDaysCsv: completedDaysCsv,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<
+                    $ReadingPlanProgressTable,
+                    ReadingPlanProgressData
+                  >(table),
+                  BaseReferences<
+                    _$UserDatabase,
+                    $ReadingPlanProgressTable,
+                    ReadingPlanProgressData
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$ReadingPlanProgressTableProcessedTableManager =
+    ProcessedTableManager<
+      _$UserDatabase,
+      $ReadingPlanProgressTable,
+      ReadingPlanProgressData,
+      $$ReadingPlanProgressTableFilterComposer,
+      $$ReadingPlanProgressTableOrderingComposer,
+      $$ReadingPlanProgressTableAnnotationComposer,
+      $$ReadingPlanProgressTableCreateCompanionBuilder,
+      $$ReadingPlanProgressTableUpdateCompanionBuilder,
+      (
+        ReadingPlanProgressData,
+        BaseReferences<
+          _$UserDatabase,
+          $ReadingPlanProgressTable,
+          ReadingPlanProgressData
+        >,
+      ),
+      ReadingPlanProgressData,
+      PrefetchHooks Function()
+    >;
 
 class $UserDatabaseManager {
   final _$UserDatabase _db;
@@ -5044,4 +5912,6 @@ class $UserDatabaseManager {
       $$ReadingProgressTableTableManager(_db, _db.readingProgress);
   $$SettingsTableTableManager get settings =>
       $$SettingsTableTableManager(_db, _db.settings);
+  $$ReadingPlanProgressTableTableManager get readingPlanProgress =>
+      $$ReadingPlanProgressTableTableManager(_db, _db.readingPlanProgress);
 }

@@ -272,4 +272,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String freeTrialThen(int days, String price) {
     return '$days-day free trial, then $price';
   }
+
+  @override
+  String get readingPlans => 'Reading Plans';
+
+  @override
+  String get readingPlan => 'Reading Plan';
+
+  @override
+  String get startPlan => 'Start Plan';
+
+  @override
+  String get continuePlan => 'Continue';
+
+  @override
+  String dayOfTotal(int day, int total) {
+    return 'Day $day of $total';
+  }
+
+  @override
+  String get markAsRead => 'Mark as read';
+
+  @override
+  String get planComplete => 'Plan complete!';
 }

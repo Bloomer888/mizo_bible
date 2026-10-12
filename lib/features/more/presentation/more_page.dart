@@ -11,6 +11,7 @@ import '../../library/presentation/notes_page.dart';
 import '../../premium/data/premium_providers.dart';
 import '../../premium/presentation/paywall_page.dart';
 import '../../reader/presentation/reader_settings_sheet.dart';
+import '../../reading_plans/presentation/reading_plans_page.dart';
 
 /// The More tab -- everything that isn't "read the Bible right now":
 /// the library views, reading preferences, account, and the legal/
@@ -36,6 +37,16 @@ class MorePage extends ConsumerWidget {
             leading: Icon(Icons.workspace_premium_rounded, color: Theme.of(context).colorScheme.primary),
             title: Text(isPremium ? l10n.premium : l10n.upgradeToPremium),
             onTap: () => openPage(const PaywallPage()),
+          ),
+          ListTile(
+            leading: const Icon(Icons.calendar_month_rounded),
+            title: Text(l10n.readingPlans),
+            // Not Premium -> same destination as tapping "Upgrade to
+            // Premium" itself, consistent with how this app gates its
+            // one other Premium feature (sync): the paywall is the
+            // single place that ever prompts for it, never a dead end
+            // or a disabled-looking row.
+            onTap: () => openPage(isPremium ? const ReadingPlansPage() : const PaywallPage()),
           ),
           const Divider(indent: 16, endIndent: 16),
           _SectionLabel(l10n.yourBible),

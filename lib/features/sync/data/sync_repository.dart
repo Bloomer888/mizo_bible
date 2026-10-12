@@ -28,12 +28,14 @@ Future<void> syncUserData(UserDatabase db, String userId) async {
   await _pushNotes(db, client);
   await _pushReadingProgress(db, client);
   await _pushSettings(db, client);
+  await _pushReadingPlanProgress(db, client);
 
   await _pullBookmarks(db, client);
   await _pullHighlights(db, client);
   await _pullNotes(db, client);
   await _pullReadingProgress(db, client);
   await _pullSettings(db, client);
+  await _pullReadingPlanProgress(db, client);
 }
 
 /// Tombstones every synced table's rows for this user, best-effort
@@ -75,6 +77,8 @@ Future<void> deleteAllUserData(UserDatabase db, String userId) async {
         .write(const ReadingProgressCompanion(deleted: Value(tombstone), dirty: Value(true)));
     await (db.update(db.settings)..where((t) => t.userId.equals(userId)))
         .write(const SettingsCompanion(deleted: Value(tombstone), dirty: Value(true)));
+    await (db.update(db.readingPlanProgress)..where((t) => t.userId.equals(userId)))
+        .write(const ReadingPlanProgressCompanion(deleted: Value(tombstone), dirty: Value(true)));
   });
 
   try {
@@ -84,6 +88,7 @@ Future<void> deleteAllUserData(UserDatabase db, String userId) async {
     await _pushNotes(db, client);
     await _pushReadingProgress(db, client);
     await _pushSettings(db, client);
+    await _pushReadingPlanProgress(db, client);
   } catch (_) {
     // Best effort -- the local wipe below happens unconditionally.
   }
@@ -95,6 +100,7 @@ Future<void> deleteAllUserData(UserDatabase db, String userId) async {
     await (db.delete(db.readingHistory)..where((t) => t.userId.equals(userId))).go();
     await (db.delete(db.readingProgress)..where((t) => t.userId.equals(userId))).go();
     await (db.delete(db.settings)..where((t) => t.userId.equals(userId))).go();
+    await (db.delete(db.readingPlanProgress)..where((t) => t.userId.equals(userId))).go();
   });
 }
 
@@ -400,6 +406,64 @@ Future<void> applyPulledSettings(UserDatabase db, List<Map<String, dynamic>> rem
           userId: Value(row['user_id'] as String),
           key: Value(key),
           value: Value(row['value'] as String),
+          createdAt: Value(DateTime.parse(row['created_at'] as String)),
+          updatedAt: Value(DateTime.parse(row['updated_at'] as String)),
+          deleted: Value(row['deleted'] as bool),
+          dirty: const Value(false),
+        ));
+  }
+}
+
+// --- Reading plan progress ----------------------------------------------
+
+Future<void> _pushReadingPlanProgress(UserDatabase db, SupabaseClient client) async {
+  final dirty = await (db.select(db.readingPlanProgress)..where((p) => p.dirty.equals(true))).get();
+  if (dirty.isEmpty) return;
+  await client.schema(_schema).from('reading_plan_progress').upsert(
+        [for (final r in dirty) _planProgressToRemote(r)],
+        onConflict: 'user_id,plan_id',
+      );
+  await (db.update(db.readingPlanProgress)..where((p) => p.id.isIn(dirty.map((r) => r.id))))
+      .write(const ReadingPlanProgressCompanion(dirty: Value(false)));
+}
+
+Map<String, dynamic> _planProgressToRemote(ReadingPlanProgressData r) => {
+      'id': r.id,
+      'user_id': r.userId,
+      'plan_id': r.planId,
+      'started_at': r.startedAt.toIso8601String(),
+      'completed_days_csv': r.completedDaysCsv,
+      'created_at': r.createdAt.toIso8601String(),
+      'updated_at': r.updatedAt.toIso8601String(),
+      'deleted': r.deleted,
+    };
+
+Future<void> _pullReadingPlanProgress(UserDatabase db, SupabaseClient client) async {
+  final remote = await client.schema(_schema).from('reading_plan_progress').select();
+  await applyPulledReadingPlanProgress(db, remote);
+}
+
+/// Business key is the plan id alone (one progress row per plan --
+/// same shape as reading_progress's one-row-per-book), not per day:
+/// a day's completion is folded into completed_days_csv, not a
+/// separate row, so there's nothing finer-grained to converge on here.
+Future<void> applyPulledReadingPlanProgress(UserDatabase db, List<Map<String, dynamic>> remote) async {
+  for (final row in remote) {
+    final planId = row['plan_id'] as String;
+    final remoteId = row['id'] as String;
+
+    final existing =
+        await (db.select(db.readingPlanProgress)..where((p) => p.planId.equals(planId))).getSingleOrNull();
+    if (existing != null && existing.id != remoteId) {
+      await (db.delete(db.readingPlanProgress)..where((p) => p.id.equals(existing.id))).go();
+    }
+
+    await db.into(db.readingPlanProgress).insertOnConflictUpdate(ReadingPlanProgressCompanion(
+          id: Value(remoteId),
+          userId: Value(row['user_id'] as String),
+          planId: Value(planId),
+          startedAt: Value(DateTime.parse(row['started_at'] as String)),
+          completedDaysCsv: Value(row['completed_days_csv'] as String),
           createdAt: Value(DateTime.parse(row['created_at'] as String)),
           updatedAt: Value(DateTime.parse(row['updated_at'] as String)),
           deleted: Value(row['deleted'] as bool),

@@ -104,12 +104,44 @@ class Settings extends Table with SyncableColumns {
   Set<Column> get primaryKey => {id};
 }
 
-@DriftDatabase(tables: [Bookmarks, Highlights, Notes, ReadingHistory, ReadingProgress, Settings])
+/// One row per plan a user has ever started -- not one row per day,
+/// which would mean a 90-row insert burst just to begin a plan.
+/// completedDaysCsv is a comma-separated list of completed day numbers
+/// (e.g. "1,2,3,7") rather than a separate junction table: progress is
+/// always read and written as a whole for the active plan, never
+/// queried day-by-day, so there's no join this would ever need to
+/// support. Unlike reading_history, this table's rows *do* sync for
+/// Premium members -- "pick up your plan on another device" is the
+/// kind of thing sync exists for, not a privacy concern the way
+/// reading history was (see reading_plan_progress_repository.dart and
+/// [[project-premium-decisions]] in memory for that distinction).
+class ReadingPlanProgress extends Table with SyncableColumns {
+  TextColumn get planId => text().named('plan_id')();
+  DateTimeColumn get startedAt => dateTime().named('started_at').withDefault(currentDateAndTime)();
+  TextColumn get completedDaysCsv => text().named('completed_days_csv').withDefault(const Constant(''))();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
+@DriftDatabase(
+  tables: [Bookmarks, Highlights, Notes, ReadingHistory, ReadingProgress, Settings, ReadingPlanProgress],
+)
 class UserDatabase extends _$UserDatabase {
   UserDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.createTable(readingPlanProgress);
+          }
+        },
+      );
 }
 
 QueryExecutor _openConnection() {
