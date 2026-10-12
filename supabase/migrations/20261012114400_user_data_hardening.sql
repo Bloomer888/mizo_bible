@@ -35,10 +35,6 @@ alter table user_data.notes
   -- Generous for a verse note -- nothing in the app's UI approaches this.
   add constraint notes_content_length check (char_length(content) <= 10000);
 
-alter table user_data.reading_history
-  add constraint reading_history_book_id_range check (book_id between 1 and 66),
-  add constraint reading_history_chapter_range check (chapter between 1 and 150);
-
 alter table user_data.reading_progress
   add constraint reading_progress_book_id_range check (book_id between 1 and 66),
   add constraint reading_progress_chapter_range check (chapter between 1 and 150),
