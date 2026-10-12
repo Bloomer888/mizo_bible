@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/l10n_extension.dart';
-import '../data/legal_text.dart';
-import 'legal_text_page.dart';
 
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
@@ -42,24 +40,6 @@ class AboutPage extends StatelessWidget {
             child: Text(l10n.bibleTextRights),
           ),
           const Divider(),
-          ListTile(
-            title: Text(l10n.privacyPolicy),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => LegalTextPage(title: l10n.privacyPolicy, body: privacyPolicyText),
-              ),
-            ),
-          ),
-          ListTile(
-            title: Text(l10n.termsOfService),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => LegalTextPage(title: l10n.termsOfService, body: termsOfServiceText),
-              ),
-            ),
-          ),
           ListTile(
             title: Text(l10n.openSourceLicenses),
             trailing: const Icon(Icons.chevron_right),
