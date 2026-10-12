@@ -25,6 +25,15 @@
       "count": { "type": "int" }
     }
   },
+  "bestStreak": "Best: {days} days",
+  "@bestStreak": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "startStreakPrompt": "Tap today to start your streak",
+  "continueStreakPrompt": "Tap today to keep your streak going",
+  "markTodayAsRead": "Mark today as read",
 
   "readingModeParallel": "Parallel",
   "readingModeMizoOnly": "Mizo only",

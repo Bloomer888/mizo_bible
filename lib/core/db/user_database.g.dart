@@ -3860,6 +3860,456 @@ class ReadingPlanProgressCompanion
   }
 }
 
+class $StreakCheckinsTable extends StreakCheckins
+    with TableInfo<$StreakCheckinsTable, StreakCheckin> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StreakCheckinsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<String> userId = GeneratedColumn<String>(
+    'user_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _createdAtMeta = const VerificationMeta(
+    'createdAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+    'created_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _updatedAtMeta = const VerificationMeta(
+    'updatedAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+    'updated_at',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+    defaultValue: currentDateAndTime,
+  );
+  static const VerificationMeta _deletedMeta = const VerificationMeta(
+    'deleted',
+  );
+  @override
+  late final GeneratedColumn<bool> deleted = GeneratedColumn<bool>(
+    'deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _dirtyMeta = const VerificationMeta('dirty');
+  @override
+  late final GeneratedColumn<bool> dirty = GeneratedColumn<bool>(
+    'dirty',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("dirty" IN (0, 1))',
+    ),
+    defaultValue: const Constant(true),
+  );
+  static const VerificationMeta _dayMeta = const VerificationMeta('day');
+  @override
+  late final GeneratedColumn<DateTime> day = GeneratedColumn<DateTime>(
+    'day',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    userId,
+    createdAt,
+    updatedAt,
+    deleted,
+    dirty,
+    day,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'streak_checkins';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StreakCheckin> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(
+        _userIdMeta,
+        userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta),
+      );
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(
+        _createdAtMeta,
+        createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta),
+      );
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(
+        _updatedAtMeta,
+        updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta),
+      );
+    }
+    if (data.containsKey('deleted')) {
+      context.handle(
+        _deletedMeta,
+        deleted.isAcceptableOrUnknown(data['deleted']!, _deletedMeta),
+      );
+    }
+    if (data.containsKey('dirty')) {
+      context.handle(
+        _dirtyMeta,
+        dirty.isAcceptableOrUnknown(data['dirty']!, _dirtyMeta),
+      );
+    }
+    if (data.containsKey('day')) {
+      context.handle(
+        _dayMeta,
+        day.isAcceptableOrUnknown(data['day']!, _dayMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_dayMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  StreakCheckin map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StreakCheckin(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      userId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}user_id'],
+      ),
+      createdAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}created_at'],
+      )!,
+      updatedAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}updated_at'],
+      )!,
+      deleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}deleted'],
+      )!,
+      dirty: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}dirty'],
+      )!,
+      day: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}day'],
+      )!,
+    );
+  }
+
+  @override
+  $StreakCheckinsTable createAlias(String alias) {
+    return $StreakCheckinsTable(attachedDatabase, alias);
+  }
+}
+
+class StreakCheckin extends DataClass implements Insertable<StreakCheckin> {
+  final String id;
+  final String? userId;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool deleted;
+  final bool dirty;
+  final DateTime day;
+  const StreakCheckin({
+    required this.id,
+    this.userId,
+    required this.createdAt,
+    required this.updatedAt,
+    required this.deleted,
+    required this.dirty,
+    required this.day,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    if (!nullToAbsent || userId != null) {
+      map['user_id'] = Variable<String>(userId);
+    }
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['deleted'] = Variable<bool>(deleted);
+    map['dirty'] = Variable<bool>(dirty);
+    map['day'] = Variable<DateTime>(day);
+    return map;
+  }
+
+  StreakCheckinsCompanion toCompanion(bool nullToAbsent) {
+    return StreakCheckinsCompanion(
+      id: Value(id),
+      userId: userId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(userId),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deleted: Value(deleted),
+      dirty: Value(dirty),
+      day: Value(day),
+    );
+  }
+
+  factory StreakCheckin.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StreakCheckin(
+      id: serializer.fromJson<String>(json['id']),
+      userId: serializer.fromJson<String?>(json['userId']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deleted: serializer.fromJson<bool>(json['deleted']),
+      dirty: serializer.fromJson<bool>(json['dirty']),
+      day: serializer.fromJson<DateTime>(json['day']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'userId': serializer.toJson<String?>(userId),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deleted': serializer.toJson<bool>(deleted),
+      'dirty': serializer.toJson<bool>(dirty),
+      'day': serializer.toJson<DateTime>(day),
+    };
+  }
+
+  StreakCheckin copyWith({
+    String? id,
+    Value<String?> userId = const Value.absent(),
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    bool? deleted,
+    bool? dirty,
+    DateTime? day,
+  }) => StreakCheckin(
+    id: id ?? this.id,
+    userId: userId.present ? userId.value : this.userId,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    deleted: deleted ?? this.deleted,
+    dirty: dirty ?? this.dirty,
+    day: day ?? this.day,
+  );
+  StreakCheckin copyWithCompanion(StreakCheckinsCompanion data) {
+    return StreakCheckin(
+      id: data.id.present ? data.id.value : this.id,
+      userId: data.userId.present ? data.userId.value : this.userId,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deleted: data.deleted.present ? data.deleted.value : this.deleted,
+      dirty: data.dirty.present ? data.dirty.value : this.dirty,
+      day: data.day.present ? data.day.value : this.day,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StreakCheckin(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deleted: $deleted, ')
+          ..write('dirty: $dirty, ')
+          ..write('day: $day')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, userId, createdAt, updatedAt, deleted, dirty, day);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StreakCheckin &&
+          other.id == this.id &&
+          other.userId == this.userId &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deleted == this.deleted &&
+          other.dirty == this.dirty &&
+          other.day == this.day);
+}
+
+class StreakCheckinsCompanion extends UpdateCompanion<StreakCheckin> {
+  final Value<String> id;
+  final Value<String?> userId;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<bool> deleted;
+  final Value<bool> dirty;
+  final Value<DateTime> day;
+  final Value<int> rowid;
+  const StreakCheckinsCompanion({
+    this.id = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.dirty = const Value.absent(),
+    this.day = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StreakCheckinsCompanion.insert({
+    required String id,
+    this.userId = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deleted = const Value.absent(),
+    this.dirty = const Value.absent(),
+    required DateTime day,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       day = Value(day);
+  static Insertable<StreakCheckin> custom({
+    Expression<String>? id,
+    Expression<String>? userId,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<bool>? deleted,
+    Expression<bool>? dirty,
+    Expression<DateTime>? day,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (userId != null) 'user_id': userId,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deleted != null) 'deleted': deleted,
+      if (dirty != null) 'dirty': dirty,
+      if (day != null) 'day': day,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StreakCheckinsCompanion copyWith({
+    Value<String>? id,
+    Value<String?>? userId,
+    Value<DateTime>? createdAt,
+    Value<DateTime>? updatedAt,
+    Value<bool>? deleted,
+    Value<bool>? dirty,
+    Value<DateTime>? day,
+    Value<int>? rowid,
+  }) {
+    return StreakCheckinsCompanion(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deleted: deleted ?? this.deleted,
+      dirty: dirty ?? this.dirty,
+      day: day ?? this.day,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<String>(userId.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deleted.present) {
+      map['deleted'] = Variable<bool>(deleted.value);
+    }
+    if (dirty.present) {
+      map['dirty'] = Variable<bool>(dirty.value);
+    }
+    if (day.present) {
+      map['day'] = Variable<DateTime>(day.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StreakCheckinsCompanion(')
+          ..write('id: $id, ')
+          ..write('userId: $userId, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deleted: $deleted, ')
+          ..write('dirty: $dirty, ')
+          ..write('day: $day, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$UserDatabase extends GeneratedDatabase {
   _$UserDatabase(QueryExecutor e) : super(e);
   $UserDatabaseManager get managers => $UserDatabaseManager(this);
@@ -3873,6 +4323,7 @@ abstract class _$UserDatabase extends GeneratedDatabase {
   late final $SettingsTable settings = $SettingsTable(this);
   late final $ReadingPlanProgressTable readingPlanProgress =
       $ReadingPlanProgressTable(this);
+  late final $StreakCheckinsTable streakCheckins = $StreakCheckinsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3885,6 +4336,7 @@ abstract class _$UserDatabase extends GeneratedDatabase {
     readingProgress,
     settings,
     readingPlanProgress,
+    streakCheckins,
   ];
 }
 
@@ -5896,6 +6348,255 @@ typedef $$ReadingPlanProgressTableProcessedTableManager =
       ReadingPlanProgressData,
       PrefetchHooks Function()
     >;
+typedef $$StreakCheckinsTableCreateCompanionBuilder =
+    StreakCheckinsCompanion Function({
+      required String id,
+      Value<String?> userId,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<bool> deleted,
+      Value<bool> dirty,
+      required DateTime day,
+      Value<int> rowid,
+    });
+typedef $$StreakCheckinsTableUpdateCompanionBuilder =
+    StreakCheckinsCompanion Function({
+      Value<String> id,
+      Value<String?> userId,
+      Value<DateTime> createdAt,
+      Value<DateTime> updatedAt,
+      Value<bool> deleted,
+      Value<bool> dirty,
+      Value<DateTime> day,
+      Value<int> rowid,
+    });
+
+class $$StreakCheckinsTableFilterComposer
+    extends Composer<_$UserDatabase, $StreakCheckinsTable> {
+  $$StreakCheckinsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get dirty => $composableBuilder(
+    column: $table.dirty,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$StreakCheckinsTableOrderingComposer
+    extends Composer<_$UserDatabase, $StreakCheckinsTable> {
+  $$StreakCheckinsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get userId => $composableBuilder(
+    column: $table.userId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+    column: $table.createdAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+    column: $table.updatedAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get deleted => $composableBuilder(
+    column: $table.deleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get dirty => $composableBuilder(
+    column: $table.dirty,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get day => $composableBuilder(
+    column: $table.day,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$StreakCheckinsTableAnnotationComposer
+    extends Composer<_$UserDatabase, $StreakCheckinsTable> {
+  $$StreakCheckinsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get userId =>
+      $composableBuilder(column: $table.userId, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<bool> get deleted =>
+      $composableBuilder(column: $table.deleted, builder: (column) => column);
+
+  GeneratedColumn<bool> get dirty =>
+      $composableBuilder(column: $table.dirty, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get day =>
+      $composableBuilder(column: $table.day, builder: (column) => column);
+}
+
+class $$StreakCheckinsTableTableManager
+    extends
+        RootTableManager<
+          _$UserDatabase,
+          $StreakCheckinsTable,
+          StreakCheckin,
+          $$StreakCheckinsTableFilterComposer,
+          $$StreakCheckinsTableOrderingComposer,
+          $$StreakCheckinsTableAnnotationComposer,
+          $$StreakCheckinsTableCreateCompanionBuilder,
+          $$StreakCheckinsTableUpdateCompanionBuilder,
+          (
+            StreakCheckin,
+            BaseReferences<_$UserDatabase, $StreakCheckinsTable, StreakCheckin>,
+          ),
+          StreakCheckin,
+          PrefetchHooks Function()
+        > {
+  $$StreakCheckinsTableTableManager(
+    _$UserDatabase db,
+    $StreakCheckinsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StreakCheckinsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StreakCheckinsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StreakCheckinsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String?> userId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<bool> dirty = const Value.absent(),
+                Value<DateTime> day = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StreakCheckinsCompanion(
+                id: id,
+                userId: userId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deleted: deleted,
+                dirty: dirty,
+                day: day,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                Value<String?> userId = const Value.absent(),
+                Value<DateTime> createdAt = const Value.absent(),
+                Value<DateTime> updatedAt = const Value.absent(),
+                Value<bool> deleted = const Value.absent(),
+                Value<bool> dirty = const Value.absent(),
+                required DateTime day,
+                Value<int> rowid = const Value.absent(),
+              }) => StreakCheckinsCompanion.insert(
+                id: id,
+                userId: userId,
+                createdAt: createdAt,
+                updatedAt: updatedAt,
+                deleted: deleted,
+                dirty: dirty,
+                day: day,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$StreakCheckinsTable, StreakCheckin>(table),
+                  BaseReferences<
+                    _$UserDatabase,
+                    $StreakCheckinsTable,
+                    StreakCheckin
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$StreakCheckinsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$UserDatabase,
+      $StreakCheckinsTable,
+      StreakCheckin,
+      $$StreakCheckinsTableFilterComposer,
+      $$StreakCheckinsTableOrderingComposer,
+      $$StreakCheckinsTableAnnotationComposer,
+      $$StreakCheckinsTableCreateCompanionBuilder,
+      $$StreakCheckinsTableUpdateCompanionBuilder,
+      (
+        StreakCheckin,
+        BaseReferences<_$UserDatabase, $StreakCheckinsTable, StreakCheckin>,
+      ),
+      StreakCheckin,
+      PrefetchHooks Function()
+    >;
 
 class $UserDatabaseManager {
   final _$UserDatabase _db;
@@ -5914,4 +6615,6 @@ class $UserDatabaseManager {
       $$SettingsTableTableManager(_db, _db.settings);
   $$ReadingPlanProgressTableTableManager get readingPlanProgress =>
       $$ReadingPlanProgressTableTableManager(_db, _db.readingPlanProgress);
+  $$StreakCheckinsTableTableManager get streakCheckins =>
+      $$StreakCheckinsTableTableManager(_db, _db.streakCheckins);
 }

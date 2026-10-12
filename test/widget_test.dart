@@ -33,9 +33,23 @@ void main() {
         child: const MizoBibleApp(),
       );
 
-  testWidgets('app starts and shows Genesis from the Bible database', (tester) async {
+  // pump() with an explicit settle duration, not pumpAndSettle() --
+  // Home's streak card (app_shell.dart's IndexedStack keeps every tab
+  // mounted regardless of which one is visible) runs two deliberately
+  // infinite animations (the flickering flame, and the check-in
+  // circle's inviting pulse while today isn't marked yet), so
+  // pumpAndSettle would wait forever for frames that never stop being
+  // scheduled. 500ms is comfortably past both tabs' own async provider
+  // chains resolving (bible.db query, the in-memory user db), without
+  // needing to wait out either animation's own loop.
+  Future<void> pumpAndLoad(WidgetTester tester) async {
     await tester.pumpWidget(testScope());
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+  }
+
+  testWidgets('app starts and shows Genesis from the Bible database', (tester) async {
+    await pumpAndLoad(tester);
 
     // At least one, not exactly one: the book/chapter/verse picker's own
     // field also displays the current book's name now, alongside the
@@ -46,8 +60,7 @@ void main() {
   });
 
   testWidgets('renders the Mizo alphabet without falling back', (tester) async {
-    await tester.pumpWidget(testScope());
-    await tester.pumpAndSettle();
+    await pumpAndLoad(tester);
 
     // U+1E6D is the character most likely to break on a device whose default
     // font lacks Latin Extended Additional coverage. Genesis 1:4's Mizo text

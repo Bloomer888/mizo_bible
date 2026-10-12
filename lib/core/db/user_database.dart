@@ -124,14 +124,38 @@ class ReadingPlanProgress extends Table with SyncableColumns {
   Set<Column> get primaryKey => {id};
 }
 
+/// One row per calendar day the user manually marked as "read today" --
+/// an explicit daily action (like a habit tracker's check-in), replacing
+/// the old streak's passive derivation from reading_history (any chapter
+/// visit counted, which also meant the streak card vanished the moment
+/// it hit zero instead of ever inviting the user to start one). day is
+/// normalized to local midnight. No DB-level uniqueness on day, same
+/// reasoning as ReadingProgress above -- checkInToday does find-or-skip
+/// itself.
+class StreakCheckins extends Table with SyncableColumns {
+  DateTimeColumn get day => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {id};
+}
+
 @DriftDatabase(
-  tables: [Bookmarks, Highlights, Notes, ReadingHistory, ReadingProgress, Settings, ReadingPlanProgress],
+  tables: [
+    Bookmarks,
+    Highlights,
+    Notes,
+    ReadingHistory,
+    ReadingProgress,
+    Settings,
+    ReadingPlanProgress,
+    StreakCheckins,
+  ],
 )
 class UserDatabase extends _$UserDatabase {
   UserDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -139,6 +163,9 @@ class UserDatabase extends _$UserDatabase {
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.createTable(readingPlanProgress);
+          }
+          if (from < 3) {
+            await m.createTable(streakCheckins);
           }
         },
       );

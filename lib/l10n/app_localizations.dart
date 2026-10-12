@@ -184,6 +184,30 @@ abstract class AppLocalizations {
   /// **'{count} day streak'**
   String dayStreak(int count);
 
+  /// No description provided for @bestStreak.
+  ///
+  /// In en, this message translates to:
+  /// **'Best: {days} days'**
+  String bestStreak(int days);
+
+  /// No description provided for @startStreakPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap today to start your streak'**
+  String get startStreakPrompt;
+
+  /// No description provided for @continueStreakPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap today to keep your streak going'**
+  String get continueStreakPrompt;
+
+  /// No description provided for @markTodayAsRead.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark today as read'**
+  String get markTodayAsRead;
+
   /// No description provided for @readingModeParallel.
   ///
   /// In en, this message translates to:

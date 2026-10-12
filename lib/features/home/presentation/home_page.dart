@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/db/bible_database.dart';
@@ -6,7 +9,6 @@ import '../../../core/db/user_database.dart';
 import '../../../core/l10n_extension.dart';
 import '../../library/presentation/library_providers.dart';
 import '../../premium/data/premium_providers.dart';
-import '../../reader/data/reading_history_repository.dart';
 import '../../reader/data/reading_progress_repository.dart';
 import '../../reader/data/verse_annotations_repository.dart';
 import '../../reader/presentation/reader_page.dart';
@@ -14,6 +16,7 @@ import '../../reader/presentation/verse_actions_sheet.dart' show verseAnnotation
 import '../../reading_plans/data/reading_plan.dart';
 import '../../reading_plans/data/reading_plan_progress_repository.dart';
 import '../../reading_plans/presentation/reading_plan_providers.dart';
+import '../data/streak_repository.dart';
 import '../data/verse_of_the_day.dart';
 
 final _mostRecentProgressProvider = FutureProvider.autoDispose<BookReadingPosition?>((ref) {
@@ -27,14 +30,24 @@ final _verseOfTheDayProvider = FutureProvider.autoDispose<VerseOfTheDay?>((ref) 
   return loadVerseOfTheDay(db, names);
 });
 
-final _readingStreakProvider = FutureProvider.autoDispose<int>((ref) {
+final _streakProvider = FutureProvider.autoDispose<int>((ref) {
   final db = ref.watch(userDatabaseProvider);
-  return loadReadingStreak(db);
+  return loadStreak(db);
 });
 
-final _readingDaysThisWeekProvider = FutureProvider.autoDispose<Set<DateTime>>((ref) {
+final _bestStreakProvider = FutureProvider.autoDispose<int>((ref) {
   final db = ref.watch(userDatabaseProvider);
-  return loadReadingDaysThisWeek(db);
+  return loadBestStreak(db);
+});
+
+final _streakDaysThisWeekProvider = FutureProvider.autoDispose<Set<DateTime>>((ref) {
+  final db = ref.watch(userDatabaseProvider);
+  return loadStreakDaysThisWeek(db);
+});
+
+final _checkedInTodayProvider = FutureProvider.autoDispose<bool>((ref) {
+  final db = ref.watch(userDatabaseProvider);
+  return isCheckedInToday(db);
 });
 
 /// The Home tab: a way back into whichever book you were last reading
@@ -50,8 +63,6 @@ class HomePage extends ConsumerWidget {
     final progressAsync = ref.watch(_mostRecentProgressProvider);
     final namesAsync = ref.watch(bookNamesMapProvider);
     final verseAsync = ref.watch(_verseOfTheDayProvider);
-    final streakAsync = ref.watch(_readingStreakProvider);
-    final readingDaysAsync = ref.watch(_readingDaysThisWeekProvider);
     final isPremium = ref.watch(isPremiumProvider);
     final planAsync = ref.watch(activePlanProgressProvider);
 
@@ -92,17 +103,8 @@ class HomePage extends ConsumerWidget {
               const SizedBox(height: 12),
               _ReadingPlanCard(state: planState),
             ],
-            if (streakAsync case AsyncData(value: final streak) when streak > 0) ...[
-              const SizedBox(height: 12),
-              _StreakCard(
-                streak: streak,
-                // Degrades to an all-empty strip for the one frame
-                // before this resolves, rather than holding the whole
-                // card back for a second, slower-resolving provider --
-                // Riverpod repaints it the moment the real set lands.
-                readingDays: readingDaysAsync.value ?? const {},
-              ),
-            ],
+            const SizedBox(height: 12),
+            const _StreakCard(),
           ],
         ),
       ),
@@ -406,29 +408,36 @@ class _ReadingPlanCard extends ConsumerWidget {
   }
 }
 
-/// The streak card: a flickering flame, a count-up streak number, and
-/// a Monday-start week strip showing which days this week already
-/// have a logged visit -- replaces the old plain icon+number row with
-/// something that's actually informative at a glance, not just
-/// decorated, per the user's "too bland" feedback (2026-10-11).
-///
-/// Purely informational, not tappable -- it used to open the History
-/// page, removed 2026-10-12 (redundant with bookmarks and this card's
-/// own week strip, the user's call); nothing else was a sensible
-/// destination for a tap here, so this stopped being a _PressableScale
-/// card rather than being wired to somewhere arbitrary. No chevron for
-/// the same reason -- that affordance means "tap me," which is no
-/// longer true.
-class _StreakCard extends StatelessWidget {
-  final int streak;
-  final Set<DateTime> readingDays;
+/// The streak card: a flickering flame, a count-up streak number, a
+/// personal-best stat, and a Monday-start week strip -- now a manual
+/// daily check-in (tap today's circle to mark it) instead of a passive
+/// log of any chapter visited, per the user's explicit request
+/// (2026-10-13). Two things changed together on purpose, not just a
+/// visual refresh: the old version derived the streak from
+/// reading_history and hid the entire card once it hit zero -- a real
+/// bug the user hit directly ("it disappear") -- which a manual,
+/// always-rendered check-in fixes as a natural side effect, since
+/// there's now always something to tap rather than nothing to show.
+class _StreakCard extends ConsumerWidget {
+  const _StreakCard();
 
-  const _StreakCard({required this.streak, required this.readingDays});
+  Future<void> _checkIn(WidgetRef ref) async {
+    await checkInToday(ref.read(userDatabaseProvider));
+    unawaited(HapticFeedback.mediumImpact());
+    ref.invalidate(_streakProvider);
+    ref.invalidate(_bestStreakProvider);
+    ref.invalidate(_streakDaysThisWeekProvider);
+    ref.invalidate(_checkedInTodayProvider);
+  }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
+    final streak = ref.watch(_streakProvider).value ?? 0;
+    final best = ref.watch(_bestStreakProvider).value ?? 0;
+    final checkedDays = ref.watch(_streakDaysThisWeekProvider).value ?? const {};
+    final checkedInToday = ref.watch(_checkedInTodayProvider).value ?? false;
 
     return Card(
       child: Padding(
@@ -444,16 +453,46 @@ class _StreakCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(l10n.readingStreak, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)),
-                      const SizedBox(height: 4),
+                      Text(
+                        l10n.readingStreak.toUpperCase(),
+                        style: TextStyle(
+                          color: scheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
                       _CountUpStreakText(streak: streak),
+                      // Only once it's something to actually mention --
+                      // "5 day streak / Best: 5 days" right after tying
+                      // your own record reads as noise, not insight.
+                      if (best > streak) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          l10n.bestStreak(best),
+                          style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 12.5),
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 18),
-            _WeekStrip(readingDays: readingDays),
+            const SizedBox(height: 20),
+            _WeekStrip(
+              checkedDays: checkedDays,
+              checkedInToday: checkedInToday,
+              onCheckIn: () => _checkIn(ref),
+            ),
+            if (!checkedInToday) ...[
+              const SizedBox(height: 14),
+              Text(
+                streak > 0 ? l10n.continueStreakPrompt : l10n.startStreakPrompt,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: scheme.primary, fontWeight: FontWeight.w600, fontSize: 13),
+              ),
+            ],
           ],
         ),
       ),
@@ -461,15 +500,17 @@ class _StreakCard extends StatelessWidget {
   }
 }
 
-/// Counts up from 0 to [streak] on first appearance by re-rendering
-/// the full templated string (l10n.dayStreak(value)) each animation
-/// frame, rather than animating a bare number and splicing in static
-/// " day streak" text around it -- keeps whatever word order a future
-/// translation uses intact, since this never assumes the number comes
-/// first. TweenAnimationBuilder only replays when streak itself
-/// changes between builds (e.g. ticking over to a new day), not on
-/// every unrelated Home rebuild -- see Flutter's own docs on how it
-/// diffs tweens across didUpdateWidget.
+/// Counts up from the previously-displayed value to the new [streak]
+/// whenever it changes (not just from 0 on first appearance -- a fresh
+/// check-in ticking 5 to 6 animates that one step, not a replay from
+/// scratch) by re-rendering the full templated string (l10n.dayStreak)
+/// each frame, rather than animating a bare number and splicing in
+/// static " day streak" text around it -- keeps whatever word order a
+/// future translation uses intact, since this never assumes the number
+/// comes first. Sized as a real hero stat (bigger, heavier, tighter
+/// letter-spacing than this card used before) rather than body text
+/// that happens to be bold -- the number is the one thing on this card
+/// worth a glance from across the room.
 class _CountUpStreakText extends StatelessWidget {
   final int streak;
   const _CountUpStreakText({required this.streak});
@@ -482,7 +523,10 @@ class _CountUpStreakText extends StatelessWidget {
       duration: const Duration(milliseconds: 700),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
-        return Text(l10n.dayStreak(value), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700));
+        return Text(
+          l10n.dayStreak(value),
+          style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800, letterSpacing: -0.3, height: 1.1),
+        );
       },
     );
   }
@@ -538,13 +582,19 @@ class _FlickeringFlameState extends State<_FlickeringFlame> with SingleTickerPro
 }
 
 /// Monday-start to match the ISO week convention, same as the
-/// production streak math in reading_history_repository.dart. Days
-/// after today render as a faint, unfilled placeholder -- not an
-/// empty/"missed" circle -- so the strip doesn't visually accuse the
-/// user of having skipped a day that hasn't happened yet.
+/// production streak math in streak_repository.dart. Days after today
+/// render as a faint, unfilled placeholder -- not an empty/"missed"
+/// circle -- so the strip doesn't visually accuse the user of having
+/// skipped a day that hasn't happened yet. Today's slot is the one
+/// genuinely interactive element: _TodayCheckInCircle owns its own tap
+/// and animation, separate from the plain _DayCircle every other day
+/// uses, since only today can ever actually be tapped.
 class _WeekStrip extends StatelessWidget {
-  final Set<DateTime> readingDays;
-  const _WeekStrip({required this.readingDays});
+  final Set<DateTime> checkedDays;
+  final bool checkedInToday;
+  final VoidCallback onCheckIn;
+
+  const _WeekStrip({required this.checkedDays, required this.checkedInToday, required this.onCheckIn});
 
   static const _dayLabels = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -561,7 +611,6 @@ class _WeekStrip extends StatelessWidget {
         final day = weekStart.add(Duration(days: i));
         final isToday = day == today;
         final isFuture = day.isAfter(today);
-        final visited = readingDays.contains(day);
 
         return Column(
           children: [
@@ -574,25 +623,171 @@ class _WeekStrip extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 6),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: visited ? scheme.primary : Colors.transparent,
-                border: Border.all(
-                  color: isFuture
-                      ? scheme.outlineVariant.withValues(alpha: 0.35)
-                      : (isToday ? scheme.primary : scheme.outlineVariant),
-                  width: isToday ? 2 : 1,
-                ),
-              ),
-              child: visited ? Icon(Icons.local_fire_department_rounded, size: 14, color: scheme.onPrimary) : null,
-            ),
+            if (isToday)
+              _TodayCheckInCircle(checkedIn: checkedInToday, onTap: onCheckIn)
+            else
+              _DayCircle(checked: checkedDays.contains(day), dimmed: isFuture),
           ],
         );
       }),
+    );
+  }
+}
+
+/// A past (or future-placeholder) day in the week strip -- the same
+/// plain filled-circle-with-flame look this card has always used,
+/// factored out now that today needs a genuinely different, animated
+/// widget next to it.
+class _DayCircle extends StatelessWidget {
+  final bool checked;
+  final bool dimmed;
+  const _DayCircle({required this.checked, required this.dimmed});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: checked ? scheme.primary : Colors.transparent,
+        border: Border.all(
+          color: dimmed ? scheme.outlineVariant.withValues(alpha: 0.35) : scheme.outlineVariant,
+        ),
+      ),
+      child: checked ? Icon(Icons.local_fire_department_rounded, size: 14, color: scheme.onPrimary) : null,
+    );
+  }
+}
+
+/// Today's slot in the week strip -- the one genuinely interactive
+/// piece of the streak card, and the "copy games" ask: not checked in
+/// yet, a soft pulsing glow invites the tap; tapped, a haptic buzz, a
+/// bounce-overshoot scale on the circle itself, and a ring expanding
+/// and fading outward give the daily check-in a small reward moment
+/// instead of a state just silently flipping. Once checked in it
+/// settles into the same plain look _DayCircle uses for past days and
+/// stops being tappable -- there's nothing to undo to.
+class _TodayCheckInCircle extends StatefulWidget {
+  final bool checkedIn;
+  final VoidCallback onTap;
+  const _TodayCheckInCircle({required this.checkedIn, required this.onTap});
+
+  @override
+  State<_TodayCheckInCircle> createState() => _TodayCheckInCircleState();
+}
+
+class _TodayCheckInCircleState extends State<_TodayCheckInCircle> with TickerProviderStateMixin {
+  late final AnimationController _pulseController;
+  late final AnimationController _burstController;
+  bool _justChecked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _pulseController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))
+      ..repeat(reverse: true);
+    _burstController = AnimationController(vsync: this, duration: const Duration(milliseconds: 500));
+  }
+
+  @override
+  void dispose() {
+    _pulseController.dispose();
+    _burstController.dispose();
+    super.dispose();
+  }
+
+  void _handleTap() {
+    if (widget.checkedIn) return;
+    setState(() => _justChecked = true);
+    unawaited(_burstController.forward(from: 0));
+    widget.onTap();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final scheme = Theme.of(context).colorScheme;
+    final checked = widget.checkedIn;
+
+    return Semantics(
+      button: true,
+      label: l10n.markTodayAsRead,
+      child: GestureDetector(
+        onTap: _handleTap,
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Expanding, fading burst ring -- plays once per tap, not
+              // a continuous loop like the pulse below.
+              AnimatedBuilder(
+                animation: _burstController,
+                builder: (context, child) {
+                  final t = _burstController.value;
+                  if (t == 0) return const SizedBox.shrink();
+                  return Opacity(
+                    opacity: 1.0 - t,
+                    child: Transform.scale(
+                      scale: 1.0 + t * 0.9,
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: scheme.primary, width: 2),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+              // Soft pulsing glow while not yet checked in, inviting the
+              // tap -- stops the moment there's nothing left to draw the
+              // eye toward, same reasoning as _FlickeringFlame.
+              if (!checked)
+                AnimatedBuilder(
+                  animation: _pulseController,
+                  builder: (context, child) {
+                    final t = Curves.easeInOut.transform(_pulseController.value);
+                    return Container(
+                      width: 28 + t * 6,
+                      height: 28 + t * 6,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: scheme.primary.withValues(alpha: 0.18 - t * 0.12),
+                      ),
+                    );
+                  },
+                ),
+              AnimatedScale(
+                scale: _justChecked ? 1.15 : 1.0,
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.elasticOut,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: checked ? scheme.primary : Colors.transparent,
+                    border: Border.all(color: scheme.primary, width: checked ? 1 : 2),
+                  ),
+                  child: Icon(
+                    checked ? Icons.local_fire_department_rounded : Icons.add_rounded,
+                    size: checked ? 14 : 16,
+                    color: checked ? scheme.onPrimary : scheme.primary,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

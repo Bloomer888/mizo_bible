@@ -57,6 +57,20 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String bestStreak(int days) {
+    return 'Best: $days days';
+  }
+
+  @override
+  String get startStreakPrompt => 'Tap today to start your streak';
+
+  @override
+  String get continueStreakPrompt => 'Tap today to keep your streak going';
+
+  @override
+  String get markTodayAsRead => 'Mark today as read';
+
+  @override
   String get readingModeParallel => 'Parallel';
 
   @override
