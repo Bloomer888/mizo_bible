@@ -5,4 +5,5 @@
          there's no flash of plain white between this splash and Flutter's
          first frame. -->
     <item android:drawable="@color/launch_background_light" />
+    <item android:drawable="@drawable/splash_logo" android:gravity="center" />
 </layer-list>

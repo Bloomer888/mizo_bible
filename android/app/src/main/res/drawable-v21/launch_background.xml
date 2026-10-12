@@ -4,4 +4,9 @@
     <!-- Matches AppTheme.light()'s ColorScheme.surface (app_theme.dart).
          See drawable-night-v21 for the dark-mode counterpart. -->
     <item android:drawable="@color/launch_background_light" />
+    <!-- The app icon, centered: same source as the launcher icon
+         (assets/icon/icon.png), already self-contained with its own
+         matching background square, so it reads cleanly as a logo
+         rather than needing a transparent cutout here. -->
+    <item android:drawable="@drawable/splash_logo" android:gravity="center" />
 </layer-list>

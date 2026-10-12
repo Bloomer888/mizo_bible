@@ -4,4 +4,8 @@
          a dark warm brown, not pure black, so the splash matches the
          app's actual dark-mode background instead of flashing to it. -->
     <item android:drawable="@color/launch_background_dark" />
+    <!-- Same logo as the light variant: its own background square is
+         pale regardless of system theme, which reads fine as a single
+         light "card" floating on the dark splash background. -->
+    <item android:drawable="@drawable/splash_logo" android:gravity="center" />
 </layer-list>
