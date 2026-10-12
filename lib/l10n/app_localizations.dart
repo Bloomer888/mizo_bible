@@ -538,6 +538,48 @@ abstract class AppLocalizations {
   /// **'Sync your bookmarks, highlights, and notes across every device.'**
   String get premiumTagline;
 
+  /// No description provided for @premiumHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Go further with Premium'**
+  String get premiumHeadline;
+
+  /// No description provided for @premiumFeatureSyncTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud Sync'**
+  String get premiumFeatureSyncTitle;
+
+  /// No description provided for @premiumFeatureReadingPlansDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Structured plans to read through Scripture at your own pace.'**
+  String get premiumFeatureReadingPlansDescription;
+
+  /// No description provided for @premiumFeatureNotificationsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Notifications'**
+  String get premiumFeatureNotificationsTitle;
+
+  /// No description provided for @premiumFeatureNotificationsDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'A daily verse reminder, plus an alert the moment a new one arrives.'**
+  String get premiumFeatureNotificationsDescription;
+
+  /// No description provided for @bestValue.
+  ///
+  /// In en, this message translates to:
+  /// **'BEST VALUE'**
+  String get bestValue;
+
+  /// No description provided for @saveBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Save {percent}%'**
+  String saveBadge(int percent);
+
   /// No description provided for @premiumActive.
   ///
   /// In en, this message translates to:

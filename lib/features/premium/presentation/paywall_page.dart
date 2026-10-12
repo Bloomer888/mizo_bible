@@ -31,21 +31,38 @@ class PaywallPage extends ConsumerWidget {
   }
 }
 
+/// The circular tinted icon used at the top of every state this page can
+/// be in (sign-in prompt, already-Premium, offerings) -- one shared visual
+/// anchor rather than three slightly different bare icons.
+class _HeroIcon extends StatelessWidget {
+  final IconData icon;
+  const _HeroIcon({this.icon = Icons.workspace_premium_rounded});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(color: scheme.primaryContainer, shape: BoxShape.circle),
+      child: Icon(icon, size: 40, color: scheme.onPrimaryContainer),
+    );
+  }
+}
+
 class _SignInPrompt extends StatelessWidget {
   const _SignInPrompt();
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final scheme = Theme.of(context).colorScheme;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.workspace_premium_rounded, size: 48, color: scheme.primary),
-            const SizedBox(height: 16),
+            const _HeroIcon(),
+            const SizedBox(height: 20),
             Text(l10n.signInToSubscribe, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 24),
             FilledButton(
@@ -65,7 +82,6 @@ class _AlreadyPremium extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
-    final scheme = Theme.of(context).colorScheme;
     final isMock = kDebugMode && ref.watch(debugMockPremiumProvider);
     return Center(
       child: Padding(
@@ -73,8 +89,8 @@ class _AlreadyPremium extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.workspace_premium_rounded, size: 48, color: scheme.primary),
-            const SizedBox(height: 16),
+            const _HeroIcon(icon: Icons.verified_rounded),
+            const SizedBox(height: 20),
             Text(l10n.premiumActive, textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium),
             if (isMock) ...[
               const SizedBox(height: 24),
@@ -103,18 +119,28 @@ class _PackageDisplay {
   final String id;
   final String title;
   final String priceString;
+  // Raw numeric price (StoreProduct.price), not parsed from
+  // priceString -- savingsPercent below is computed from this, never
+  // from the formatted string, since that's locale/currency-formatted
+  // text that isn't safe to parse back into a number.
+  final double price;
   final int? freeTrialDays;
+  final bool isRecommended;
+  final int? savingsPercent;
   final Package? realPackage;
 
   const _PackageDisplay({
     required this.id,
     required this.title,
     required this.priceString,
+    required this.price,
     this.freeTrialDays,
+    this.isRecommended = false,
+    this.savingsPercent,
     this.realPackage,
   });
 
-  factory _PackageDisplay.fromPackage(Package package) {
+  factory _PackageDisplay.fromPackage(Package package, {bool isRecommended = false, int? savingsPercent}) {
     final product = package.storeProduct;
     final intro = product.introductoryPrice;
     final isFreeTrial = intro != null && intro.price == 0;
@@ -122,16 +148,40 @@ class _PackageDisplay {
       id: package.identifier,
       title: product.title,
       priceString: product.priceString,
+      price: product.price,
       freeTrialDays: isFreeTrial ? intro.periodNumberOfUnits : null,
+      isRecommended: isRecommended,
+      savingsPercent: savingsPercent,
       realPackage: package,
     );
   }
 }
 
-const _mockPackages = [
-  _PackageDisplay(id: 'mock_monthly', title: 'Monthly', priceString: '₹29/month', freeTrialDays: 7),
-  _PackageDisplay(id: 'mock_annual', title: 'Annual', priceString: '₹290/year'),
-  _PackageDisplay(id: 'mock_lifetime', title: 'Lifetime', priceString: '₹699 one-time'),
+/// How much cheaper [comparedPrice] is than paying [basePrice] for the
+/// same stretch of time it covers (e.g. 12x the monthly price for an
+/// annual plan) -- null when there's nothing to compare against, or the
+/// "discount" would be zero or negative (a monthly price that didn't
+/// actually save anything isn't worth a badge).
+int? _savingsPercent({required double basePrice, required int baseMultiplier, required double comparedPrice}) {
+  final baseTotal = basePrice * baseMultiplier;
+  if (baseTotal <= 0) return null;
+  final percent = ((baseTotal - comparedPrice) / baseTotal * 100).round();
+  return percent > 0 ? percent : null;
+}
+
+final _mockMonthlyPrice = 29.0;
+final _mockAnnualPrice = 290.0;
+final _mockPackages = [
+  _PackageDisplay(id: 'mock_monthly', title: 'Monthly', priceString: '₹29/month', price: _mockMonthlyPrice, freeTrialDays: 7),
+  _PackageDisplay(
+    id: 'mock_annual',
+    title: 'Annual',
+    priceString: '₹290/year',
+    price: _mockAnnualPrice,
+    isRecommended: true,
+    savingsPercent: _savingsPercent(basePrice: _mockMonthlyPrice, baseMultiplier: 12, comparedPrice: _mockAnnualPrice),
+  ),
+  const _PackageDisplay(id: 'mock_lifetime', title: 'Lifetime', priceString: '₹699 one-time', price: 699),
 ];
 
 class _OfferingsView extends ConsumerStatefulWidget {
@@ -254,10 +304,22 @@ class _OfferingsViewState extends ConsumerState<_OfferingsView> {
     }
 
     final offering = _offering!;
-    final displays = [offering.monthly, offering.annual, offering.lifetime]
-        .whereType<Package>()
-        .map(_PackageDisplay.fromPackage)
-        .toList();
+    final monthlyPackage = offering.monthly;
+    final annualPackage = offering.annual;
+    final annualSavings = (monthlyPackage != null && annualPackage != null)
+        ? _savingsPercent(
+            basePrice: monthlyPackage.storeProduct.price,
+            baseMultiplier: 12,
+            comparedPrice: annualPackage.storeProduct.price,
+          )
+        : null;
+
+    final displays = <_PackageDisplay>[
+      if (monthlyPackage != null) _PackageDisplay.fromPackage(monthlyPackage),
+      if (annualPackage != null)
+        _PackageDisplay.fromPackage(annualPackage, isRecommended: true, savingsPercent: annualSavings),
+      if (offering.lifetime case final lifetimePackage?) _PackageDisplay.fromPackage(lifetimePackage),
+    ];
     return _buildList(context, displays, showTestBanner: false);
   }
 
@@ -274,8 +336,36 @@ class _OfferingsViewState extends ConsumerState<_OfferingsView> {
           ),
           const SizedBox(height: 16),
         ],
-        Text(l10n.premiumTagline, style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 16),
+        Center(
+          child: Column(
+            children: [
+              const _HeroIcon(),
+              const SizedBox(height: 16),
+              Text(
+                l10n.premiumHeadline,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        _FeatureRow(
+          icon: Icons.sync_rounded,
+          title: l10n.premiumFeatureSyncTitle,
+          description: l10n.premiumTagline,
+        ),
+        _FeatureRow(
+          icon: Icons.calendar_month_rounded,
+          title: l10n.readingPlans,
+          description: l10n.premiumFeatureReadingPlansDescription,
+        ),
+        _FeatureRow(
+          icon: Icons.notifications_active_rounded,
+          title: l10n.premiumFeatureNotificationsTitle,
+          description: l10n.premiumFeatureNotificationsDescription,
+        ),
+        const SizedBox(height: 12),
         for (final display in displays) ...[
           _PackageCard(
             display: display,
@@ -298,6 +388,42 @@ class _OfferingsViewState extends ConsumerState<_OfferingsView> {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _FeatureRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String description;
+  const _FeatureRow({required this.icon, required this.title, required this.description});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(color: scheme.secondaryContainer, shape: BoxShape.circle),
+            child: Icon(icon, size: 20, color: scheme.onSecondaryContainer),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                const SizedBox(height: 2),
+                Text(description, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13, height: 1.3)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -339,6 +465,25 @@ class _TestModeBanner extends StatelessWidget {
   }
 }
 
+class _Badge extends StatelessWidget {
+  final String label;
+  final Color color;
+  final Color onColor;
+  const _Badge({required this.label, required this.color, required this.onColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)),
+      child: Text(
+        label,
+        style: TextStyle(color: onColor, fontWeight: FontWeight.w700, fontSize: 11, letterSpacing: 0.3),
+      ),
+    );
+  }
+}
+
 class _PackageCard extends StatelessWidget {
   final _PackageDisplay display;
   final bool isPurchasing;
@@ -349,19 +494,53 @@ class _PackageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final scheme = Theme.of(context).colorScheme;
     final freeTrialDays = display.freeTrialDays;
+    final recommended = display.isRecommended;
+    final savingsPercent = display.savingsPercent;
 
     return Card(
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        onTap: onTap,
-        title: Text(display.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: freeTrialDays != null
-            ? Text(l10n.freeTrialThen(freeTrialDays, display.priceString))
-            : Text(display.priceString),
-        trailing: isPurchasing
-            ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
-            : const Icon(Icons.chevron_right_rounded),
+      margin: EdgeInsets.zero,
+      // A flat alphaBlend against the theme's own card color, not a
+      // runtime-transparent overlay -- predictable regardless of
+      // what's behind it, and subtle enough not to fight the app's
+      // generally muted palette.
+      color: recommended ? Color.alphaBlend(scheme.primary.withValues(alpha: 0.08), scheme.surfaceContainerLow) : null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: recommended ? scheme.primary : Colors.transparent, width: 2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (recommended || savingsPercent != null)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Row(
+                children: [
+                  if (recommended) _Badge(label: l10n.bestValue, color: scheme.primary, onColor: scheme.onPrimary),
+                  if (recommended && savingsPercent != null) const SizedBox(width: 8),
+                  if (savingsPercent != null)
+                    _Badge(
+                      label: l10n.saveBadge(savingsPercent),
+                      color: scheme.secondaryContainer,
+                      onColor: scheme.onSecondaryContainer,
+                    ),
+                ],
+              ),
+            ),
+          ListTile(
+            contentPadding: const EdgeInsets.all(16),
+            onTap: onTap,
+            title: Text(display.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+            subtitle: freeTrialDays != null
+                ? Text(l10n.freeTrialThen(freeTrialDays, display.priceString))
+                : Text(display.priceString),
+            trailing: isPurchasing
+                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.chevron_right_rounded),
+          ),
+        ],
       ),
     );
   }

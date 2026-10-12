@@ -92,6 +92,18 @@
   "premium": "Premium",
   "upgradeToPremium": "Upgrade to Premium",
   "premiumTagline": "Sync your bookmarks, highlights, and notes across every device.",
+  "premiumHeadline": "Go further with Premium",
+  "premiumFeatureSyncTitle": "Cloud Sync",
+  "premiumFeatureReadingPlansDescription": "Structured plans to read through Scripture at your own pace.",
+  "premiumFeatureNotificationsTitle": "Daily Notifications",
+  "premiumFeatureNotificationsDescription": "A daily verse reminder, plus an alert the moment a new one arrives.",
+  "bestValue": "BEST VALUE",
+  "saveBadge": "Save {percent}%",
+  "@saveBadge": {
+    "placeholders": {
+      "percent": { "type": "int" }
+    }
+  },
   "premiumActive": "You're a Premium member",
   "signInToSubscribe": "Sign in to subscribe to Premium",
   "syncRequiresPremium": "Cloud sync is a Premium feature",

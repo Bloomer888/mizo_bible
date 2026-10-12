@@ -239,6 +239,31 @@ class AppLocalizationsEn extends AppLocalizations {
       'Sync your bookmarks, highlights, and notes across every device.';
 
   @override
+  String get premiumHeadline => 'Go further with Premium';
+
+  @override
+  String get premiumFeatureSyncTitle => 'Cloud Sync';
+
+  @override
+  String get premiumFeatureReadingPlansDescription =>
+      'Structured plans to read through Scripture at your own pace.';
+
+  @override
+  String get premiumFeatureNotificationsTitle => 'Daily Notifications';
+
+  @override
+  String get premiumFeatureNotificationsDescription =>
+      'A daily verse reminder, plus an alert the moment a new one arrives.';
+
+  @override
+  String get bestValue => 'BEST VALUE';
+
+  @override
+  String saveBadge(int percent) {
+    return 'Save $percent%';
+  }
+
+  @override
   String get premiumActive => 'You\'re a Premium member';
 
   @override
