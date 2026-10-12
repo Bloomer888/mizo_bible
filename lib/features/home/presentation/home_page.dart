@@ -211,17 +211,19 @@ class _HomeCard extends StatelessWidget {
 /// Tapping jumps straight to the verse in its full chapter context,
 /// same destination the continue-reading card uses.
 ///
-/// Sized to almost half the screen, per the user's explicit request
-/// (2026-10-12) -- the label and reference sit up top, then a large
-/// gap, then the quote. The gap is real spacing (not a stretched
-/// background or oversized type), and scales with screen height via
-/// MediaQuery rather than a fixed pixel value, so "almost half the
-/// screen" holds across phone sizes instead of only looking right on
-/// whatever device this was tuned on. minHeight on the ConstrainedBox
-/// is a backstop for an unusually short verse -- the gap alone
-/// comfortably clears it for every reference in the curated list as
-/// checked on-device, but a future shorter entry shouldn't be able to
-/// shrink the card back down.
+/// Sized noticeably larger than a normal Home card, per the user's
+/// explicit request (2026-10-12, spacing trimmed down a bit the same
+/// day after it first shipped too large) -- the label and reference
+/// sit up top, then a gap, then the quote. The gap is real spacing
+/// (not a stretched background or oversized type), and scales with
+/// screen height via MediaQuery rather than a fixed pixel value, so
+/// the proportions hold across phone sizes instead of only looking
+/// right on whatever device this was tuned on. minHeight on the
+/// ConstrainedBox is a real floor, not just a redundant backstop --
+/// for a short verse (or now, with the trimmed gap, even some typical
+/// ones) natural content falls short of it, and the extra space reads
+/// fine landing below the quote rather than needing to all be in the
+/// one gap above it.
 class _VerseOfTheDayCard extends StatelessWidget {
   final VerseOfTheDay verse;
   const _VerseOfTheDayCard({required this.verse});
@@ -239,7 +241,7 @@ class _VerseOfTheDayCard extends StatelessWidget {
         ),
       ),
       child: ConstrainedBox(
-        constraints: BoxConstraints(minHeight: screenHeight * 0.46),
+        constraints: BoxConstraints(minHeight: screenHeight * 0.38),
         child: Card(
           child: Padding(
             padding: const EdgeInsets.all(20),
@@ -266,7 +268,7 @@ class _VerseOfTheDayCard extends StatelessWidget {
                   '${verse.bookName} ${verse.chapter}:${verse.verse}',
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: scheme.primary),
                 ),
-                SizedBox(height: screenHeight * 0.16),
+                SizedBox(height: screenHeight * 0.10),
                 Text(verse.englishText, style: const TextStyle(fontSize: 17, height: 1.5)),
                 const SizedBox(height: 10),
                 Text(
