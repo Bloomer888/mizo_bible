@@ -53,6 +53,23 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
   int? _restoredChapter;
   int? _restoredVerse;
   bool _topBarVisible = true;
+  // True while any of the picker's three dropdown fields has focus --
+  // i.e. its popup is open or was just closed. DropdownMenu's popup is
+  // built via OverlayPortal, which keeps it a logical descendant of
+  // wherever the picker sits for Notification-bubbling purposes (unlike
+  // the legacy raw-Overlay approach, which would have isolated it) --
+  // so scrolling inside the popup's own list produces UserScrollNotification
+  // that would otherwise reach the NotificationListener below and hide
+  // this page's top bar (and, bubbling further, app_shell's bottom nav
+  // too) as if the reader itself were being scrolled. Swallowing that
+  // notification at the picker (see build() below) stops the bar-hiding,
+  // but doesn't by itself stop the background list's own Scrollable from
+  // also claiming the same drag -- confirmed on a real device, scrolling
+  // the open book dropdown moved the chapter content behind it. This
+  // flag locks the list's physics for as long as a dropdown might be
+  // open, which is also just correct UX: scrolling the Bible text while
+  // a book/chapter/verse picker is open was never a meaningful gesture.
+  bool _pickerMenuActive = false;
 
   // Read once up front and kept, not re-read via ref.read from
   // dispose() -- ref becomes unsafe to use once a widget is unmounting,
@@ -191,25 +208,39 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
               preferredSize: const Size.fromHeight(96),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-                child: _BookChapterVersePicker(
-                  bookId: widget.bookId,
-                  bookName: bookInfo.name,
-                  chapterCount: bookInfo.chapterCount,
-                  items: items,
-                  initialChapter: targetChapter ?? 1,
-                  initialVerse: widget.targetVerse ?? _restoredVerse ?? 1,
-                  onChapterSelected: (chapter) {
-                    final index = _chapterIndex(items!)[chapter];
-                    if (index != null && _scrollController.isAttached) {
-                      _scrollController.scrollTo(index: index, duration: const Duration(milliseconds: 300));
-                    }
-                  },
-                  onVerseSelected: (chapter, verse) {
-                    final index = _targetIndex(items!, chapter, verse);
-                    if (index != null && _scrollController.isAttached) {
-                      _scrollController.scrollTo(index: index, duration: const Duration(milliseconds: 300));
-                    }
-                  },
+                // Absorbs the ScrollNotification that bubbles up from the
+                // open dropdown's own popup list (see _pickerMenuActive's
+                // doc comment) before it reaches this page's own
+                // NotificationListener<UserScrollNotification> below, or
+                // app_shell.dart's further up -- returning true marks a
+                // notification as handled, which stops it from bubbling
+                // any further.
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (_) => true,
+                  child: _BookChapterVersePicker(
+                    bookId: widget.bookId,
+                    bookName: bookInfo.name,
+                    chapterCount: bookInfo.chapterCount,
+                    items: items,
+                    initialChapter: targetChapter ?? 1,
+                    initialVerse: widget.targetVerse ?? _restoredVerse ?? 1,
+                    onChapterSelected: (chapter) {
+                      final index = _chapterIndex(items!)[chapter];
+                      if (index != null && _scrollController.isAttached) {
+                        _scrollController.scrollTo(index: index, duration: const Duration(milliseconds: 300));
+                      }
+                    },
+                    onVerseSelected: (chapter, verse) {
+                      final index = _targetIndex(items!, chapter, verse);
+                      if (index != null && _scrollController.isAttached) {
+                        _scrollController.scrollTo(index: index, duration: const Duration(milliseconds: 300));
+                      }
+                    },
+                    onMenuActiveChanged: (active) {
+                      if (active == _pickerMenuActive) return;
+                      setState(() => _pickerMenuActive = active);
+                    },
+                  ),
                 ),
               ),
             )
@@ -256,6 +287,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
                       bookId: widget.bookId,
                       bookName: bookInfo?.name ?? '',
                       topPadding: topBarHeight,
+                      scrollLocked: _pickerMenuActive,
                     ),
                   AsyncError(:final error) => Center(child: Text('Failed to load: $error')),
                   _ => const Center(child: CircularProgressIndicator()),
@@ -322,6 +354,11 @@ class _ReaderList extends StatelessWidget {
   // scrolls away together with the content behind the bar once the bar
   // has slid out of view, instead of leaving a fixed dead gap.
   final double topPadding;
+  // True while the book/chapter/verse picker's popup might be open --
+  // see _pickerMenuActive in _ReaderPageState for why this list needs
+  // its own scrolling disabled for that duration, not just the picker
+  // fixed in isolation.
+  final bool scrollLocked;
   const _ReaderList({
     required this.items,
     required this.scrollController,
@@ -329,6 +366,7 @@ class _ReaderList extends StatelessWidget {
     required this.bookId,
     required this.bookName,
     required this.topPadding,
+    required this.scrollLocked,
   });
 
   @override
@@ -338,6 +376,7 @@ class _ReaderList extends StatelessWidget {
       itemPositionsListener: positionsListener,
       itemCount: items.length,
       padding: EdgeInsets.only(top: topPadding),
+      physics: scrollLocked ? const NeverScrollableScrollPhysics() : null,
       itemBuilder: (context, index) => _ReaderItemTile(item: items[index], bookId: bookId, bookName: bookName),
     );
   }
@@ -544,6 +583,12 @@ class _BookChapterVersePicker extends ConsumerStatefulWidget {
   final int initialVerse;
   final ValueChanged<int> onChapterSelected;
   final void Function(int chapter, int verse) onVerseSelected;
+  // Fires whenever any of the three dropdowns' focus state changes --
+  // DropdownMenu requests focus on its field when it opens, so "any
+  // field focused" is this picker's own signal for "a popup might be
+  // open," passed up so the reader page can lock its own list's
+  // scrolling for that duration (see _pickerMenuActive in reader_page.dart).
+  final ValueChanged<bool> onMenuActiveChanged;
 
   const _BookChapterVersePicker({
     required this.bookId,
@@ -554,6 +599,7 @@ class _BookChapterVersePicker extends ConsumerStatefulWidget {
     required this.initialVerse,
     required this.onChapterSelected,
     required this.onVerseSelected,
+    required this.onMenuActiveChanged,
   });
 
   @override
@@ -563,6 +609,9 @@ class _BookChapterVersePicker extends ConsumerStatefulWidget {
 class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker> {
   late int _chapter;
   late int _verse;
+  final _bookFocus = FocusNode();
+  final _chapterFocus = FocusNode();
+  final _verseFocus = FocusNode();
 
   @override
   void initState() {
@@ -572,6 +621,23 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
     // the first point it's guaranteed set.
     _chapter = widget.initialChapter;
     _verse = widget.initialVerse;
+    for (final node in [_bookFocus, _chapterFocus, _verseFocus]) {
+      node.addListener(_notifyMenuActive);
+    }
+  }
+
+  @override
+  void dispose() {
+    for (final node in [_bookFocus, _chapterFocus, _verseFocus]) {
+      node
+        ..removeListener(_notifyMenuActive)
+        ..dispose();
+    }
+    super.dispose();
+  }
+
+  void _notifyMenuActive() {
+    widget.onMenuActiveChanged(_bookFocus.hasFocus || _chapterFocus.hasFocus || _verseFocus.hasFocus);
   }
 
   List<int> _versesInChapter(int chapter) {
@@ -596,11 +662,11 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
     // (app_theme.dart) for just these three fields -- no wrapping box
     // around the group at all, just each field as its own outlined
     // control sitting directly on the app bar, matching its fill
-    // exactly (scheme.surfaceContainer, same as AppBarTheme.backgroundColor)
+    // exactly (scheme.surfaceContainerLow, same as AppBarTheme.backgroundColor)
     // so only the border defines each one.
     final fieldDecoration = InputDecorationTheme(
       filled: true,
-      fillColor: scheme.surfaceContainer,
+      fillColor: scheme.surfaceContainerLow,
       border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide(color: scheme.outlineVariant)),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(14),
@@ -625,6 +691,7 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
           flex: 5,
           child: switch (booksAsync) {
             AsyncData(:final value) => DropdownMenu<int>(
+                focusNode: _bookFocus,
                 initialSelection: widget.bookId,
                 label: Text(language.booksLabel(context.l10n)),
                 inputDecorationTheme: fieldDecoration,
@@ -648,6 +715,7 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
           flex: 3,
           child: DropdownMenu<int>(
             key: ValueKey('chapter-${widget.bookId}-$_chapter'),
+            focusNode: _chapterFocus,
             initialSelection: _chapter,
             label: Text(language.chaptersLabel(context.l10n)),
             inputDecorationTheme: fieldDecoration,
@@ -671,6 +739,7 @@ class _BookChapterVersePickerState extends ConsumerState<_BookChapterVersePicker
           flex: 3,
           child: DropdownMenu<int>(
             key: ValueKey('verse-${widget.bookId}-$_chapter'),
+            focusNode: _verseFocus,
             initialSelection: verseSelection,
             label: Text(language.verseLabel(context.l10n)),
             inputDecorationTheme: fieldDecoration,

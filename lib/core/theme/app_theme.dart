@@ -30,12 +30,20 @@ abstract final class AppTheme {
       scaffoldBackgroundColor: scheme.surface,
 
       appBarTheme: AppBarTheme(
-        // Matches NavigationBar's own M3 default (ColorScheme.surfaceContainer,
-        // set by Flutter itself since app_shell.dart's bottom bar has no
-        // explicit theme) -- left as scheme.surface here instead, the top and
-        // bottom bars read as two visibly different tones of the same app.
-        backgroundColor: scheme.surfaceContainer,
-        surfaceTintColor: scheme.surfaceTint,
+        // surfaceContainerLow, not the stronger surfaceContainer -- a
+        // softer, barely-tinted lift off the scaffold's plain surface,
+        // same token cardTheme/bottomSheetTheme below already use.
+        // surfaceTintColor is explicitly transparent (same reasoning as
+        // those two) because otherwise scrolledUnderElevation blends
+        // scheme.surfaceTint into this color once content scrolls
+        // beneath the bar -- which is nearly always, reading a book --
+        // so the bar would drift away from backgroundColor and away
+        // from navigationBarTheme below, which has no such scroll-driven
+        // tint to begin with. shadowColor is kept: a drop shadow on
+        // scroll is a fine "lift" cue that doesn't change the bar's own
+        // fill, unlike the tint did.
+        backgroundColor: scheme.surfaceContainerLow,
+        surfaceTintColor: Colors.transparent,
         scrolledUnderElevation: 3,
         shadowColor: scheme.shadow.withValues(alpha: 0.2),
         titleTextStyle: TextStyle(
@@ -45,6 +53,17 @@ abstract final class AppTheme {
           fontWeight: FontWeight.w600,
           color: scheme.onSurface,
         ),
+      ),
+
+      // Explicit, not left to NavigationBar's own M3 default
+      // (ColorScheme.surfaceContainer) -- that default is what caused
+      // the original top/bottom mismatch, since AppBarTheme above was
+      // never using that same token. Pinning both to the same literal
+      // color here is what actually guarantees they match, rather than
+      // two independent defaults happening to agree.
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: scheme.surfaceContainerLow,
+        surfaceTintColor: Colors.transparent,
       ),
 
       iconButtonTheme: IconButtonThemeData(
