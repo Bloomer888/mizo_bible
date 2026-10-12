@@ -6,7 +6,6 @@ import '../../about/presentation/about_page.dart';
 import '../../auth/presentation/account_page.dart';
 import '../../library/presentation/bookmarks_page.dart';
 import '../../library/presentation/highlights_page.dart';
-import '../../library/presentation/history_page.dart';
 import '../../library/presentation/notes_page.dart';
 import '../../premium/data/premium_providers.dart';
 import '../../premium/presentation/paywall_page.dart';
@@ -64,11 +63,6 @@ class MorePage extends ConsumerWidget {
             leading: const Icon(Icons.edit_note_rounded),
             title: Text(l10n.notes),
             onTap: () => openPage(const NotesPage()),
-          ),
-          ListTile(
-            leading: const Icon(Icons.history_rounded),
-            title: Text(l10n.history),
-            onTap: () => openPage(const HistoryPage()),
           ),
           const Divider(indent: 16, endIndent: 16),
           _SectionLabel(l10n.settings),

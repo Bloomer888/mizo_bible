@@ -1,4 +1,3 @@
-import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../core/db/user_database.dart';
@@ -6,11 +5,15 @@ import '../../../core/db/user_database.dart';
 const _uuid = Uuid();
 
 /// Append-only, unlike reading_progress (one row per book, always
-/// updated in place) -- this is a log of chapters visited over time, so
-/// "recently read" can show real history, not just the current spot.
-/// Skips inserting when the most recent entry is already this exact
-/// chapter, so re-entering the same chapter repeatedly in one sitting
-/// doesn't flood the log with duplicates.
+/// updated in place) -- this is a log of chapters visited over time,
+/// which the reading streak (loadReadingStreak/loadReadingDaysThisWeek
+/// below) counts distinct calendar days from. There used to be a
+/// browsable History page reading this same log directly; removed
+/// 2026-10-12 (redundant with bookmarks + the streak's week-strip, the
+/// user's call) but the log itself stays, since the streak still needs
+/// it. Skips inserting when the most recent entry is already this
+/// exact chapter, so re-entering the same chapter repeatedly in one
+/// sitting doesn't flood the log with duplicates.
 Future<void> logChapterVisit(UserDatabase db, {required int bookId, required int chapter}) async {
   // Raw SQL ordering by rowid, not Drift's typed query builder ordering
   // by createdAt -- caught by a test: two inserts landing in the same
@@ -36,42 +39,6 @@ Future<void> logChapterVisit(UserDatabase db, {required int bookId, required int
       );
 }
 
-class HistoryEntry {
-  final int bookId;
-  final String bookName;
-  final int chapter;
-  final DateTime visitedAt;
-  const HistoryEntry({required this.bookId, required this.bookName, required this.chapter, required this.visitedAt});
-}
-
-Future<List<HistoryEntry>> loadHistory(UserDatabase db, Map<int, String> bookNames, {int limit = 200}) async {
-  // rowid, not createdAt, for the same reason as logChapterVisit's own
-  // "most recent" check: two visits can tie on createdAt's stored
-  // precision, and ORDER BY created_at DESC then has no guaranteed
-  // tie-break, so "most recent first" stopped being reliably true right
-  // when a user would actually notice -- the chapter they just left not
-  // showing up first. (Caught by a test asserting history.first after
-  // two visits in quick succession -- display order is a real
-  // expectation here, not just cosmetic, same as the dedup check.)
-  final rows = await db
-      .customSelect(
-        'select book_id, chapter, created_at from reading_history where deleted = 0 order by rowid desc limit ?',
-        variables: [Variable.withInt(limit)],
-        readsFrom: {db.readingHistory},
-      )
-      .get();
-
-  return [
-    for (final r in rows)
-      HistoryEntry(
-        bookId: r.read<int>('book_id'),
-        bookName: bookNames[r.read<int>('book_id')] ?? '?',
-        chapter: r.read<int>('chapter'),
-        visitedAt: r.read<DateTime>('created_at'),
-      ),
-  ];
-}
-
 /// Current daily reading streak: consecutive calendar days (local
 /// time) with at least one reading_history entry, counting back from
 /// today. One grace day built in -- if the most recent entry was
@@ -80,8 +47,8 @@ Future<List<HistoryEntry>> loadHistory(UserDatabase db, Map<int, String> bookNam
 /// before they've opened the app.
 ///
 /// No new table or column: this is a read over data reading_history
-/// already stores for the history list, so a per-user streak costs
-/// nothing beyond what's already there. .toLocal() is deliberate, not
+/// already stores, so a per-user streak costs nothing beyond what's
+/// already there. .toLocal() is deliberate, not
 /// defensive dead code -- a streak must count calendar days as this
 /// device's owner experiences them, not whatever timezone the stored
 /// timestamp's raw value happens to be in.

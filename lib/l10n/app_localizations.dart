@@ -160,12 +160,6 @@ abstract class AppLocalizations {
   /// **'Highlights'**
   String get highlights;
 
-  /// No description provided for @history.
-  ///
-  /// In en, this message translates to:
-  /// **'History'**
-  String get history;
-
   /// No description provided for @continueReading.
   ///
   /// In en, this message translates to:
@@ -345,12 +339,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No notes yet'**
   String get noNotesYet;
-
-  /// No description provided for @noHistoryYet.
-  ///
-  /// In en, this message translates to:
-  /// **'No reading history yet'**
-  String get noHistoryYet;
 
   /// No description provided for @account.
   ///

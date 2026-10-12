@@ -4,12 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/db/bible_database.dart';
 import '../../../core/db/user_database.dart';
 import '../../../core/l10n_extension.dart';
-import '../../library/presentation/history_page.dart';
 import '../../library/presentation/library_providers.dart';
 import '../../premium/data/premium_providers.dart';
 import '../../reader/data/reading_history_repository.dart';
 import '../../reader/data/reading_progress_repository.dart';
+import '../../reader/data/verse_annotations_repository.dart';
 import '../../reader/presentation/reader_page.dart';
+import '../../reader/presentation/verse_actions_sheet.dart' show verseAnnotationsProvider;
 import '../../reading_plans/data/reading_plan.dart';
 import '../../reading_plans/data/reading_plan_progress_repository.dart';
 import '../../reading_plans/presentation/reading_plan_providers.dart';
@@ -100,9 +101,6 @@ class HomePage extends ConsumerWidget {
                 // card back for a second, slower-resolving provider --
                 // Riverpod repaints it the moment the real set lands.
                 readingDays: readingDaysAsync.value ?? const {},
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const HistoryPage()),
-                ),
               ),
             ],
           ],
@@ -112,7 +110,16 @@ class HomePage extends ConsumerWidget {
   }
 }
 
-class _ContinueReadingCard extends StatelessWidget {
+/// The one Home card with a trailing action beyond the chevron -- a
+/// bookmark toggle, so turning "where I automatically stopped" into
+/// "a spot I deliberately want to keep" is one tap instead of opening
+/// the reader first (user's suggestion, 2026-10-12: Continue Reading's
+/// auto-tracked position and a bookmark are different things on
+/// purpose -- see [[project-premium-decisions]]-adjacent reasoning in
+/// memory -- but nothing stopped them being one tap apart). Only on
+/// this card, not _StartReadingCard: there's no tracked position yet
+/// to bookmark before any reading has happened.
+class _ContinueReadingCard extends ConsumerWidget {
   final String bookName;
   final int bookId;
   final int chapter;
@@ -126,8 +133,11 @@ class _ContinueReadingCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = context.l10n;
+    final scheme = Theme.of(context).colorScheme;
+    final key = (bookId, chapter, verse);
+    final isBookmarked = ref.watch(verseAnnotationsProvider(key)).value?.bookmarked ?? false;
 
     return _HomeCard(
       icon: Icons.menu_book_rounded,
@@ -137,6 +147,21 @@ class _ContinueReadingCard extends StatelessWidget {
         MaterialPageRoute(
           builder: (_) => ReaderPage(bookId: bookId, targetChapter: chapter, targetVerse: verse),
         ),
+      ),
+      // A real IconButton, not a bare Icon -- same reason the Reading
+      // Plan card's "Mark as read" is a real button and not just
+      // tappable-looking text: it needs its own gesture recognizer so
+      // this tap doesn't also trigger the card's own onTap above.
+      trailing: IconButton(
+        icon: Icon(
+          isBookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
+          color: scheme.primary,
+        ),
+        tooltip: isBookmarked ? l10n.removeBookmark : l10n.addBookmark,
+        onPressed: () async {
+          await toggleBookmark(ref.read(userDatabaseProvider), bookId: bookId, chapter: chapter, verse: verse);
+          ref.invalidate(verseAnnotationsProvider(key));
+        },
       ),
     );
   }
@@ -175,7 +200,18 @@ class _HomeCard extends StatelessWidget {
   final String value;
   final VoidCallback onTap;
 
-  const _HomeCard({required this.icon, required this.label, required this.value, required this.onTap});
+  /// An extra tappable widget before the chevron (e.g. the bookmark
+  /// toggle on _ContinueReadingCard) -- optional, since most cards
+  /// using this just want the plain chevron.
+  final Widget? trailing;
+
+  const _HomeCard({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onTap,
+    this.trailing,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -199,7 +235,13 @@ class _HomeCard extends StatelessWidget {
               Text(value, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
             ],
           ),
-          trailing: Icon(Icons.chevron_right_rounded, color: scheme.outlineVariant),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ?trailing,
+              Icon(Icons.chevron_right_rounded, color: scheme.outlineVariant),
+            ],
+          ),
         ),
       ),
     );
@@ -369,47 +411,50 @@ class _ReadingPlanCard extends ConsumerWidget {
 /// have a logged visit -- replaces the old plain icon+number row with
 /// something that's actually informative at a glance, not just
 /// decorated, per the user's "too bland" feedback (2026-10-11).
+///
+/// Purely informational, not tappable -- it used to open the History
+/// page, removed 2026-10-12 (redundant with bookmarks and this card's
+/// own week strip, the user's call); nothing else was a sensible
+/// destination for a tap here, so this stopped being a _PressableScale
+/// card rather than being wired to somewhere arbitrary. No chevron for
+/// the same reason -- that affordance means "tap me," which is no
+/// longer true.
 class _StreakCard extends StatelessWidget {
   final int streak;
   final Set<DateTime> readingDays;
-  final VoidCallback onTap;
 
-  const _StreakCard({required this.streak, required this.readingDays, required this.onTap});
+  const _StreakCard({required this.streak, required this.readingDays});
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
 
-    return _PressableScale(
-      onTap: onTap,
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  _FlickeringFlame(color: scheme.primary),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(l10n.readingStreak, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)),
-                        const SizedBox(height: 4),
-                        _CountUpStreakText(streak: streak),
-                      ],
-                    ),
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                _FlickeringFlame(color: scheme.primary),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(l10n.readingStreak, style: TextStyle(color: scheme.onSurfaceVariant, fontSize: 13)),
+                      const SizedBox(height: 4),
+                      _CountUpStreakText(streak: streak),
+                    ],
                   ),
-                  Icon(Icons.chevron_right_rounded, color: scheme.outlineVariant),
-                ],
-              ),
-              const SizedBox(height: 18),
-              _WeekStrip(readingDays: readingDays),
-            ],
-          ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            _WeekStrip(readingDays: readingDays),
+          ],
         ),
       ),
     );

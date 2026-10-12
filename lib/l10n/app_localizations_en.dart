@@ -43,9 +43,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get highlights => 'Highlights';
 
   @override
-  String get history => 'History';
-
-  @override
   String get continueReading => 'Continue reading';
 
   @override
@@ -136,9 +133,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get noNotesYet => 'No notes yet';
-
-  @override
-  String get noHistoryYet => 'No reading history yet';
 
   @override
   String get account => 'Account';
