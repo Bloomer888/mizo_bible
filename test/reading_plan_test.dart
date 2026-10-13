@@ -80,8 +80,66 @@ void main() {
       expect(findReadingPlan('nt_90_days')!.name, 'New Testament in 90 Days');
     });
 
+    test('finds the 52-week plan by id', () {
+      expect(findReadingPlan('whole_bible_52_weeks'), isNotNull);
+      expect(findReadingPlan('whole_bible_52_weeks')!.name, '52-Week Bible Reading Plan');
+    });
+
     test('returns null for an unknown id rather than throwing', () {
       expect(findReadingPlan('does_not_exist'), isNull);
+    });
+  });
+
+  group('fiftyTwoWeekBiblePlan', () {
+    // The strongest available check on a hand-transcribed 364-entry
+    // table: since this plan covers the whole Bible exactly once, every
+    // one of its 1,189 chapters (the Bible's real total) must appear in
+    // every book, in order, with nothing missing or duplicated -- a
+    // transcription slip anywhere would break this, not just a loose
+    // spot-check.
+    test('covers 364 days, one per week-category combination', () {
+      expect(fiftyTwoWeekBiblePlan.totalDays, 364);
+      expect(fiftyTwoWeekBiblePlan.days, hasLength(364));
+      expect(fiftyTwoWeekBiblePlan.dayLabels, hasLength(364));
+    });
+
+    test('covers all 1,189 Bible chapters with none missing or duplicated', () {
+      final flattened = fiftyTwoWeekBiblePlan.days.expand((d) => d).toList();
+      expect(flattened.length, 1189);
+      expect(flattened.toSet().length, 1189);
+    });
+
+    test('every book from Genesis (1) to Revelation (66) appears, chapters strictly in order', () {
+      final byBook = <int, List<int>>{};
+      for (final day in fiftyTwoWeekBiblePlan.days) {
+        for (final (bookId, chapter) in day) {
+          byBook.putIfAbsent(bookId, () => []).add(chapter);
+        }
+      }
+      expect(byBook.keys.toSet(), Set<int>.from(List.generate(66, (i) => i + 1)));
+      for (final chapters in byBook.values) {
+        expect(chapters, List.generate(chapters.length, (i) => i + 1));
+      }
+    });
+
+    test('starts at Genesis 1 (week 1, Sunday/Epistles column is Romans, but Monday/Law starts the book order)', () {
+      // The plan's *day order* starts with Sunday's Epistles reading
+      // (Romans 1), not Genesis -- this just confirms Genesis 1 is
+      // somewhere in day 1's set (Monday's Law reading, same day index
+      // since every week packs all 7 categories into consecutive days).
+      expect(fiftyTwoWeekBiblePlan.days[1], contains((1, 1)));
+    });
+
+    test('ends at Revelation 22 and Acts 28 in the final week', () {
+      final lastWeekChapters = fiftyTwoWeekBiblePlan.days.sublist(357, 364).expand((d) => d).toSet();
+      expect(lastWeekChapters, contains((66, 22)));
+      expect(lastWeekChapters, contains((44, 28)));
+    });
+
+    test('day labels follow "Week N · Category" and align with the day order', () {
+      expect(fiftyTwoWeekBiblePlan.dayLabels!.first, 'Week 1 · Epistles');
+      expect(fiftyTwoWeekBiblePlan.dayLabels![6], 'Week 1 · Gospels');
+      expect(fiftyTwoWeekBiblePlan.dayLabels!.last, 'Week 52 · Gospels');
     });
   });
 

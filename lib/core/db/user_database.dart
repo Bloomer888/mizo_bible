@@ -156,6 +156,41 @@ class DailyVerseRefs extends Table {
   Set<Column> get primaryKey => {bookId, chapter, verse};
 }
 
+/// A local cache of Supabase's content.word_of_day -- same "shared
+/// admin-curated list, not SyncableColumns" reasoning as DailyVerseRefs
+/// above, but keyed on scheduledFor (the admin assigns one entry per
+/// calendar date, never two for the same day -- enforced by a unique
+/// constraint on the Supabase side too) rather than a book/chapter/verse
+/// triple. Replaced wholesale on every successful sync, same as
+/// DailyVerseRefs.
+class WordOfDayEntries extends Table {
+  TextColumn get word => text()();
+  TextColumn get meaning => text()();
+  DateTimeColumn get scheduledFor => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {scheduledFor};
+}
+
+/// A local cache of Supabase's content.daily_devotions -- same shape and
+/// reasoning as WordOfDayEntries above. bookId/chapter/verseStart/
+/// verseEnd reference content.verses' identity the same denormalized way
+/// every other table here does (see this file's doc comment on
+/// Bookmarks) -- verseEnd is nullable since a devotion can point at a
+/// single verse rather than a range.
+class DailyDevotionEntries extends Table {
+  TextColumn get title => text()();
+  IntColumn get bookId => integer()();
+  IntColumn get chapter => integer()();
+  IntColumn get verseStart => integer()();
+  IntColumn get verseEnd => integer().nullable()();
+  TextColumn get body => text()();
+  DateTimeColumn get scheduledFor => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {scheduledFor};
+}
+
 @DriftDatabase(
   tables: [
     Bookmarks,
@@ -167,13 +202,15 @@ class DailyVerseRefs extends Table {
     ReadingPlanProgress,
     StreakCheckins,
     DailyVerseRefs,
+    WordOfDayEntries,
+    DailyDevotionEntries,
   ],
 )
 class UserDatabase extends _$UserDatabase {
   UserDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -187,6 +224,10 @@ class UserDatabase extends _$UserDatabase {
           }
           if (from < 4) {
             await m.createTable(dailyVerseRefs);
+          }
+          if (from < 5) {
+            await m.createTable(wordOfDayEntries);
+            await m.createTable(dailyDevotionEntries);
           }
         },
       );

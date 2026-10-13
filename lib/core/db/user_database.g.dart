@@ -4621,6 +4621,751 @@ class DailyVerseRefsCompanion extends UpdateCompanion<DailyVerseRef> {
   }
 }
 
+class $WordOfDayEntriesTable extends WordOfDayEntries
+    with TableInfo<$WordOfDayEntriesTable, WordOfDayEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $WordOfDayEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _wordMeta = const VerificationMeta('word');
+  @override
+  late final GeneratedColumn<String> word = GeneratedColumn<String>(
+    'word',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _meaningMeta = const VerificationMeta(
+    'meaning',
+  );
+  @override
+  late final GeneratedColumn<String> meaning = GeneratedColumn<String>(
+    'meaning',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scheduledForMeta = const VerificationMeta(
+    'scheduledFor',
+  );
+  @override
+  late final GeneratedColumn<DateTime> scheduledFor = GeneratedColumn<DateTime>(
+    'scheduled_for',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [word, meaning, scheduledFor];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'word_of_day_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<WordOfDayEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('word')) {
+      context.handle(
+        _wordMeta,
+        word.isAcceptableOrUnknown(data['word']!, _wordMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_wordMeta);
+    }
+    if (data.containsKey('meaning')) {
+      context.handle(
+        _meaningMeta,
+        meaning.isAcceptableOrUnknown(data['meaning']!, _meaningMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_meaningMeta);
+    }
+    if (data.containsKey('scheduled_for')) {
+      context.handle(
+        _scheduledForMeta,
+        scheduledFor.isAcceptableOrUnknown(
+          data['scheduled_for']!,
+          _scheduledForMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_scheduledForMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {scheduledFor};
+  @override
+  WordOfDayEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return WordOfDayEntry(
+      word: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}word'],
+      )!,
+      meaning: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}meaning'],
+      )!,
+      scheduledFor: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}scheduled_for'],
+      )!,
+    );
+  }
+
+  @override
+  $WordOfDayEntriesTable createAlias(String alias) {
+    return $WordOfDayEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class WordOfDayEntry extends DataClass implements Insertable<WordOfDayEntry> {
+  final String word;
+  final String meaning;
+  final DateTime scheduledFor;
+  const WordOfDayEntry({
+    required this.word,
+    required this.meaning,
+    required this.scheduledFor,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['word'] = Variable<String>(word);
+    map['meaning'] = Variable<String>(meaning);
+    map['scheduled_for'] = Variable<DateTime>(scheduledFor);
+    return map;
+  }
+
+  WordOfDayEntriesCompanion toCompanion(bool nullToAbsent) {
+    return WordOfDayEntriesCompanion(
+      word: Value(word),
+      meaning: Value(meaning),
+      scheduledFor: Value(scheduledFor),
+    );
+  }
+
+  factory WordOfDayEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return WordOfDayEntry(
+      word: serializer.fromJson<String>(json['word']),
+      meaning: serializer.fromJson<String>(json['meaning']),
+      scheduledFor: serializer.fromJson<DateTime>(json['scheduledFor']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'word': serializer.toJson<String>(word),
+      'meaning': serializer.toJson<String>(meaning),
+      'scheduledFor': serializer.toJson<DateTime>(scheduledFor),
+    };
+  }
+
+  WordOfDayEntry copyWith({
+    String? word,
+    String? meaning,
+    DateTime? scheduledFor,
+  }) => WordOfDayEntry(
+    word: word ?? this.word,
+    meaning: meaning ?? this.meaning,
+    scheduledFor: scheduledFor ?? this.scheduledFor,
+  );
+  WordOfDayEntry copyWithCompanion(WordOfDayEntriesCompanion data) {
+    return WordOfDayEntry(
+      word: data.word.present ? data.word.value : this.word,
+      meaning: data.meaning.present ? data.meaning.value : this.meaning,
+      scheduledFor: data.scheduledFor.present
+          ? data.scheduledFor.value
+          : this.scheduledFor,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WordOfDayEntry(')
+          ..write('word: $word, ')
+          ..write('meaning: $meaning, ')
+          ..write('scheduledFor: $scheduledFor')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(word, meaning, scheduledFor);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is WordOfDayEntry &&
+          other.word == this.word &&
+          other.meaning == this.meaning &&
+          other.scheduledFor == this.scheduledFor);
+}
+
+class WordOfDayEntriesCompanion extends UpdateCompanion<WordOfDayEntry> {
+  final Value<String> word;
+  final Value<String> meaning;
+  final Value<DateTime> scheduledFor;
+  final Value<int> rowid;
+  const WordOfDayEntriesCompanion({
+    this.word = const Value.absent(),
+    this.meaning = const Value.absent(),
+    this.scheduledFor = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  WordOfDayEntriesCompanion.insert({
+    required String word,
+    required String meaning,
+    required DateTime scheduledFor,
+    this.rowid = const Value.absent(),
+  }) : word = Value(word),
+       meaning = Value(meaning),
+       scheduledFor = Value(scheduledFor);
+  static Insertable<WordOfDayEntry> custom({
+    Expression<String>? word,
+    Expression<String>? meaning,
+    Expression<DateTime>? scheduledFor,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (word != null) 'word': word,
+      if (meaning != null) 'meaning': meaning,
+      if (scheduledFor != null) 'scheduled_for': scheduledFor,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  WordOfDayEntriesCompanion copyWith({
+    Value<String>? word,
+    Value<String>? meaning,
+    Value<DateTime>? scheduledFor,
+    Value<int>? rowid,
+  }) {
+    return WordOfDayEntriesCompanion(
+      word: word ?? this.word,
+      meaning: meaning ?? this.meaning,
+      scheduledFor: scheduledFor ?? this.scheduledFor,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (word.present) {
+      map['word'] = Variable<String>(word.value);
+    }
+    if (meaning.present) {
+      map['meaning'] = Variable<String>(meaning.value);
+    }
+    if (scheduledFor.present) {
+      map['scheduled_for'] = Variable<DateTime>(scheduledFor.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('WordOfDayEntriesCompanion(')
+          ..write('word: $word, ')
+          ..write('meaning: $meaning, ')
+          ..write('scheduledFor: $scheduledFor, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $DailyDevotionEntriesTable extends DailyDevotionEntries
+    with TableInfo<$DailyDevotionEntriesTable, DailyDevotionEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DailyDevotionEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<int> bookId = GeneratedColumn<int>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _chapterMeta = const VerificationMeta(
+    'chapter',
+  );
+  @override
+  late final GeneratedColumn<int> chapter = GeneratedColumn<int>(
+    'chapter',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _verseStartMeta = const VerificationMeta(
+    'verseStart',
+  );
+  @override
+  late final GeneratedColumn<int> verseStart = GeneratedColumn<int>(
+    'verse_start',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _verseEndMeta = const VerificationMeta(
+    'verseEnd',
+  );
+  @override
+  late final GeneratedColumn<int> verseEnd = GeneratedColumn<int>(
+    'verse_end',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _bodyMeta = const VerificationMeta('body');
+  @override
+  late final GeneratedColumn<String> body = GeneratedColumn<String>(
+    'body',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scheduledForMeta = const VerificationMeta(
+    'scheduledFor',
+  );
+  @override
+  late final GeneratedColumn<DateTime> scheduledFor = GeneratedColumn<DateTime>(
+    'scheduled_for',
+    aliasedName,
+    false,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    title,
+    bookId,
+    chapter,
+    verseStart,
+    verseEnd,
+    body,
+    scheduledFor,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'daily_devotion_entries';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DailyDevotionEntry> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('chapter')) {
+      context.handle(
+        _chapterMeta,
+        chapter.isAcceptableOrUnknown(data['chapter']!, _chapterMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chapterMeta);
+    }
+    if (data.containsKey('verse_start')) {
+      context.handle(
+        _verseStartMeta,
+        verseStart.isAcceptableOrUnknown(data['verse_start']!, _verseStartMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_verseStartMeta);
+    }
+    if (data.containsKey('verse_end')) {
+      context.handle(
+        _verseEndMeta,
+        verseEnd.isAcceptableOrUnknown(data['verse_end']!, _verseEndMeta),
+      );
+    }
+    if (data.containsKey('body')) {
+      context.handle(
+        _bodyMeta,
+        body.isAcceptableOrUnknown(data['body']!, _bodyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bodyMeta);
+    }
+    if (data.containsKey('scheduled_for')) {
+      context.handle(
+        _scheduledForMeta,
+        scheduledFor.isAcceptableOrUnknown(
+          data['scheduled_for']!,
+          _scheduledForMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_scheduledForMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {scheduledFor};
+  @override
+  DailyDevotionEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DailyDevotionEntry(
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}book_id'],
+      )!,
+      chapter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}chapter'],
+      )!,
+      verseStart: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}verse_start'],
+      )!,
+      verseEnd: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}verse_end'],
+      ),
+      body: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}body'],
+      )!,
+      scheduledFor: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}scheduled_for'],
+      )!,
+    );
+  }
+
+  @override
+  $DailyDevotionEntriesTable createAlias(String alias) {
+    return $DailyDevotionEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class DailyDevotionEntry extends DataClass
+    implements Insertable<DailyDevotionEntry> {
+  final String title;
+  final int bookId;
+  final int chapter;
+  final int verseStart;
+  final int? verseEnd;
+  final String body;
+  final DateTime scheduledFor;
+  const DailyDevotionEntry({
+    required this.title,
+    required this.bookId,
+    required this.chapter,
+    required this.verseStart,
+    this.verseEnd,
+    required this.body,
+    required this.scheduledFor,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['title'] = Variable<String>(title);
+    map['book_id'] = Variable<int>(bookId);
+    map['chapter'] = Variable<int>(chapter);
+    map['verse_start'] = Variable<int>(verseStart);
+    if (!nullToAbsent || verseEnd != null) {
+      map['verse_end'] = Variable<int>(verseEnd);
+    }
+    map['body'] = Variable<String>(body);
+    map['scheduled_for'] = Variable<DateTime>(scheduledFor);
+    return map;
+  }
+
+  DailyDevotionEntriesCompanion toCompanion(bool nullToAbsent) {
+    return DailyDevotionEntriesCompanion(
+      title: Value(title),
+      bookId: Value(bookId),
+      chapter: Value(chapter),
+      verseStart: Value(verseStart),
+      verseEnd: verseEnd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(verseEnd),
+      body: Value(body),
+      scheduledFor: Value(scheduledFor),
+    );
+  }
+
+  factory DailyDevotionEntry.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DailyDevotionEntry(
+      title: serializer.fromJson<String>(json['title']),
+      bookId: serializer.fromJson<int>(json['bookId']),
+      chapter: serializer.fromJson<int>(json['chapter']),
+      verseStart: serializer.fromJson<int>(json['verseStart']),
+      verseEnd: serializer.fromJson<int?>(json['verseEnd']),
+      body: serializer.fromJson<String>(json['body']),
+      scheduledFor: serializer.fromJson<DateTime>(json['scheduledFor']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'title': serializer.toJson<String>(title),
+      'bookId': serializer.toJson<int>(bookId),
+      'chapter': serializer.toJson<int>(chapter),
+      'verseStart': serializer.toJson<int>(verseStart),
+      'verseEnd': serializer.toJson<int?>(verseEnd),
+      'body': serializer.toJson<String>(body),
+      'scheduledFor': serializer.toJson<DateTime>(scheduledFor),
+    };
+  }
+
+  DailyDevotionEntry copyWith({
+    String? title,
+    int? bookId,
+    int? chapter,
+    int? verseStart,
+    Value<int?> verseEnd = const Value.absent(),
+    String? body,
+    DateTime? scheduledFor,
+  }) => DailyDevotionEntry(
+    title: title ?? this.title,
+    bookId: bookId ?? this.bookId,
+    chapter: chapter ?? this.chapter,
+    verseStart: verseStart ?? this.verseStart,
+    verseEnd: verseEnd.present ? verseEnd.value : this.verseEnd,
+    body: body ?? this.body,
+    scheduledFor: scheduledFor ?? this.scheduledFor,
+  );
+  DailyDevotionEntry copyWithCompanion(DailyDevotionEntriesCompanion data) {
+    return DailyDevotionEntry(
+      title: data.title.present ? data.title.value : this.title,
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      chapter: data.chapter.present ? data.chapter.value : this.chapter,
+      verseStart: data.verseStart.present
+          ? data.verseStart.value
+          : this.verseStart,
+      verseEnd: data.verseEnd.present ? data.verseEnd.value : this.verseEnd,
+      body: data.body.present ? data.body.value : this.body,
+      scheduledFor: data.scheduledFor.present
+          ? data.scheduledFor.value
+          : this.scheduledFor,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyDevotionEntry(')
+          ..write('title: $title, ')
+          ..write('bookId: $bookId, ')
+          ..write('chapter: $chapter, ')
+          ..write('verseStart: $verseStart, ')
+          ..write('verseEnd: $verseEnd, ')
+          ..write('body: $body, ')
+          ..write('scheduledFor: $scheduledFor')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    title,
+    bookId,
+    chapter,
+    verseStart,
+    verseEnd,
+    body,
+    scheduledFor,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DailyDevotionEntry &&
+          other.title == this.title &&
+          other.bookId == this.bookId &&
+          other.chapter == this.chapter &&
+          other.verseStart == this.verseStart &&
+          other.verseEnd == this.verseEnd &&
+          other.body == this.body &&
+          other.scheduledFor == this.scheduledFor);
+}
+
+class DailyDevotionEntriesCompanion
+    extends UpdateCompanion<DailyDevotionEntry> {
+  final Value<String> title;
+  final Value<int> bookId;
+  final Value<int> chapter;
+  final Value<int> verseStart;
+  final Value<int?> verseEnd;
+  final Value<String> body;
+  final Value<DateTime> scheduledFor;
+  final Value<int> rowid;
+  const DailyDevotionEntriesCompanion({
+    this.title = const Value.absent(),
+    this.bookId = const Value.absent(),
+    this.chapter = const Value.absent(),
+    this.verseStart = const Value.absent(),
+    this.verseEnd = const Value.absent(),
+    this.body = const Value.absent(),
+    this.scheduledFor = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DailyDevotionEntriesCompanion.insert({
+    required String title,
+    required int bookId,
+    required int chapter,
+    required int verseStart,
+    this.verseEnd = const Value.absent(),
+    required String body,
+    required DateTime scheduledFor,
+    this.rowid = const Value.absent(),
+  }) : title = Value(title),
+       bookId = Value(bookId),
+       chapter = Value(chapter),
+       verseStart = Value(verseStart),
+       body = Value(body),
+       scheduledFor = Value(scheduledFor);
+  static Insertable<DailyDevotionEntry> custom({
+    Expression<String>? title,
+    Expression<int>? bookId,
+    Expression<int>? chapter,
+    Expression<int>? verseStart,
+    Expression<int>? verseEnd,
+    Expression<String>? body,
+    Expression<DateTime>? scheduledFor,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (title != null) 'title': title,
+      if (bookId != null) 'book_id': bookId,
+      if (chapter != null) 'chapter': chapter,
+      if (verseStart != null) 'verse_start': verseStart,
+      if (verseEnd != null) 'verse_end': verseEnd,
+      if (body != null) 'body': body,
+      if (scheduledFor != null) 'scheduled_for': scheduledFor,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DailyDevotionEntriesCompanion copyWith({
+    Value<String>? title,
+    Value<int>? bookId,
+    Value<int>? chapter,
+    Value<int>? verseStart,
+    Value<int?>? verseEnd,
+    Value<String>? body,
+    Value<DateTime>? scheduledFor,
+    Value<int>? rowid,
+  }) {
+    return DailyDevotionEntriesCompanion(
+      title: title ?? this.title,
+      bookId: bookId ?? this.bookId,
+      chapter: chapter ?? this.chapter,
+      verseStart: verseStart ?? this.verseStart,
+      verseEnd: verseEnd ?? this.verseEnd,
+      body: body ?? this.body,
+      scheduledFor: scheduledFor ?? this.scheduledFor,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (bookId.present) {
+      map['book_id'] = Variable<int>(bookId.value);
+    }
+    if (chapter.present) {
+      map['chapter'] = Variable<int>(chapter.value);
+    }
+    if (verseStart.present) {
+      map['verse_start'] = Variable<int>(verseStart.value);
+    }
+    if (verseEnd.present) {
+      map['verse_end'] = Variable<int>(verseEnd.value);
+    }
+    if (body.present) {
+      map['body'] = Variable<String>(body.value);
+    }
+    if (scheduledFor.present) {
+      map['scheduled_for'] = Variable<DateTime>(scheduledFor.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyDevotionEntriesCompanion(')
+          ..write('title: $title, ')
+          ..write('bookId: $bookId, ')
+          ..write('chapter: $chapter, ')
+          ..write('verseStart: $verseStart, ')
+          ..write('verseEnd: $verseEnd, ')
+          ..write('body: $body, ')
+          ..write('scheduledFor: $scheduledFor, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$UserDatabase extends GeneratedDatabase {
   _$UserDatabase(QueryExecutor e) : super(e);
   $UserDatabaseManager get managers => $UserDatabaseManager(this);
@@ -4636,6 +5381,11 @@ abstract class _$UserDatabase extends GeneratedDatabase {
       $ReadingPlanProgressTable(this);
   late final $StreakCheckinsTable streakCheckins = $StreakCheckinsTable(this);
   late final $DailyVerseRefsTable dailyVerseRefs = $DailyVerseRefsTable(this);
+  late final $WordOfDayEntriesTable wordOfDayEntries = $WordOfDayEntriesTable(
+    this,
+  );
+  late final $DailyDevotionEntriesTable dailyDevotionEntries =
+      $DailyDevotionEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4650,6 +5400,8 @@ abstract class _$UserDatabase extends GeneratedDatabase {
     readingPlanProgress,
     streakCheckins,
     dailyVerseRefs,
+    wordOfDayEntries,
+    dailyDevotionEntries,
   ];
 }
 
@@ -7102,6 +7854,454 @@ typedef $$DailyVerseRefsTableProcessedTableManager =
       DailyVerseRef,
       PrefetchHooks Function()
     >;
+typedef $$WordOfDayEntriesTableCreateCompanionBuilder =
+    WordOfDayEntriesCompanion Function({
+      required String word,
+      required String meaning,
+      required DateTime scheduledFor,
+      Value<int> rowid,
+    });
+typedef $$WordOfDayEntriesTableUpdateCompanionBuilder =
+    WordOfDayEntriesCompanion Function({
+      Value<String> word,
+      Value<String> meaning,
+      Value<DateTime> scheduledFor,
+      Value<int> rowid,
+    });
+
+class $$WordOfDayEntriesTableFilterComposer
+    extends Composer<_$UserDatabase, $WordOfDayEntriesTable> {
+  $$WordOfDayEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get word => $composableBuilder(
+    column: $table.word,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get meaning => $composableBuilder(
+    column: $table.meaning,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get scheduledFor => $composableBuilder(
+    column: $table.scheduledFor,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$WordOfDayEntriesTableOrderingComposer
+    extends Composer<_$UserDatabase, $WordOfDayEntriesTable> {
+  $$WordOfDayEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get word => $composableBuilder(
+    column: $table.word,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get meaning => $composableBuilder(
+    column: $table.meaning,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get scheduledFor => $composableBuilder(
+    column: $table.scheduledFor,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$WordOfDayEntriesTableAnnotationComposer
+    extends Composer<_$UserDatabase, $WordOfDayEntriesTable> {
+  $$WordOfDayEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get word =>
+      $composableBuilder(column: $table.word, builder: (column) => column);
+
+  GeneratedColumn<String> get meaning =>
+      $composableBuilder(column: $table.meaning, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get scheduledFor => $composableBuilder(
+    column: $table.scheduledFor,
+    builder: (column) => column,
+  );
+}
+
+class $$WordOfDayEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$UserDatabase,
+          $WordOfDayEntriesTable,
+          WordOfDayEntry,
+          $$WordOfDayEntriesTableFilterComposer,
+          $$WordOfDayEntriesTableOrderingComposer,
+          $$WordOfDayEntriesTableAnnotationComposer,
+          $$WordOfDayEntriesTableCreateCompanionBuilder,
+          $$WordOfDayEntriesTableUpdateCompanionBuilder,
+          (
+            WordOfDayEntry,
+            BaseReferences<
+              _$UserDatabase,
+              $WordOfDayEntriesTable,
+              WordOfDayEntry
+            >,
+          ),
+          WordOfDayEntry,
+          PrefetchHooks Function()
+        > {
+  $$WordOfDayEntriesTableTableManager(
+    _$UserDatabase db,
+    $WordOfDayEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$WordOfDayEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$WordOfDayEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$WordOfDayEntriesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> word = const Value.absent(),
+                Value<String> meaning = const Value.absent(),
+                Value<DateTime> scheduledFor = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => WordOfDayEntriesCompanion(
+                word: word,
+                meaning: meaning,
+                scheduledFor: scheduledFor,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String word,
+                required String meaning,
+                required DateTime scheduledFor,
+                Value<int> rowid = const Value.absent(),
+              }) => WordOfDayEntriesCompanion.insert(
+                word: word,
+                meaning: meaning,
+                scheduledFor: scheduledFor,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$WordOfDayEntriesTable, WordOfDayEntry>(table),
+                  BaseReferences<
+                    _$UserDatabase,
+                    $WordOfDayEntriesTable,
+                    WordOfDayEntry
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$WordOfDayEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$UserDatabase,
+      $WordOfDayEntriesTable,
+      WordOfDayEntry,
+      $$WordOfDayEntriesTableFilterComposer,
+      $$WordOfDayEntriesTableOrderingComposer,
+      $$WordOfDayEntriesTableAnnotationComposer,
+      $$WordOfDayEntriesTableCreateCompanionBuilder,
+      $$WordOfDayEntriesTableUpdateCompanionBuilder,
+      (
+        WordOfDayEntry,
+        BaseReferences<_$UserDatabase, $WordOfDayEntriesTable, WordOfDayEntry>,
+      ),
+      WordOfDayEntry,
+      PrefetchHooks Function()
+    >;
+typedef $$DailyDevotionEntriesTableCreateCompanionBuilder =
+    DailyDevotionEntriesCompanion Function({
+      required String title,
+      required int bookId,
+      required int chapter,
+      required int verseStart,
+      Value<int?> verseEnd,
+      required String body,
+      required DateTime scheduledFor,
+      Value<int> rowid,
+    });
+typedef $$DailyDevotionEntriesTableUpdateCompanionBuilder =
+    DailyDevotionEntriesCompanion Function({
+      Value<String> title,
+      Value<int> bookId,
+      Value<int> chapter,
+      Value<int> verseStart,
+      Value<int?> verseEnd,
+      Value<String> body,
+      Value<DateTime> scheduledFor,
+      Value<int> rowid,
+    });
+
+class $$DailyDevotionEntriesTableFilterComposer
+    extends Composer<_$UserDatabase, $DailyDevotionEntriesTable> {
+  $$DailyDevotionEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get chapter => $composableBuilder(
+    column: $table.chapter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get verseStart => $composableBuilder(
+    column: $table.verseStart,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get verseEnd => $composableBuilder(
+    column: $table.verseEnd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get scheduledFor => $composableBuilder(
+    column: $table.scheduledFor,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DailyDevotionEntriesTableOrderingComposer
+    extends Composer<_$UserDatabase, $DailyDevotionEntriesTable> {
+  $$DailyDevotionEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get chapter => $composableBuilder(
+    column: $table.chapter,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get verseStart => $composableBuilder(
+    column: $table.verseStart,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get verseEnd => $composableBuilder(
+    column: $table.verseEnd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get body => $composableBuilder(
+    column: $table.body,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get scheduledFor => $composableBuilder(
+    column: $table.scheduledFor,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DailyDevotionEntriesTableAnnotationComposer
+    extends Composer<_$UserDatabase, $DailyDevotionEntriesTable> {
+  $$DailyDevotionEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<int> get bookId =>
+      $composableBuilder(column: $table.bookId, builder: (column) => column);
+
+  GeneratedColumn<int> get chapter =>
+      $composableBuilder(column: $table.chapter, builder: (column) => column);
+
+  GeneratedColumn<int> get verseStart => $composableBuilder(
+    column: $table.verseStart,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get verseEnd =>
+      $composableBuilder(column: $table.verseEnd, builder: (column) => column);
+
+  GeneratedColumn<String> get body =>
+      $composableBuilder(column: $table.body, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get scheduledFor => $composableBuilder(
+    column: $table.scheduledFor,
+    builder: (column) => column,
+  );
+}
+
+class $$DailyDevotionEntriesTableTableManager
+    extends
+        RootTableManager<
+          _$UserDatabase,
+          $DailyDevotionEntriesTable,
+          DailyDevotionEntry,
+          $$DailyDevotionEntriesTableFilterComposer,
+          $$DailyDevotionEntriesTableOrderingComposer,
+          $$DailyDevotionEntriesTableAnnotationComposer,
+          $$DailyDevotionEntriesTableCreateCompanionBuilder,
+          $$DailyDevotionEntriesTableUpdateCompanionBuilder,
+          (
+            DailyDevotionEntry,
+            BaseReferences<
+              _$UserDatabase,
+              $DailyDevotionEntriesTable,
+              DailyDevotionEntry
+            >,
+          ),
+          DailyDevotionEntry,
+          PrefetchHooks Function()
+        > {
+  $$DailyDevotionEntriesTableTableManager(
+    _$UserDatabase db,
+    $DailyDevotionEntriesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DailyDevotionEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DailyDevotionEntriesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$DailyDevotionEntriesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> title = const Value.absent(),
+                Value<int> bookId = const Value.absent(),
+                Value<int> chapter = const Value.absent(),
+                Value<int> verseStart = const Value.absent(),
+                Value<int?> verseEnd = const Value.absent(),
+                Value<String> body = const Value.absent(),
+                Value<DateTime> scheduledFor = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DailyDevotionEntriesCompanion(
+                title: title,
+                bookId: bookId,
+                chapter: chapter,
+                verseStart: verseStart,
+                verseEnd: verseEnd,
+                body: body,
+                scheduledFor: scheduledFor,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String title,
+                required int bookId,
+                required int chapter,
+                required int verseStart,
+                Value<int?> verseEnd = const Value.absent(),
+                required String body,
+                required DateTime scheduledFor,
+                Value<int> rowid = const Value.absent(),
+              }) => DailyDevotionEntriesCompanion.insert(
+                title: title,
+                bookId: bookId,
+                chapter: chapter,
+                verseStart: verseStart,
+                verseEnd: verseEnd,
+                body: body,
+                scheduledFor: scheduledFor,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$DailyDevotionEntriesTable, DailyDevotionEntry>(
+                    table,
+                  ),
+                  BaseReferences<
+                    _$UserDatabase,
+                    $DailyDevotionEntriesTable,
+                    DailyDevotionEntry
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DailyDevotionEntriesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$UserDatabase,
+      $DailyDevotionEntriesTable,
+      DailyDevotionEntry,
+      $$DailyDevotionEntriesTableFilterComposer,
+      $$DailyDevotionEntriesTableOrderingComposer,
+      $$DailyDevotionEntriesTableAnnotationComposer,
+      $$DailyDevotionEntriesTableCreateCompanionBuilder,
+      $$DailyDevotionEntriesTableUpdateCompanionBuilder,
+      (
+        DailyDevotionEntry,
+        BaseReferences<
+          _$UserDatabase,
+          $DailyDevotionEntriesTable,
+          DailyDevotionEntry
+        >,
+      ),
+      DailyDevotionEntry,
+      PrefetchHooks Function()
+    >;
 
 class $UserDatabaseManager {
   final _$UserDatabase _db;
@@ -7124,4 +8324,8 @@ class $UserDatabaseManager {
       $$StreakCheckinsTableTableManager(_db, _db.streakCheckins);
   $$DailyVerseRefsTableTableManager get dailyVerseRefs =>
       $$DailyVerseRefsTableTableManager(_db, _db.dailyVerseRefs);
+  $$WordOfDayEntriesTableTableManager get wordOfDayEntries =>
+      $$WordOfDayEntriesTableTableManager(_db, _db.wordOfDayEntries);
+  $$DailyDevotionEntriesTableTableManager get dailyDevotionEntries =>
+      $$DailyDevotionEntriesTableTableManager(_db, _db.dailyDevotionEntries);
 }

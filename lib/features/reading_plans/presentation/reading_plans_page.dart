@@ -92,6 +92,13 @@ class _PlanCard extends ConsumerWidget {
               ),
               const SizedBox(height: 8),
               Text(l10n.dayOfTotal(state.currentDay!, plan.totalDays), style: TextStyle(color: scheme.onSurfaceVariant)),
+              if (plan.dayLabels case final labels?) ...[
+                const SizedBox(height: 4),
+                Text(
+                  labels[state.currentDay! - 1],
+                  style: AppTypography.weight(TextStyle(color: scheme.primary, fontSize: 12.5), FontWeight.w600),
+                ),
+              ],
             ],
           ],
         ),

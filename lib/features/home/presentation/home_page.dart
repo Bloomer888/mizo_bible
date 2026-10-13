@@ -17,8 +17,11 @@ import '../../reader/presentation/verse_actions_sheet.dart' show verseAnnotation
 import '../../reading_plans/data/reading_plan.dart';
 import '../../reading_plans/data/reading_plan_progress_repository.dart';
 import '../../reading_plans/presentation/reading_plan_providers.dart';
+import '../data/daily_devotion.dart';
 import '../data/streak_repository.dart';
 import '../data/verse_of_the_day.dart';
+import '../data/word_of_the_day.dart';
+import 'daily_devotion_page.dart';
 
 final _mostRecentProgressProvider = FutureProvider.autoDispose<BookReadingPosition?>((ref) {
   final db = ref.watch(userDatabaseProvider);
@@ -31,6 +34,17 @@ final _verseOfTheDayProvider = FutureProvider.autoDispose<VerseOfTheDay?>((ref) 
   final names = await ref.watch(bookNamesMapProvider.future);
   final references = await loadActiveDailyVerseReferences(userDb);
   return loadVerseOfTheDay(bibleDb, names, references: references);
+});
+
+final _wordOfTheDayProvider = FutureProvider.autoDispose<WordOfTheDay?>((ref) {
+  final db = ref.watch(userDatabaseProvider);
+  return loadActiveWordOfDay(db);
+});
+
+final _dailyDevotionProvider = FutureProvider.autoDispose<DailyDevotion?>((ref) async {
+  final db = ref.watch(userDatabaseProvider);
+  final names = await ref.watch(bookNamesMapProvider.future);
+  return loadActiveDailyDevotion(db, names);
 });
 
 final _streakProvider = FutureProvider.autoDispose<int>((ref) {
@@ -66,6 +80,8 @@ class HomePage extends ConsumerWidget {
     final progressAsync = ref.watch(_mostRecentProgressProvider);
     final namesAsync = ref.watch(bookNamesMapProvider);
     final verseAsync = ref.watch(_verseOfTheDayProvider);
+    final devotionAsync = ref.watch(_dailyDevotionProvider);
+    final wordAsync = ref.watch(_wordOfTheDayProvider);
     final isPremium = ref.watch(isPremiumProvider);
     final planAsync = ref.watch(activePlanProgressProvider);
 
@@ -93,9 +109,13 @@ class HomePage extends ConsumerWidget {
               (AsyncData(value: null), _) => const _StartReadingCard(),
               _ => const SizedBox.shrink(),
             },
-            if (verseAsync case AsyncData(value: final verse?)) ...[
+            if (devotionAsync case AsyncData(value: final devotion?)) ...[
               const SizedBox(height: 12),
-              _VerseOfTheDayCard(verse: verse),
+              _DailyDevotionCard(devotion: devotion),
+            ],
+            if (wordAsync case AsyncData(value: final word?)) ...[
+              const SizedBox(height: 12),
+              _WordOfTheDayCard(word: word),
             ],
             // Premium-gated and only once a plan is active and not yet
             // finished -- never shown to free users regardless of what
@@ -108,6 +128,14 @@ class HomePage extends ConsumerWidget {
             ],
             const SizedBox(height: 12),
             const _StreakCard(),
+            // Moved to the bottom per the user's explicit request
+            // (2026-10-13) -- stays in the app (not removed), just no
+            // longer the first thing after Continue/Start Reading, now
+            // that Daily Devotion and Word of the Day sit above it.
+            if (verseAsync case AsyncData(value: final verse?)) ...[
+              const SizedBox(height: 12),
+              _VerseOfTheDayCard(verse: verse),
+            ],
           ],
         ),
       ),
@@ -329,6 +357,94 @@ class _VerseOfTheDayCard extends StatelessWidget {
   }
 }
 
+/// The pastor's word/short phrase for the day, Merriam-Webster style --
+/// just the word itself on the card, tapping opens a bottom sheet with
+/// the full meaning (the pastor's own content, admin-provided -- see
+/// word_of_the_day.dart). Hidden entirely on Home whenever there's no
+/// active entry (an empty content.word_of_day table, or a device that's
+/// never synced), same pattern _ReadingPlanCard already uses for "no
+/// active plan."
+class _WordOfTheDayCard extends StatelessWidget {
+  final WordOfTheDay word;
+  const _WordOfTheDayCard({required this.word});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return _HomeCard(
+      icon: Icons.menu_book_outlined,
+      label: l10n.wordOfTheDay,
+      value: word.word,
+      onTap: () => showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (_) => _WordOfTheDaySheet(word: word),
+      ),
+    );
+  }
+}
+
+/// The Word of the Day detail view -- same showModalBottomSheet(
+/// isScrollControlled: true) launch shape as openVerseActions in
+/// verse_actions_sheet.dart, the established tap-to-expand pattern in
+/// this app.
+class _WordOfTheDaySheet extends StatelessWidget {
+  final WordOfTheDay word;
+  const _WordOfTheDaySheet({required this.word});
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              word.word,
+              style: AppTypography.weight(TextStyle(fontSize: 28, color: scheme.primary), FontWeight.w800),
+            ),
+            const SizedBox(height: 16),
+            Text(word.meaning, style: const TextStyle(fontSize: 16, height: 1.5)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A full devotional write-up for the day -- title + scripture
+/// reference teaser on Home, tapping opens the full body on its own
+/// page (see daily_devotion_page.dart) rather than a bottom sheet, since
+/// this content runs much longer than a Word of the Day entry. Hidden
+/// on Home with no active entry, same as _WordOfTheDayCard.
+class _DailyDevotionCard extends StatelessWidget {
+  final DailyDevotion devotion;
+  const _DailyDevotionCard({required this.devotion});
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final reference = devotion.verseEnd == null
+        ? '${devotion.bookName} ${devotion.chapter}:${devotion.verseStart}'
+        : '${devotion.bookName} ${devotion.chapter}:${devotion.verseStart}-${devotion.verseEnd}';
+
+    return _HomeCard(
+      icon: Icons.self_improvement_rounded,
+      label: l10n.dailyDevotion,
+      value: devotion.title,
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => DailyDevotionPage(devotion: devotion)),
+      ),
+      trailing: Text(reference, style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant, fontSize: 13)),
+    );
+  }
+}
+
 /// Today's reading-plan assignment, a progress line, and a "mark as
 /// read" button -- a second, separate tap target nested inside the
 /// card's own _PressableScale. Material buttons claim their own taps
@@ -379,6 +495,13 @@ class _ReadingPlanCard extends ConsumerWidget {
                 l10n.dayOfTotal(state.currentDay!, state.plan.totalDays),
                 style: TextStyle(color: scheme.onSurfaceVariant),
               ),
+              if (state.plan.dayLabels case final labels?) ...[
+                const SizedBox(height: 6),
+                Text(
+                  labels[state.currentDay! - 1],
+                  style: AppTypography.weight(TextStyle(color: scheme.primary, fontSize: 12.5), FontWeight.w600),
+                ),
+              ],
               const SizedBox(height: 10),
               Text(
                 namesAsync.value == null ? '' : formatPlanDayReading(today, namesAsync.value!),

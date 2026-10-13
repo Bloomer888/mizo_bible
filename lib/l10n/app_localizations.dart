@@ -753,6 +753,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Plan complete!'**
   String get planComplete;
+
+  /// No description provided for @wordOfTheDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Word of the Day'**
+  String get wordOfTheDay;
+
+  /// No description provided for @dailyDevotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Devotion'**
+  String get dailyDevotion;
 }
 
 class _AppLocalizationsDelegate

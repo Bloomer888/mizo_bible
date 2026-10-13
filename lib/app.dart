@@ -11,7 +11,9 @@ import 'core/env.dart';
 import 'core/l10n_extension.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_settings.dart';
+import 'features/home/data/daily_devotion.dart';
 import 'features/home/data/verse_of_the_day.dart';
+import 'features/home/data/word_of_the_day.dart';
 import 'features/notifications/data/daily_verse_notifications.dart';
 import 'features/premium/data/premium_providers.dart';
 import 'features/sync/data/sync_repository.dart';
@@ -33,6 +35,8 @@ class _MizoBibleAppState extends ConsumerState<MizoBibleApp> with WidgetsBinding
     WidgetsBinding.instance.addObserver(this);
     _syncIfSignedIn();
     unawaited(syncDailyVerseReferences(ref.read(userDatabaseProvider)));
+    unawaited(syncWordOfDayEntries(ref.read(userDatabaseProvider)));
+    unawaited(syncDailyDevotionEntries(ref.read(userDatabaseProvider)));
     _applyNotificationState(ref.read(isPremiumProvider)).catchError((_) {});
     // listenManual, not ref.listen -- this needs to fire once at
     // startup regardless of build(), and keep firing for the rest of
@@ -74,6 +78,8 @@ class _MizoBibleAppState extends ConsumerState<MizoBibleApp> with WidgetsBinding
     if (state != AppLifecycleState.resumed) return;
     _syncIfSignedIn();
     unawaited(syncDailyVerseReferences(ref.read(userDatabaseProvider)));
+    unawaited(syncWordOfDayEntries(ref.read(userDatabaseProvider)));
+    unawaited(syncDailyDevotionEntries(ref.read(userDatabaseProvider)));
     // The verse-changed notification is one-shot, not a native repeat
     // (see its own doc comment in daily_verse_notifications.dart), so
     // it needs refreshing here to stay aligned with the next rotation

@@ -360,4 +360,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planComplete => 'Plan complete!';
+
+  @override
+  String get wordOfTheDay => 'Word of the Day';
+
+  @override
+  String get dailyDevotion => 'Daily Devotion';
 }

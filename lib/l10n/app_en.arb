@@ -155,5 +155,8 @@
     }
   },
   "markAsRead": "Mark as read",
-  "planComplete": "Plan complete!"
+  "planComplete": "Plan complete!",
+
+  "wordOfTheDay": "Word of the Day",
+  "dailyDevotion": "Daily Devotion"
 }

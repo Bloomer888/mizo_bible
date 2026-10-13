@@ -1,3 +1,5 @@
+import 'fifty_two_week_plan.dart';
+
 /// A plan is just a name/description plus a pre-split day-by-day
 /// chapter sequence -- no runtime content pipeline, no admin panel,
 /// same "hand-curated, checked once" spirit as the Verse of the Day
@@ -16,12 +18,21 @@ class ReadingPlan {
   /// aligned to book starts.
   final List<List<(int bookId, int chapter)>> days;
 
+  /// dayLabels[i] is an optional subtitle for day i + 1 (e.g. "Week 1 ·
+  /// Epistles"), shown above the reading text wherever a plan's day is
+  /// rendered. Null for plans with no inherent category structure (e.g.
+  /// New Testament in 90 Days, which is just an evenly-split chapter
+  /// sequence) -- nothing changes for those plans. When non-null, its
+  /// length must equal [days].length.
+  final List<String>? dayLabels;
+
   const ReadingPlan({
     required this.id,
     required this.name,
     required this.description,
     required this.totalDays,
     required this.days,
+    this.dayLabels,
   });
 }
 
@@ -73,11 +84,25 @@ final newTestamentIn90Days = ReadingPlan(
   days: splitIntoDays(_newTestamentChapterCounts, 90),
 );
 
-/// Just the one plan for now, deliberately -- launch with a single
-/// plan and add more based on real usage, same "ship lean" pattern as
-/// Premium itself. A list from day one so adding a second plan later
-/// means appending an entry, not a refactor.
-final allReadingPlans = <ReadingPlan>[newTestamentIn90Days];
+/// A published 52-week plan covering the whole Bible, 7 readings a
+/// week from 7 different sections (Epistles, The Law, History, Psalms,
+/// Poetry, Prophecy, Gospels) -- see fifty_two_week_plan.dart for the
+/// transcribed day-by-day data and its own correctness verification.
+/// Self-paced, same as newTestamentIn90Days -- the week/category
+/// structure is preserved as dayLabels purely for display, not
+/// enforced against the calendar.
+final fiftyTwoWeekBiblePlan = ReadingPlan(
+  id: 'whole_bible_52_weeks',
+  name: '52-Week Bible Reading Plan',
+  description: 'Read through the whole Bible in a year, with a different section each day of the week.',
+  totalDays: fiftyTwoWeekPlanDays.length,
+  days: fiftyTwoWeekPlanDays,
+  dayLabels: fiftyTwoWeekPlanDayLabels,
+);
+
+/// A list from day one so adding a plan means appending an entry, not
+/// a refactor -- now proven out by the second plan above.
+final allReadingPlans = <ReadingPlan>[newTestamentIn90Days, fiftyTwoWeekBiblePlan];
 
 ReadingPlan? findReadingPlan(String id) {
   for (final plan in allReadingPlans) {
