@@ -36,6 +36,24 @@ class ReaderSettingsSheet extends ConsumerWidget {
               onIncrease: notifier.increaseLineHeight,
             ),
             const SizedBox(height: 20),
+            // Each segment's label renders in the font it switches to --
+            // the fastest possible preview of what "Serif" actually looks
+            // like, same idea as how other reading apps' font pickers work.
+            SegmentedButton<ReaderFontFamily>(
+              segments: [
+                ButtonSegment(
+                  value: ReaderFontFamily.sans,
+                  label: Text(l10n.fontStyleSans, style: TextStyle(fontFamily: ReaderFontFamily.sans.familyName)),
+                ),
+                ButtonSegment(
+                  value: ReaderFontFamily.serif,
+                  label: Text(l10n.fontStyleSerif, style: TextStyle(fontFamily: ReaderFontFamily.serif.familyName)),
+                ),
+              ],
+              selected: {settings.fontFamily},
+              onSelectionChanged: (selection) => notifier.setFontFamily(selection.first),
+            ),
+            const SizedBox(height: 12),
             SegmentedButton<ReadingMode>(
               segments: [
                 ButtonSegment(value: ReadingMode.parallel, label: Text(l10n.readingModeParallel)),

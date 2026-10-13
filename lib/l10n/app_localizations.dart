@@ -232,6 +232,18 @@ abstract class AppLocalizations {
   /// **'Swap sides'**
   String get swapLanguageSides;
 
+  /// No description provided for @fontStyleSans.
+  ///
+  /// In en, this message translates to:
+  /// **'Sans-serif'**
+  String get fontStyleSans;
+
+  /// No description provided for @fontStyleSerif.
+  ///
+  /// In en, this message translates to:
+  /// **'Serif'**
+  String get fontStyleSerif;
+
   /// No description provided for @oldTestament.
   ///
   /// In en, this message translates to:

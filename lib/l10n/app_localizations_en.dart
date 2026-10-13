@@ -83,6 +83,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get swapLanguageSides => 'Swap sides';
 
   @override
+  String get fontStyleSans => 'Sans-serif';
+
+  @override
+  String get fontStyleSerif => 'Serif';
+
+  @override
   String get oldTestament => 'Old Testament';
 
   @override

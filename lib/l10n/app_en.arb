@@ -39,6 +39,8 @@
   "readingModeMizoOnly": "Mizo only",
   "readingModeEnglishOnly": "English only",
   "swapLanguageSides": "Swap sides",
+  "fontStyleSans": "Sans-serif",
+  "fontStyleSerif": "Serif",
 
   "oldTestament": "Old Testament",
   "newTestament": "New Testament",

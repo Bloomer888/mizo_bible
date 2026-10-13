@@ -5,8 +5,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/db/settings_repository.dart';
 import '../../../core/db/user_database.dart';
+import '../../../core/theme/app_typography.dart';
 
 enum ReadingMode { parallel, mizoOnly, englishOnly }
+
+/// The two typefaces actually bundled with the app (see app_typography.dart)
+/// -- not a placeholder for more choices later, just these two, since
+/// that's what's actually shipped as an asset today.
+enum ReaderFontFamily { sans, serif }
+
+extension ReaderFontFamilyX on ReaderFontFamily {
+  String get familyName => switch (this) {
+        ReaderFontFamily.sans => AppTypography.sans,
+        ReaderFontFamily.serif => AppTypography.serif,
+      };
+}
 
 const _settingsKey = 'reader_settings';
 
@@ -15,12 +28,14 @@ class ReaderSettings {
   final double lineHeightScale;
   final ReadingMode mode;
   final bool swapped;
+  final ReaderFontFamily fontFamily;
 
   const ReaderSettings({
     this.fontScale = 1.0,
     this.lineHeightScale = 1.0,
     this.mode = ReadingMode.parallel,
     this.swapped = false,
+    this.fontFamily = ReaderFontFamily.sans,
   });
 
   ReaderSettings copyWith({
@@ -28,12 +43,14 @@ class ReaderSettings {
     double? lineHeightScale,
     ReadingMode? mode,
     bool? swapped,
+    ReaderFontFamily? fontFamily,
   }) {
     return ReaderSettings(
       fontScale: fontScale ?? this.fontScale,
       lineHeightScale: lineHeightScale ?? this.lineHeightScale,
       mode: mode ?? this.mode,
       swapped: swapped ?? this.swapped,
+      fontFamily: fontFamily ?? this.fontFamily,
     );
   }
 
@@ -42,6 +59,7 @@ class ReaderSettings {
         'lineHeightScale': lineHeightScale,
         'mode': mode.name,
         'swapped': swapped,
+        'fontFamily': fontFamily.name,
       };
 
   factory ReaderSettings.fromJson(Map<String, dynamic> json) => ReaderSettings(
@@ -52,6 +70,10 @@ class ReaderSettings {
           orElse: () => ReadingMode.parallel,
         ),
         swapped: json['swapped'] as bool? ?? false,
+        fontFamily: ReaderFontFamily.values.firstWhere(
+          (f) => f.name == json['fontFamily'],
+          orElse: () => ReaderFontFamily.sans,
+        ),
       );
 }
 
@@ -119,6 +141,11 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
 
   void setMode(ReadingMode mode) {
     state = state.copyWith(mode: mode);
+    _save();
+  }
+
+  void setFontFamily(ReaderFontFamily fontFamily) {
+    state = state.copyWith(fontFamily: fontFamily);
     _save();
   }
 
