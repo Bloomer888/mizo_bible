@@ -4310,6 +4310,317 @@ class StreakCheckinsCompanion extends UpdateCompanion<StreakCheckin> {
   }
 }
 
+class $DailyVerseRefsTable extends DailyVerseRefs
+    with TableInfo<$DailyVerseRefsTable, DailyVerseRef> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $DailyVerseRefsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _bookIdMeta = const VerificationMeta('bookId');
+  @override
+  late final GeneratedColumn<int> bookId = GeneratedColumn<int>(
+    'book_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _chapterMeta = const VerificationMeta(
+    'chapter',
+  );
+  @override
+  late final GeneratedColumn<int> chapter = GeneratedColumn<int>(
+    'chapter',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _verseMeta = const VerificationMeta('verse');
+  @override
+  late final GeneratedColumn<int> verse = GeneratedColumn<int>(
+    'verse',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sortOrderMeta = const VerificationMeta(
+    'sortOrder',
+  );
+  @override
+  late final GeneratedColumn<int> sortOrder = GeneratedColumn<int>(
+    'sort_order',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [bookId, chapter, verse, sortOrder];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'daily_verse_refs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<DailyVerseRef> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('book_id')) {
+      context.handle(
+        _bookIdMeta,
+        bookId.isAcceptableOrUnknown(data['book_id']!, _bookIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_bookIdMeta);
+    }
+    if (data.containsKey('chapter')) {
+      context.handle(
+        _chapterMeta,
+        chapter.isAcceptableOrUnknown(data['chapter']!, _chapterMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_chapterMeta);
+    }
+    if (data.containsKey('verse')) {
+      context.handle(
+        _verseMeta,
+        verse.isAcceptableOrUnknown(data['verse']!, _verseMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_verseMeta);
+    }
+    if (data.containsKey('sort_order')) {
+      context.handle(
+        _sortOrderMeta,
+        sortOrder.isAcceptableOrUnknown(data['sort_order']!, _sortOrderMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sortOrderMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {bookId, chapter, verse};
+  @override
+  DailyVerseRef map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return DailyVerseRef(
+      bookId: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}book_id'],
+      )!,
+      chapter: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}chapter'],
+      )!,
+      verse: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}verse'],
+      )!,
+      sortOrder: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sort_order'],
+      )!,
+    );
+  }
+
+  @override
+  $DailyVerseRefsTable createAlias(String alias) {
+    return $DailyVerseRefsTable(attachedDatabase, alias);
+  }
+}
+
+class DailyVerseRef extends DataClass implements Insertable<DailyVerseRef> {
+  final int bookId;
+  final int chapter;
+  final int verse;
+  final int sortOrder;
+  const DailyVerseRef({
+    required this.bookId,
+    required this.chapter,
+    required this.verse,
+    required this.sortOrder,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['book_id'] = Variable<int>(bookId);
+    map['chapter'] = Variable<int>(chapter);
+    map['verse'] = Variable<int>(verse);
+    map['sort_order'] = Variable<int>(sortOrder);
+    return map;
+  }
+
+  DailyVerseRefsCompanion toCompanion(bool nullToAbsent) {
+    return DailyVerseRefsCompanion(
+      bookId: Value(bookId),
+      chapter: Value(chapter),
+      verse: Value(verse),
+      sortOrder: Value(sortOrder),
+    );
+  }
+
+  factory DailyVerseRef.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return DailyVerseRef(
+      bookId: serializer.fromJson<int>(json['bookId']),
+      chapter: serializer.fromJson<int>(json['chapter']),
+      verse: serializer.fromJson<int>(json['verse']),
+      sortOrder: serializer.fromJson<int>(json['sortOrder']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'bookId': serializer.toJson<int>(bookId),
+      'chapter': serializer.toJson<int>(chapter),
+      'verse': serializer.toJson<int>(verse),
+      'sortOrder': serializer.toJson<int>(sortOrder),
+    };
+  }
+
+  DailyVerseRef copyWith({
+    int? bookId,
+    int? chapter,
+    int? verse,
+    int? sortOrder,
+  }) => DailyVerseRef(
+    bookId: bookId ?? this.bookId,
+    chapter: chapter ?? this.chapter,
+    verse: verse ?? this.verse,
+    sortOrder: sortOrder ?? this.sortOrder,
+  );
+  DailyVerseRef copyWithCompanion(DailyVerseRefsCompanion data) {
+    return DailyVerseRef(
+      bookId: data.bookId.present ? data.bookId.value : this.bookId,
+      chapter: data.chapter.present ? data.chapter.value : this.chapter,
+      verse: data.verse.present ? data.verse.value : this.verse,
+      sortOrder: data.sortOrder.present ? data.sortOrder.value : this.sortOrder,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyVerseRef(')
+          ..write('bookId: $bookId, ')
+          ..write('chapter: $chapter, ')
+          ..write('verse: $verse, ')
+          ..write('sortOrder: $sortOrder')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(bookId, chapter, verse, sortOrder);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is DailyVerseRef &&
+          other.bookId == this.bookId &&
+          other.chapter == this.chapter &&
+          other.verse == this.verse &&
+          other.sortOrder == this.sortOrder);
+}
+
+class DailyVerseRefsCompanion extends UpdateCompanion<DailyVerseRef> {
+  final Value<int> bookId;
+  final Value<int> chapter;
+  final Value<int> verse;
+  final Value<int> sortOrder;
+  final Value<int> rowid;
+  const DailyVerseRefsCompanion({
+    this.bookId = const Value.absent(),
+    this.chapter = const Value.absent(),
+    this.verse = const Value.absent(),
+    this.sortOrder = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  DailyVerseRefsCompanion.insert({
+    required int bookId,
+    required int chapter,
+    required int verse,
+    required int sortOrder,
+    this.rowid = const Value.absent(),
+  }) : bookId = Value(bookId),
+       chapter = Value(chapter),
+       verse = Value(verse),
+       sortOrder = Value(sortOrder);
+  static Insertable<DailyVerseRef> custom({
+    Expression<int>? bookId,
+    Expression<int>? chapter,
+    Expression<int>? verse,
+    Expression<int>? sortOrder,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (bookId != null) 'book_id': bookId,
+      if (chapter != null) 'chapter': chapter,
+      if (verse != null) 'verse': verse,
+      if (sortOrder != null) 'sort_order': sortOrder,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  DailyVerseRefsCompanion copyWith({
+    Value<int>? bookId,
+    Value<int>? chapter,
+    Value<int>? verse,
+    Value<int>? sortOrder,
+    Value<int>? rowid,
+  }) {
+    return DailyVerseRefsCompanion(
+      bookId: bookId ?? this.bookId,
+      chapter: chapter ?? this.chapter,
+      verse: verse ?? this.verse,
+      sortOrder: sortOrder ?? this.sortOrder,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (bookId.present) {
+      map['book_id'] = Variable<int>(bookId.value);
+    }
+    if (chapter.present) {
+      map['chapter'] = Variable<int>(chapter.value);
+    }
+    if (verse.present) {
+      map['verse'] = Variable<int>(verse.value);
+    }
+    if (sortOrder.present) {
+      map['sort_order'] = Variable<int>(sortOrder.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('DailyVerseRefsCompanion(')
+          ..write('bookId: $bookId, ')
+          ..write('chapter: $chapter, ')
+          ..write('verse: $verse, ')
+          ..write('sortOrder: $sortOrder, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$UserDatabase extends GeneratedDatabase {
   _$UserDatabase(QueryExecutor e) : super(e);
   $UserDatabaseManager get managers => $UserDatabaseManager(this);
@@ -4324,6 +4635,7 @@ abstract class _$UserDatabase extends GeneratedDatabase {
   late final $ReadingPlanProgressTable readingPlanProgress =
       $ReadingPlanProgressTable(this);
   late final $StreakCheckinsTable streakCheckins = $StreakCheckinsTable(this);
+  late final $DailyVerseRefsTable dailyVerseRefs = $DailyVerseRefsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -4337,6 +4649,7 @@ abstract class _$UserDatabase extends GeneratedDatabase {
     settings,
     readingPlanProgress,
     streakCheckins,
+    dailyVerseRefs,
   ];
 }
 
@@ -6597,6 +6910,198 @@ typedef $$StreakCheckinsTableProcessedTableManager =
       StreakCheckin,
       PrefetchHooks Function()
     >;
+typedef $$DailyVerseRefsTableCreateCompanionBuilder =
+    DailyVerseRefsCompanion Function({
+      required int bookId,
+      required int chapter,
+      required int verse,
+      required int sortOrder,
+      Value<int> rowid,
+    });
+typedef $$DailyVerseRefsTableUpdateCompanionBuilder =
+    DailyVerseRefsCompanion Function({
+      Value<int> bookId,
+      Value<int> chapter,
+      Value<int> verse,
+      Value<int> sortOrder,
+      Value<int> rowid,
+    });
+
+class $$DailyVerseRefsTableFilterComposer
+    extends Composer<_$UserDatabase, $DailyVerseRefsTable> {
+  $$DailyVerseRefsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get chapter => $composableBuilder(
+    column: $table.chapter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get verse => $composableBuilder(
+    column: $table.verse,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$DailyVerseRefsTableOrderingComposer
+    extends Composer<_$UserDatabase, $DailyVerseRefsTable> {
+  $$DailyVerseRefsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get bookId => $composableBuilder(
+    column: $table.bookId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get chapter => $composableBuilder(
+    column: $table.chapter,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get verse => $composableBuilder(
+    column: $table.verse,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sortOrder => $composableBuilder(
+    column: $table.sortOrder,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$DailyVerseRefsTableAnnotationComposer
+    extends Composer<_$UserDatabase, $DailyVerseRefsTable> {
+  $$DailyVerseRefsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get bookId =>
+      $composableBuilder(column: $table.bookId, builder: (column) => column);
+
+  GeneratedColumn<int> get chapter =>
+      $composableBuilder(column: $table.chapter, builder: (column) => column);
+
+  GeneratedColumn<int> get verse =>
+      $composableBuilder(column: $table.verse, builder: (column) => column);
+
+  GeneratedColumn<int> get sortOrder =>
+      $composableBuilder(column: $table.sortOrder, builder: (column) => column);
+}
+
+class $$DailyVerseRefsTableTableManager
+    extends
+        RootTableManager<
+          _$UserDatabase,
+          $DailyVerseRefsTable,
+          DailyVerseRef,
+          $$DailyVerseRefsTableFilterComposer,
+          $$DailyVerseRefsTableOrderingComposer,
+          $$DailyVerseRefsTableAnnotationComposer,
+          $$DailyVerseRefsTableCreateCompanionBuilder,
+          $$DailyVerseRefsTableUpdateCompanionBuilder,
+          (
+            DailyVerseRef,
+            BaseReferences<_$UserDatabase, $DailyVerseRefsTable, DailyVerseRef>,
+          ),
+          DailyVerseRef,
+          PrefetchHooks Function()
+        > {
+  $$DailyVerseRefsTableTableManager(
+    _$UserDatabase db,
+    $DailyVerseRefsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$DailyVerseRefsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$DailyVerseRefsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$DailyVerseRefsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<int> bookId = const Value.absent(),
+                Value<int> chapter = const Value.absent(),
+                Value<int> verse = const Value.absent(),
+                Value<int> sortOrder = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => DailyVerseRefsCompanion(
+                bookId: bookId,
+                chapter: chapter,
+                verse: verse,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required int bookId,
+                required int chapter,
+                required int verse,
+                required int sortOrder,
+                Value<int> rowid = const Value.absent(),
+              }) => DailyVerseRefsCompanion.insert(
+                bookId: bookId,
+                chapter: chapter,
+                verse: verse,
+                sortOrder: sortOrder,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable<$DailyVerseRefsTable, DailyVerseRef>(table),
+                  BaseReferences<
+                    _$UserDatabase,
+                    $DailyVerseRefsTable,
+                    DailyVerseRef
+                  >(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$DailyVerseRefsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$UserDatabase,
+      $DailyVerseRefsTable,
+      DailyVerseRef,
+      $$DailyVerseRefsTableFilterComposer,
+      $$DailyVerseRefsTableOrderingComposer,
+      $$DailyVerseRefsTableAnnotationComposer,
+      $$DailyVerseRefsTableCreateCompanionBuilder,
+      $$DailyVerseRefsTableUpdateCompanionBuilder,
+      (
+        DailyVerseRef,
+        BaseReferences<_$UserDatabase, $DailyVerseRefsTable, DailyVerseRef>,
+      ),
+      DailyVerseRef,
+      PrefetchHooks Function()
+    >;
 
 class $UserDatabaseManager {
   final _$UserDatabase _db;
@@ -6617,4 +7122,6 @@ class $UserDatabaseManager {
       $$ReadingPlanProgressTableTableManager(_db, _db.readingPlanProgress);
   $$StreakCheckinsTableTableManager get streakCheckins =>
       $$StreakCheckinsTableTableManager(_db, _db.streakCheckins);
+  $$DailyVerseRefsTableTableManager get dailyVerseRefs =>
+      $$DailyVerseRefsTableTableManager(_db, _db.dailyVerseRefs);
 }

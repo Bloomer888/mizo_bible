@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mizo_bible/core/db/bible_database.dart';
+import 'package:mizo_bible/core/db/user_database.dart';
 import 'package:mizo_bible/features/home/data/verse_of_the_day.dart';
 
 void main() {
@@ -47,6 +48,15 @@ void main() {
     test('the period index wraps back to the same reference after a full cycle', () {
       // 64 periods later lands back on index 0 in a 64-entry list.
       expect(verseReferenceForInstant(epoch.add(verseRotationPeriod * 64)), verseReferenceForInstant(epoch));
+    });
+
+    test('an explicit references list overrides the hardcoded default', () {
+      // Proves the admin-editable path actually changes the result,
+      // not just that a parameter exists -- a single-entry list always
+      // picks that one entry regardless of period.
+      const custom = <(int, int, int)>[(40, 1, 1)];
+      expect(verseReferenceForInstant(epoch, references: custom), (40, 1, 1));
+      expect(verseReferenceForInstant(epoch.add(verseRotationPeriod * 5), references: custom), (40, 1, 1));
     });
   });
 
@@ -99,6 +109,38 @@ void main() {
       // from if it somehow did.
       final result = await loadVerseOfTheDay(db, {1: 'Genesis'}, now: DateTime.utc(1970).add(verseRotationPeriod));
       expect(result, isNull);
+    });
+  });
+
+  group('loadActiveDailyVerseReferences', () {
+    late UserDatabase userDb;
+
+    setUp(() => userDb = UserDatabase(NativeDatabase.memory()));
+    tearDown(() => userDb.close());
+
+    test('falls back to the hardcoded default list when the cache is empty', () async {
+      // Covers both a fresh install and a device that's never reached
+      // syncDailyVerseReferences successfully -- the feature must still
+      // show something, not nothing. Checks against verseReferenceForInstant's
+      // own default (same list, exercised via the Unix epoch anchor
+      // already used throughout this file) rather than re-importing the
+      // private _defaultReferences constant.
+      final result = await loadActiveDailyVerseReferences(userDb);
+      expect(result, isNotEmpty);
+      expect(result[0], verseReferenceForInstant(epoch));
+    });
+
+    test('returns the cached references, ordered by sortOrder, once the cache is populated', () async {
+      await userDb.into(userDb.dailyVerseRefs).insert(
+            DailyVerseRefsCompanion.insert(bookId: 43, chapter: 3, verse: 16, sortOrder: 1),
+          );
+      await userDb.into(userDb.dailyVerseRefs).insert(
+            DailyVerseRefsCompanion.insert(bookId: 1, chapter: 1, verse: 1, sortOrder: 0),
+          );
+
+      final result = await loadActiveDailyVerseReferences(userDb);
+
+      expect(result, [(1, 1, 1), (43, 3, 16)]);
     });
   });
 }

@@ -1,20 +1,28 @@
 import 'package:drift/drift.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/db/bible_database.dart';
+import '../../../core/db/user_database.dart';
+import '../../../core/env.dart';
 import '../../reader/data/reader_repository.dart' show defaultReaderSides;
 
-/// Well-known, encouraging, single-verse-complete references -- not a
-/// true random pick across the whole Bible, deliberately. A uniform
-/// random verse could just as easily land on a genealogy entry or a
-/// mid-sentence fragment from a legal passage, which defeats the point
-/// of a "verse of the day." Every entry here was checked directly
-/// against bible.db before being added (book/chapter/verse exists in
-/// both translations, and the English text reads as a complete
-/// thought -- a few otherwise-famous candidates were left out because
-/// the source text runs a trailing section heading onto the verse,
-/// e.g. Isaiah 40:31, or because the well-known quote only completes
-/// across two verses, e.g. Romans 8:38).
-const _curatedReferences = <(int bookId, int chapter, int verse)>[
+/// Well-known, encouraging, single-verse-complete references -- the
+/// offline/first-launch fallback now that content.daily_verses exists as
+/// the live, admin-editable source of truth (see
+/// syncDailyVerseReferences/loadActiveDailyVerseReferences below). Used
+/// whenever the local cache is empty: before any sync has ever
+/// succeeded, or a device that's never been online. Not a true random
+/// pick across the whole Bible, deliberately. A uniform random verse
+/// could just as easily land on a genealogy entry or a mid-sentence
+/// fragment from a legal passage, which defeats the point of a "verse of
+/// the day." Every entry here was checked directly against bible.db
+/// before being added (book/chapter/verse exists in both translations,
+/// and the English text reads as a complete thought -- a few
+/// otherwise-famous candidates were left out because the source text
+/// runs a trailing section heading onto the verse, e.g. Isaiah 40:31, or
+/// because the well-known quote only completes across two verses, e.g.
+/// Romans 8:38).
+const _defaultReferences = <(int bookId, int chapter, int verse)>[
   (1, 1, 1), (19, 23, 1), (19, 46, 1), (19, 119, 105), (20, 3, 5),
   (23, 41, 10), (24, 29, 11), (40, 5, 14), (40, 6, 33), (40, 11, 28),
   (40, 28, 20), (43, 3, 16), (43, 14, 27), (45, 8, 28), (46, 13, 4),
@@ -47,9 +55,15 @@ int _periodIndexFor(DateTime instant) {
 }
 
 /// Deterministic, not random: the same 60-hour period always picks the
-/// same reference, for every user on every device.
-(int bookId, int chapter, int verse) verseReferenceForInstant(DateTime instant) {
-  return _curatedReferences[_periodIndexFor(instant) % _curatedReferences.length];
+/// same entry from [references], for every user on every device.
+/// [references] defaults to the hardcoded fallback list, but real
+/// callers pass whatever [loadActiveDailyVerseReferences] currently has
+/// cached, so an admin's edit actually changes what this returns.
+(int bookId, int chapter, int verse) verseReferenceForInstant(
+  DateTime instant, {
+  List<(int, int, int)> references = _defaultReferences,
+}) {
+  return references[_periodIndexFor(instant) % references.length];
 }
 
 /// The exact instant the period containing [instant] began.
@@ -82,17 +96,20 @@ class VerseOfTheDay {
   });
 }
 
-/// Null only if the curated reference somehow isn't in this build's
-/// bible.db -- shouldn't happen (every entry was checked against the
-/// real database before being added above), but a missing verse must
-/// never crash the Home tab, so this degrades to "don't show the
-/// card" rather than throwing.
+/// Null only if the chosen reference somehow isn't in this build's
+/// bible.db -- shouldn't happen for the hardcoded fallback list (every
+/// entry was checked against the real database before being added
+/// above), and an admin-added content.daily_verses reference is checked
+/// the same way before the admin panel lets it save -- but a missing
+/// verse must never crash the Home tab, so this degrades to "don't show
+/// the card" rather than throwing.
 Future<VerseOfTheDay?> loadVerseOfTheDay(
   BibleDatabase db,
   Map<int, String> bookNames, {
   DateTime? now,
+  List<(int, int, int)> references = _defaultReferences,
 }) async {
-  final (bookId, chapter, verse) = verseReferenceForInstant(now ?? DateTime.now());
+  final (bookId, chapter, verse) = verseReferenceForInstant(now ?? DateTime.now(), references: references);
 
   final rows = await (db.select(db.verses)
         ..where((v) => v.bookId.equals(bookId) & v.chapter.equals(chapter) & v.verse.equals(verse)))
@@ -114,4 +131,54 @@ Future<VerseOfTheDay?> loadVerseOfTheDay(
     mizoText: mizoText,
     englishText: englishText,
   );
+}
+
+/// Reads the locally-cached content.daily_verses rows, ordered the way
+/// the admin arranged them -- falls back to [_defaultReferences] if the
+/// cache is empty, so a fresh install (or a device that's never
+/// reached [syncDailyVerseReferences] successfully) still shows
+/// something instead of nothing.
+Future<List<(int, int, int)>> loadActiveDailyVerseReferences(UserDatabase db) async {
+  final rows = await (db.select(db.dailyVerseRefs)..orderBy([(t) => OrderingTerm.asc(t.sortOrder)])).get();
+  if (rows.isEmpty) return _defaultReferences;
+  return [for (final r in rows) (r.bookId, r.chapter, r.verse)];
+}
+
+/// Best-effort, silent-fail: fetches content.daily_verses from Supabase
+/// and replaces the local cache wholesale. Deliberately not gated on
+/// sign-in or Premium -- Verse of the Day is a free feature, and this
+/// one table is readable by anyone via the publishable key (a narrow,
+/// explicit exception to content.* otherwise being service-role-only --
+/// see the migration that created content.daily_verses). Safe to call
+/// repeatedly, e.g. on every app launch/resume, same shape as
+/// syncUserData in sync_repository.dart.
+Future<void> syncDailyVerseReferences(UserDatabase db) async {
+  if (!Env.hasSupabase) return;
+  try {
+    final rows = await Supabase.instance.client.schema('content').from('daily_verses').select();
+    // An empty response could mean "the admin genuinely cleared the
+    // list" or it could mean the migration hasn't been applied yet, or
+    // a transient bad response -- either way, keep whatever's already
+    // cached (or the hardcoded fallback) rather than wipe the feature
+    // to nothing on an ambiguous signal.
+    if (rows.isEmpty) return;
+
+    await db.transaction(() async {
+      await db.delete(db.dailyVerseRefs).go();
+      for (final row in rows) {
+        await db.into(db.dailyVerseRefs).insert(
+              DailyVerseRefsCompanion.insert(
+                bookId: row['book_id'] as int,
+                chapter: row['chapter'] as int,
+                verse: row['verse'] as int,
+                sortOrder: row['sort_order'] as int,
+              ),
+            );
+      }
+    });
+  } catch (_) {
+    // Offline, unreachable, or the migration hasn't been applied yet --
+    // keep whatever's cached locally rather than let this throw into
+    // whatever called it (app launch/resume must never fail over this).
+  }
 }

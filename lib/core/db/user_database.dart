@@ -139,6 +139,23 @@ class StreakCheckins extends Table with SyncableColumns {
   Set<Column> get primaryKey => {id};
 }
 
+/// A local cache of Supabase's content.daily_verses -- not a
+/// SyncableColumns table, since this isn't user-owned data that syncs
+/// per-user, it's a shared admin-curated list the app pulls down
+/// read-only (see syncDailyVerseReferences in verse_of_the_day.dart).
+/// Replaced wholesale on every successful sync (old rows deleted, new
+/// ones inserted) rather than reconciled row-by-row -- the list is small
+/// and always fetched whole, so there's nothing to gain from diffing it.
+class DailyVerseRefs extends Table {
+  IntColumn get bookId => integer()();
+  IntColumn get chapter => integer()();
+  IntColumn get verse => integer()();
+  IntColumn get sortOrder => integer()();
+
+  @override
+  Set<Column> get primaryKey => {bookId, chapter, verse};
+}
+
 @DriftDatabase(
   tables: [
     Bookmarks,
@@ -149,13 +166,14 @@ class StreakCheckins extends Table with SyncableColumns {
     Settings,
     ReadingPlanProgress,
     StreakCheckins,
+    DailyVerseRefs,
   ],
 )
 class UserDatabase extends _$UserDatabase {
   UserDatabase([QueryExecutor? executor]) : super(executor ?? _openConnection());
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -166,6 +184,9 @@ class UserDatabase extends _$UserDatabase {
           }
           if (from < 3) {
             await m.createTable(streakCheckins);
+          }
+          if (from < 4) {
+            await m.createTable(dailyVerseRefs);
           }
         },
       );

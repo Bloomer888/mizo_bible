@@ -26,9 +26,11 @@ final _mostRecentProgressProvider = FutureProvider.autoDispose<BookReadingPositi
 });
 
 final _verseOfTheDayProvider = FutureProvider.autoDispose<VerseOfTheDay?>((ref) async {
-  final db = ref.watch(bibleDatabaseProvider);
+  final bibleDb = ref.watch(bibleDatabaseProvider);
+  final userDb = ref.watch(userDatabaseProvider);
   final names = await ref.watch(bookNamesMapProvider.future);
-  return loadVerseOfTheDay(db, names);
+  final references = await loadActiveDailyVerseReferences(userDb);
+  return loadVerseOfTheDay(bibleDb, names, references: references);
 });
 
 final _streakProvider = FutureProvider.autoDispose<int>((ref) {
