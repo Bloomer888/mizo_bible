@@ -358,12 +358,6 @@ abstract class AppLocalizations {
   /// **'Remove bookmark'**
   String get removeBookmark;
 
-  /// No description provided for @highlight.
-  ///
-  /// In en, this message translates to:
-  /// **'Highlight'**
-  String get highlight;
-
   /// No description provided for @removeHighlight.
   ///
   /// In en, this message translates to:
@@ -562,18 +556,6 @@ abstract class AppLocalizations {
   /// **'Mizo: Mizo-English Parallel Bible (2010/2011/2015/2017), a product of the Christian Research Centre, Aizawl — rights confirmed for use in this app. English: King James Version blended with New King James Version, used by permission of Thomas Nelson. Full-text use of the English side is still pending written permission from the current rights holder, HarperCollins Christian Publishing.'**
   String get bibleTextRights;
 
-  /// No description provided for @privacyPolicy.
-  ///
-  /// In en, this message translates to:
-  /// **'Privacy Policy'**
-  String get privacyPolicy;
-
-  /// No description provided for @termsOfService.
-  ///
-  /// In en, this message translates to:
-  /// **'Terms of Service'**
-  String get termsOfService;
-
   /// No description provided for @openSourceLicenses.
   ///
   /// In en, this message translates to:
@@ -759,12 +741,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start Plan'**
   String get startPlan;
-
-  /// No description provided for @continuePlan.
-  ///
-  /// In en, this message translates to:
-  /// **'Continue'**
-  String get continuePlan;
 
   /// No description provided for @dayOfTotal.
   ///
