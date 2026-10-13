@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 
@@ -54,12 +53,16 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
   int? _restoredChapter;
   int? _restoredVerse;
   bool _topBarVisible = true;
+  // See _handleTopBarScroll's doc comment -- app_shell.dart's bottom nav
+  // uses the identical accumulated-delta approach for the identical reason.
+  double _topBarScrollDelta = 0;
+  static const _topBarScrollThreshold = 16.0;
   // True while any of the picker's three dropdown fields has focus --
   // i.e. its popup is open or was just closed. DropdownMenu's popup is
   // built via OverlayPortal, which keeps it a logical descendant of
   // wherever the picker sits for Notification-bubbling purposes (unlike
   // the legacy raw-Overlay approach, which would have isolated it) --
-  // so scrolling inside the popup's own list produces UserScrollNotification
+  // so scrolling inside the popup's own list produces ScrollNotifications
   // that would otherwise reach the NotificationListener below and hide
   // this page's top bar (and, bubbling further, app_shell's bottom nav
   // too) as if the reader itself were being scrolled. Swallowing that
@@ -128,6 +131,41 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
     final positions = _positionsListener.itemPositions.value;
     if (positions.isEmpty) return;
     _visibleTopIndex = positions.map((p) => p.index).reduce((a, b) => a < b ? a : b);
+  }
+
+  /// Hides the top bar once scrolled-down movement crosses a small
+  /// threshold, shows it once scrolled-up movement does -- accumulated
+  /// across the whole gesture via ScrollUpdateNotification.scrollDelta,
+  /// not decided from a single UserScrollNotification.direction reading.
+  /// That used to flip the bar back immediately after showing it: a real
+  /// swipe can report ScrollDirection.forward and then, a frame or two
+  /// later as the same gesture settles, a brief ScrollDirection.reverse
+  /// right before going idle (confirmed live via logcat, not assumed --
+  /// scrolling up showed the bar for one frame then hid it again on that
+  /// trailing flip, matching exactly what was reported: "scroll back up
+  /// and ... it didn't" come back). A small threshold plus resetting the
+  /// accumulator whenever the bar actually flips (or the gesture ends)
+  /// is immune to that single-frame noise while still reacting to a real
+  /// scroll well within one gesture.
+  void _handleTopBarScroll(ScrollNotification notification) {
+    if (notification is ScrollUpdateNotification) {
+      final delta = notification.scrollDelta;
+      if (delta == null) return;
+      _topBarScrollDelta += delta;
+      if (_topBarScrollDelta > _topBarScrollThreshold && _topBarVisible) {
+        setState(() {
+          _topBarVisible = false;
+          _topBarScrollDelta = 0;
+        });
+      } else if (_topBarScrollDelta < -_topBarScrollThreshold && !_topBarVisible) {
+        setState(() {
+          _topBarVisible = true;
+          _topBarScrollDelta = 0;
+        });
+      }
+    } else if (notification is ScrollEndNotification) {
+      _topBarScrollDelta = 0;
+    }
   }
 
   /// Fires once per page visit (back button, switching books via the
@@ -264,14 +302,9 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
       // this list does bubble correctly (already proven by the bottom
       // nav bar's identical hide/show in app_shell.dart), so that's what
       // drives this instead.
-      body: NotificationListener<UserScrollNotification>(
+      body: NotificationListener<ScrollNotification>(
         onNotification: (notification) {
-          final direction = notification.direction;
-          if (direction == ScrollDirection.reverse && _topBarVisible) {
-            setState(() => _topBarVisible = false);
-          } else if (direction == ScrollDirection.forward && !_topBarVisible) {
-            setState(() => _topBarVisible = true);
-          }
+          _handleTopBarScroll(notification);
           return false;
         },
         child: Stack(
