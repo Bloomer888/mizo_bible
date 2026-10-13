@@ -556,12 +556,6 @@ abstract class AppLocalizations {
   /// **'Mizo: Mizo-English Parallel Bible (2010/2011/2015/2017), a product of the Christian Research Centre, Aizawl — rights confirmed for use in this app. English: King James Version blended with New King James Version, used by permission of Thomas Nelson. Full-text use of the English side is still pending written permission from the current rights holder, HarperCollins Christian Publishing.'**
   String get bibleTextRights;
 
-  /// No description provided for @openSourceLicenses.
-  ///
-  /// In en, this message translates to:
-  /// **'Open Source Licenses'**
-  String get openSourceLicenses;
-
   /// No description provided for @deleteMyData.
   ///
   /// In en, this message translates to:

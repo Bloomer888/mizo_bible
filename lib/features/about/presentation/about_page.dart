@@ -40,16 +40,6 @@ class AboutPage extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Text(l10n.bibleTextRights),
           ),
-          const Divider(),
-          ListTile(
-            title: Text(l10n.openSourceLicenses),
-            trailing: const Icon(Icons.chevron_right),
-            onTap: () => showLicensePage(
-              context: context,
-              applicationName: l10n.appTitle,
-              applicationVersion: '1.0.0',
-            ),
-          ),
         ],
       ),
     );
