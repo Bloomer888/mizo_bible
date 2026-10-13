@@ -86,7 +86,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fontStyleSans => 'Sans-serif';
 
   @override
+  String get fontStyleSansCondensed => 'Sans-serif Condensed';
+
+  @override
   String get fontStyleSerif => 'Serif';
+
+  @override
+  String get fontStyleSerifCondensed => 'Serif Condensed';
+
+  @override
+  String get fontStyle => 'Font Style';
 
   @override
   String get oldTestament => 'Old Testament';

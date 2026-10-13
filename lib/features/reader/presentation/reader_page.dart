@@ -6,6 +6,7 @@ import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../../core/db/bible_database.dart';
 import '../../../core/db/user_database.dart';
 import '../../../core/l10n_extension.dart';
+import '../../../core/theme/app_typography.dart';
 import '../../navigation/data/book_repository.dart';
 import '../../navigation/presentation/book_language_settings.dart';
 import '../../navigation/presentation/book_list_page.dart';
@@ -392,14 +393,17 @@ class _ReaderItemTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final lineHeight = ref.watch(readerSettingsProvider.select((s) => s.lineHeightScale));
-    final fontFamily = ref.watch(readerSettingsProvider.select((s) => s.fontFamily)).familyName;
+    final fontStyle = ref.watch(readerSettingsProvider.select((s) => s.fontFamily));
     return switch (item) {
       ChapterHeader(:final chapter) => Padding(
           padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
           child: Center(
             child: Text(
               '$chapter',
-              style: theme.textTheme.headlineMedium?.copyWith(height: lineHeight, fontFamily: fontFamily),
+              style: AppTypography.width(
+                theme.textTheme.headlineMedium?.copyWith(height: lineHeight, fontFamily: fontStyle.familyName),
+                fontStyle.width,
+              ),
             ),
           ),
         ),
@@ -408,19 +412,25 @@ class _ReaderItemTile extends ConsumerWidget {
           child: _ParallelRow(
             a: Text(
               a ?? '',
-              style: theme.textTheme.titleMedium?.copyWith(
-                    fontStyle: FontStyle.italic,
-                    height: lineHeight,
-                    fontFamily: fontFamily,
-                  ),
+              style: AppTypography.width(
+                theme.textTheme.titleMedium?.copyWith(
+                  fontStyle: FontStyle.italic,
+                  height: lineHeight,
+                  fontFamily: fontStyle.familyName,
+                ),
+                fontStyle.width,
+              ),
             ),
             b: Text(
               b ?? '',
-              style: theme.textTheme.titleMedium?.copyWith(
-                    fontStyle: FontStyle.italic,
-                    height: lineHeight,
-                    fontFamily: fontFamily,
-                  ),
+              style: AppTypography.width(
+                theme.textTheme.titleMedium?.copyWith(
+                  fontStyle: FontStyle.italic,
+                  height: lineHeight,
+                  fontFamily: fontStyle.familyName,
+                ),
+                fontStyle.width,
+              ),
             ),
           ),
         ),
@@ -550,8 +560,11 @@ class _VerseText extends ConsumerWidget {
     if (content == null) return const SizedBox.shrink();
 
     final lineHeight = ref.watch(readerSettingsProvider.select((s) => s.lineHeightScale));
-    final fontFamily = ref.watch(readerSettingsProvider.select((s) => s.fontFamily)).familyName;
-    final baseStyle = DefaultTextStyle.of(context).style.copyWith(height: lineHeight, fontFamily: fontFamily);
+    final fontStyle = ref.watch(readerSettingsProvider.select((s) => s.fontFamily));
+    final baseStyle = AppTypography.width(
+      DefaultTextStyle.of(context).style.copyWith(height: lineHeight, fontFamily: fontStyle.familyName),
+      fontStyle.width,
+    )!;
     final labelStyle = Theme.of(context).textTheme.labelSmall;
     final iconColor = labelStyle?.color ?? Theme.of(context).iconTheme.color;
     final markers = annotations;

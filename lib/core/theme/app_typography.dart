@@ -22,4 +22,20 @@ abstract final class AppTypography {
 
   static TextStyle weight(TextStyle base, FontWeight w) =>
       base.copyWith(fontWeight: w, fontVariations: variations(w));
+
+  /// Returns [base] with its `wdth` axis (62.5-100 on both bundled fonts --
+  /// confirmed by reading each file's own fvar table directly, not assumed)
+  /// set to [width], preserving whatever `wght` variation [base] already
+  /// carries. Replacing fontVariations outright instead of merging into it
+  /// would silently drop that weight axis, the same mistake [weight]'s own
+  /// doc comment exists to prevent in the first place.
+  ///
+  /// Nullable in and out, unlike [weight] -- its real call sites are always
+  /// a literal TextStyle(...), but this one's are theme.textTheme.*?.copyWith(...)
+  /// chains, which are nullable by nature.
+  static TextStyle? width(TextStyle? base, double width) {
+    if (base == null) return null;
+    final kept = base.fontVariations?.where((v) => v.axis != 'wdth') ?? const <FontVariation>[];
+    return base.copyWith(fontVariations: [...kept, FontVariation('wdth', width)]);
+  }
 }

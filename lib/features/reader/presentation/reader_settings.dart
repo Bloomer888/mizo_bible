@@ -9,15 +9,29 @@ import '../../../core/theme/app_typography.dart';
 
 enum ReadingMode { parallel, mizoOnly, englishOnly }
 
-/// The two typefaces actually bundled with the app (see app_typography.dart)
-/// -- not a placeholder for more choices later, just these two, since
-/// that's what's actually shipped as an asset today.
-enum ReaderFontFamily { sans, serif }
+/// Four styles from the two typefaces actually bundled with the app (see
+/// app_typography.dart) -- condensed isn't a third font file, it's the same
+/// two fonts' own `wdth` axis (confirmed present, 62.5-100, by reading each
+/// file's fvar table directly) driven down from its 100 default. Not a
+/// placeholder for more choices later; exactly these four exist because
+/// that's what the two bundled variable fonts can actually produce.
+enum ReaderFontFamily { sans, sansCondensed, serif, serifCondensed }
+
+/// How condensed a "Condensed" style renders -- comfortably narrower than
+/// the 100 default without nearing the 62.5 floor, where the bundled font
+/// starts looking strained rather than just compact.
+const _condensedWidth = 75.0;
+const _regularWidth = 100.0;
 
 extension ReaderFontFamilyX on ReaderFontFamily {
   String get familyName => switch (this) {
-        ReaderFontFamily.sans => AppTypography.sans,
-        ReaderFontFamily.serif => AppTypography.serif,
+        ReaderFontFamily.sans || ReaderFontFamily.sansCondensed => AppTypography.sans,
+        ReaderFontFamily.serif || ReaderFontFamily.serifCondensed => AppTypography.serif,
+      };
+
+  double get width => switch (this) {
+        ReaderFontFamily.sans || ReaderFontFamily.serif => _regularWidth,
+        ReaderFontFamily.sansCondensed || ReaderFontFamily.serifCondensed => _condensedWidth,
       };
 }
 

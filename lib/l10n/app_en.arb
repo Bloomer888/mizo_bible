@@ -40,7 +40,10 @@
   "readingModeEnglishOnly": "English only",
   "swapLanguageSides": "Swap sides",
   "fontStyleSans": "Sans-serif",
+  "fontStyleSansCondensed": "Sans-serif Condensed",
   "fontStyleSerif": "Serif",
+  "fontStyleSerifCondensed": "Serif Condensed",
+  "fontStyle": "Font Style",
 
   "oldTestament": "Old Testament",
   "newTestament": "New Testament",

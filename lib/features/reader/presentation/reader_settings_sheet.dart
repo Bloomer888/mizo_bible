@@ -2,7 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/l10n_extension.dart';
+import '../../../l10n/app_localizations.dart';
 import 'reader_settings.dart';
+
+String _fontStyleLabel(AppLocalizations l10n, ReaderFontFamily style) => switch (style) {
+      ReaderFontFamily.sans => l10n.fontStyleSans,
+      ReaderFontFamily.sansCondensed => l10n.fontStyleSansCondensed,
+      ReaderFontFamily.serif => l10n.fontStyleSerif,
+      ReaderFontFamily.serifCondensed => l10n.fontStyleSerifCondensed,
+    };
 
 class ReaderSettingsSheet extends ConsumerWidget {
   const ReaderSettingsSheet({super.key});
@@ -36,22 +44,35 @@ class ReaderSettingsSheet extends ConsumerWidget {
               onIncrease: notifier.increaseLineHeight,
             ),
             const SizedBox(height: 20),
-            // Each segment's label renders in the font it switches to --
-            // the fastest possible preview of what "Serif" actually looks
-            // like, same idea as how other reading apps' font pickers work.
-            SegmentedButton<ReaderFontFamily>(
-              segments: [
-                ButtonSegment(
-                  value: ReaderFontFamily.sans,
-                  label: Text(l10n.fontStyleSans, style: TextStyle(fontFamily: ReaderFontFamily.sans.familyName)),
-                ),
-                ButtonSegment(
-                  value: ReaderFontFamily.serif,
-                  label: Text(l10n.fontStyleSerif, style: TextStyle(fontFamily: ReaderFontFamily.serif.familyName)),
-                ),
+            // A dropdown, not a SegmentedButton -- four styles is one too
+            // many to read comfortably as a row of segments on a phone
+            // width, where the font-size/line-height rows and the (three-
+            // segment) reading-mode row below still fit fine. Each entry's
+            // labelWidget renders in the actual style it selects -- the
+            // fastest possible preview, same idea as how other reading
+            // apps' font pickers work -- while label stays plain text for
+            // the closed field and for accessibility.
+            DropdownMenu<ReaderFontFamily>(
+              initialSelection: settings.fontFamily,
+              label: Text(l10n.fontStyle),
+              expandedInsets: EdgeInsets.zero,
+              dropdownMenuEntries: [
+                for (final style in ReaderFontFamily.values)
+                  DropdownMenuEntry(
+                    value: style,
+                    label: _fontStyleLabel(l10n, style),
+                    labelWidget: Text(
+                      _fontStyleLabel(l10n, style),
+                      style: TextStyle(
+                        fontFamily: style.familyName,
+                        fontVariations: [FontVariation('wdth', style.width)],
+                      ),
+                    ),
+                  ),
               ],
-              selected: {settings.fontFamily},
-              onSelectionChanged: (selection) => notifier.setFontFamily(selection.first),
+              onSelected: (style) {
+                if (style != null) notifier.setFontFamily(style);
+              },
             ),
             const SizedBox(height: 12),
             SegmentedButton<ReadingMode>(
