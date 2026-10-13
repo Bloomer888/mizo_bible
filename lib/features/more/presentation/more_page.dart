@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/l10n_extension.dart';
 import '../../../core/theme/app_typography.dart';
+import '../../../core/theme/theme_settings.dart';
 import '../../about/presentation/about_page.dart';
 import '../../auth/presentation/account_page.dart';
 import '../../library/presentation/bookmarks_page.dart';
@@ -11,7 +12,7 @@ import '../../library/presentation/notes_page.dart';
 import '../../navigation/presentation/book_language_settings.dart';
 import '../../premium/data/premium_providers.dart';
 import '../../premium/presentation/paywall_page.dart';
-import '../../reader/presentation/reader_settings_sheet.dart';
+import '../../reader/presentation/text_settings_page.dart';
 import '../../reading_plans/presentation/reading_plans_page.dart';
 
 /// The More tab -- everything that isn't "read the Bible right now":
@@ -26,6 +27,7 @@ class MorePage extends ConsumerWidget {
     final l10n = context.l10n;
     final isPremium = ref.watch(isPremiumProvider);
     final bookNameLanguage = ref.watch(bookNameLanguageProvider);
+    final darkMode = ref.watch(darkModeProvider);
 
     void openPage(Widget page) {
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
@@ -72,10 +74,7 @@ class MorePage extends ConsumerWidget {
           ListTile(
             leading: const Icon(Icons.text_fields_rounded),
             title: Text(l10n.textSettings),
-            onTap: () => showModalBottomSheet(
-              context: context,
-              builder: (_) => const ReaderSettingsSheet(),
-            ),
+            onTap: () => openPage(const TextSettingsPage()),
           ),
           SwitchListTile(
             // Not Icons.translate -- that icon depicts two different
@@ -88,6 +87,12 @@ class MorePage extends ConsumerWidget {
             onChanged: (value) => ref.read(bookNameLanguageProvider.notifier).setLanguage(
                   value ? BookNameLanguage.english : BookNameLanguage.mizo,
                 ),
+          ),
+          SwitchListTile(
+            secondary: const Icon(Icons.dark_mode_rounded),
+            title: Text(l10n.darkMode),
+            value: darkMode,
+            onChanged: (value) => ref.read(darkModeProvider.notifier).setDarkMode(value),
           ),
           ListTile(
             leading: const Icon(Icons.account_circle_rounded),

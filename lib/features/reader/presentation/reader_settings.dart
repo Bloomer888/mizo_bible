@@ -37,30 +37,55 @@ extension ReaderFontFamilyX on ReaderFontFamily {
 
 const _settingsKey = 'reader_settings';
 
+/// The slider's range -- a literal point size the user picks directly
+/// (image the user supplied: a big number, a slider, +/- buttons, min/max
+/// labels), not the old abstract 75-200% scale. 10 is "not super small"
+/// per the user's own words (still legible, just small); 40 is this
+/// session's judgment call for "not super large" after the user left the
+/// exact ceiling to me ("maybe 40/50").
+const minFontSize = 10.0;
+const maxFontSize = 40.0;
+
+/// What [ReaderSettings.scale] is 1.0 at -- the reader's chapter headers
+/// and section headings (theme.textTheme.headlineMedium/titleMedium) still
+/// scale via the old TextScaler mechanism in reader_page.dart, proportional
+/// to the verse body text's own chosen size, so headings keep growing and
+/// shrinking together with the body instead of needing their own sliders.
+const _baseFontSize = 17.0;
+
+const _minLineHeightScale = 0.9;
+const _maxLineHeightScale = 2.0;
+const _lineHeightStep = 0.1;
+
 class ReaderSettings {
-  final double fontScale;
+  final double fontSize;
   final double lineHeightScale;
   final ReadingMode mode;
   final bool swapped;
   final ReaderFontFamily fontFamily;
 
   const ReaderSettings({
-    this.fontScale = 1.0,
+    this.fontSize = _baseFontSize,
     this.lineHeightScale = 1.0,
     this.mode = ReadingMode.parallel,
     this.swapped = false,
     this.fontFamily = ReaderFontFamily.sans,
   });
 
+  /// The multiplier reader_page.dart's page-wide TextScaler applies, so
+  /// chapter headers and section headings scale in proportion to the body
+  /// size chosen here rather than needing their own separate controls.
+  double get scale => fontSize / _baseFontSize;
+
   ReaderSettings copyWith({
-    double? fontScale,
+    double? fontSize,
     double? lineHeightScale,
     ReadingMode? mode,
     bool? swapped,
     ReaderFontFamily? fontFamily,
   }) {
     return ReaderSettings(
-      fontScale: fontScale ?? this.fontScale,
+      fontSize: fontSize ?? this.fontSize,
       lineHeightScale: lineHeightScale ?? this.lineHeightScale,
       mode: mode ?? this.mode,
       swapped: swapped ?? this.swapped,
@@ -69,7 +94,7 @@ class ReaderSettings {
   }
 
   Map<String, dynamic> toJson() => {
-        'fontScale': fontScale,
+        'fontSize': fontSize,
         'lineHeightScale': lineHeightScale,
         'mode': mode.name,
         'swapped': swapped,
@@ -77,7 +102,11 @@ class ReaderSettings {
       };
 
   factory ReaderSettings.fromJson(Map<String, dynamic> json) => ReaderSettings(
-        fontScale: (json['fontScale'] as num?)?.toDouble() ?? 1.0,
+        // No migration from the old 'fontScale' key -- a pre-launch,
+        // single-test-device app with nothing durable to carry forward;
+        // an old save just falls back to the new default, same as any
+        // other corrupt-or-unrecognized value already does.
+        fontSize: ((json['fontSize'] as num?)?.toDouble() ?? _baseFontSize).clamp(minFontSize, maxFontSize),
         lineHeightScale: (json['lineHeightScale'] as num?)?.toDouble() ?? 1.0,
         mode: ReadingMode.values.firstWhere(
           (m) => m.name == json['mode'],
@@ -90,12 +119,6 @@ class ReaderSettings {
         ),
       );
 }
-
-const _minFontScale = 0.75;
-const _maxFontScale = 2.0;
-const _minLineHeightScale = 0.9;
-const _maxLineHeightScale = 2.0;
-const _step = 0.1;
 
 class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
   @override
@@ -129,26 +152,30 @@ class ReaderSettingsNotifier extends Notifier<ReaderSettings> {
     unawaited(saveSetting(db, _settingsKey, jsonEncode(state.toJson())).catchError((_) {}));
   }
 
-  void increaseFontScale() {
-    state = state.copyWith(fontScale: (state.fontScale + _step).clamp(_minFontScale, _maxFontScale));
+  /// Drives the slider directly -- Slider.onChanged already only ever
+  /// calls this with a value inside [minFontSize, maxFontSize] (it's the
+  /// widget's own min/max), but the +/- buttons share this same setter and
+  /// step past either end without the clamp, so it's enforced here once
+  /// rather than at every call site.
+  void setFontSize(double value) {
+    state = state.copyWith(fontSize: value.clamp(minFontSize, maxFontSize));
     _save();
   }
 
-  void decreaseFontScale() {
-    state = state.copyWith(fontScale: (state.fontScale - _step).clamp(_minFontScale, _maxFontScale));
-    _save();
-  }
+  void increaseFontSize() => setFontSize(state.fontSize + 1);
+
+  void decreaseFontSize() => setFontSize(state.fontSize - 1);
 
   void increaseLineHeight() {
     state = state.copyWith(
-      lineHeightScale: (state.lineHeightScale + _step).clamp(_minLineHeightScale, _maxLineHeightScale),
+      lineHeightScale: (state.lineHeightScale + _lineHeightStep).clamp(_minLineHeightScale, _maxLineHeightScale),
     );
     _save();
   }
 
   void decreaseLineHeight() {
     state = state.copyWith(
-      lineHeightScale: (state.lineHeightScale - _step).clamp(_minLineHeightScale, _maxLineHeightScale),
+      lineHeightScale: (state.lineHeightScale - _lineHeightStep).clamp(_minLineHeightScale, _maxLineHeightScale),
     );
     _save();
   }

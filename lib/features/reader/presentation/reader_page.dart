@@ -16,7 +16,7 @@ import '../data/reading_progress_repository.dart';
 import '../data/verse_annotations_repository.dart';
 import '../domain/reader_item.dart';
 import 'reader_settings.dart';
-import 'reader_settings_sheet.dart';
+import 'text_settings_page.dart';
 import 'verse_actions_sheet.dart';
 
 /// Loads one book's reader items, keyed by canonical book id. autoDispose
@@ -178,7 +178,7 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
   Widget build(BuildContext context) {
     final itemsAsync = ref.watch(readerItemsProvider(widget.bookId));
     final bookInfoAsync = ref.watch(bookInfoProvider(widget.bookId));
-    final fontScale = ref.watch(readerSettingsProvider.select((s) => s.fontScale));
+    final fontScale = ref.watch(readerSettingsProvider.select((s) => s.scale));
 
     BookInfo? bookInfo;
     if (bookInfoAsync case AsyncData(:final value)) bookInfo = value;
@@ -197,9 +197,8 @@ class _ReaderPageState extends ConsumerState<ReaderPage> with WidgetsBindingObse
         IconButton.filledTonal(
           icon: const Icon(Icons.text_fields_rounded),
           tooltip: context.l10n.textSettings,
-          onPressed: () => showModalBottomSheet(
-            context: context,
-            builder: (_) => const ReaderSettingsSheet(),
+          onPressed: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const TextSettingsPage()),
           ),
         ),
         const SizedBox(width: 8),

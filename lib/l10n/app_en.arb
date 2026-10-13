@@ -56,6 +56,10 @@
   "verseMizo": "Chang",
   "textSettings": "Text Settings",
   "bookNamesInEnglish": "Book names in English",
+  "darkMode": "Dark Mode",
+  "fontSize": "Font Size",
+  "preview": "Preview",
+  "done": "Done",
 
   "addBookmark": "Add bookmark",
   "removeBookmark": "Remove bookmark",

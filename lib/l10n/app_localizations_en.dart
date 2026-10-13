@@ -128,6 +128,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get bookNamesInEnglish => 'Book names in English';
 
   @override
+  String get darkMode => 'Dark Mode';
+
+  @override
+  String get fontSize => 'Font Size';
+
+  @override
+  String get preview => 'Preview';
+
+  @override
+  String get done => 'Done';
+
+  @override
   String get addBookmark => 'Add bookmark';
 
   @override

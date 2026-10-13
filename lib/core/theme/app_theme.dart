@@ -14,7 +14,7 @@ abstract final class AppTheme {
   // selects a heavier glyph unless `fontVariations` drives the `wght` axis
   // too -- so every one of those styles was silently rendering at the same
   // visual weight everywhere they're used via Theme.of(context).textTheme.*
-  // (reader_page's verse references, reader_settings_sheet's heading, and
+  // (reader_page's verse references, text_settings_page's headings, and
   // more). This re-derives fontVariations from each style's own fontWeight
   // once, here, instead of needing every call site to remember to do it.
   static TextTheme _withVariableWeights(TextTheme theme) {

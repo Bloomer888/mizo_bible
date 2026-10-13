@@ -8,6 +8,7 @@ import 'core/db/user_database.dart';
 import 'core/env.dart';
 import 'core/l10n_extension.dart';
 import 'core/theme/app_theme.dart';
+import 'core/theme/theme_settings.dart';
 import 'features/notifications/data/daily_verse_notifications.dart';
 import 'features/premium/data/premium_providers.dart';
 import 'features/sync/data/sync_repository.dart';
@@ -96,11 +97,13 @@ class _MizoBibleAppState extends ConsumerState<MizoBibleApp> with WidgetsBinding
 
   @override
   Widget build(BuildContext context) {
+    final darkMode = ref.watch(darkModeProvider);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       onGenerateTitle: (context) => context.l10n.appTitle,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
+      themeMode: darkMode ? ThemeMode.dark : ThemeMode.light,
       localizationsDelegates: const [
         AppLocalizations.delegate,
         GlobalMaterialLocalizations.delegate,
