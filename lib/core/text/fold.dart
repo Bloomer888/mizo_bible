@@ -5,6 +5,14 @@
 /// search query the same way. tool/fold_test_vectors.json is the shared
 /// source of truth both sides are tested against (test/fold_test.dart
 /// here, tool/test_fold.py on the Python side).
+///
+/// Currently unused by any UI: full-text search itself was removed
+/// (commit b0372c0), but this folding logic -- and the matching
+/// text_folded/verses_fts bits of export_bible_db.py and bible.db --
+/// were deliberately kept rather than torn out, since they cost nothing
+/// to leave and removing them would mean touching the Python export
+/// pipeline for no benefit. Revisit together as one unit if search is
+/// either brought back or finally removed for good.
 library;
 
 const Map<int, int> _foldMap = {

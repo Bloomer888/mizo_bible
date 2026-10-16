@@ -46,9 +46,9 @@ flutter build apk --release --dart-define-from-file=dart_define.json
 | Path | What |
 |---|---|
 | `lib/core/` | Database, text utilities, theme, build-time config |
-| `lib/features/` | One folder per feature (reader, search, settings, …) |
+| `lib/features/` | One folder per feature (reader, home, premium, …) |
 | `lib/l10n/` | `.arb` translation files; English filled, Mizo later |
-| `tool/` | PDF → `bible.db` pipeline: `extract_pdf.py`, `seed_supabase.py`, `export_bible_db.py` |
+| `tool/` | PDF → `bible.db` pipeline: `extract_pdf.py`, `seed_supabase.py`, `export_bible_db.py`, plus `fold.py` (diacritic folding for the `text_folded`/`verses_fts` columns, kept for a since-removed search feature — see `lib/core/text/fold.dart`'s doc comment) |
 | `assets/db/` | Generated `bible.db` (gitignored, rebuild with the tool) |
 | `assets/fonts/` | Noto Sans/Serif — needed for `ṭ` (U+1E6D) and circumflex vowels |
 | `source_pdfs/` | Your Bible PDFs (gitignored, copyrighted) |

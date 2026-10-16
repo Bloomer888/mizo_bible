@@ -627,8 +627,8 @@ class _VerseText extends ConsumerWidget {
 /// Direct book/chapter/verse navigation -- replaces the old pair of
 /// "tap the title for a book list" and "tap a grid icon for chapters"
 /// with one row that jumps anywhere in a tap or two, covering the
-/// common "I already know exactly where I want to go" case without
-/// needing full-text search (still reachable from the drawer).
+/// common "I already know exactly where I want to go" case. Full-text
+/// search itself was removed (see fold.dart's doc comment).
 class _BookChapterVersePicker extends ConsumerStatefulWidget {
   final int bookId;
   final String bookName;
