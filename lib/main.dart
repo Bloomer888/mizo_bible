@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -46,6 +47,20 @@ See https://scripts.sil.org/OFL for the full license text.'''),
       await Purchases.configure(PurchasesConfiguration(Env.revenueCatAndroidApiKey));
     } catch (error, stackTrace) {
       debugPrint('RevenueCat init failed; Premium unavailable: $error');
+      debugPrintStack(stackTrace: stackTrace);
+    }
+  }
+
+  // GoogleSignIn.instance.initialize() is meant to be called once, here,
+  // not per sign-in attempt -- signInWithGoogle() in auth_repository.dart
+  // just calls .authenticate() on the already-initialized instance. Same
+  // fail-closed reasoning as the two blocks above: no serverClientId
+  // means no Google sign-in option at all, not a button that errors.
+  if (Env.hasGoogleSignIn) {
+    try {
+      await GoogleSignIn.instance.initialize(serverClientId: Env.googleWebClientId);
+    } catch (error, stackTrace) {
+      debugPrint('Google Sign-In init failed; that option will be unavailable: $error');
       debugPrintStack(stackTrace: stackTrace);
     }
   }

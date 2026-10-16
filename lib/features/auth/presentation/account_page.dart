@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/db/user_database.dart';
@@ -229,6 +230,35 @@ class _SignInFormState extends ConsumerState<_SignInForm> {
     }
   }
 
+  Future<void> _submitGoogle() async {
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await signInWithGoogle();
+      final user = response.user;
+      if (user != null) {
+        await syncUserData(ref.read(userDatabaseProvider), user.id);
+      }
+      if (widget.popOnSuccess && response.session != null && mounted) {
+        Navigator.of(context).pop();
+      }
+    } on GoogleSignInException catch (error) {
+      // Cancellation isn't an error from the user's perspective -- they
+      // just backed out of the account picker. Every other code (a real
+      // config problem, network failure, etc.) is worth surfacing.
+      if (error.code != GoogleSignInExceptionCode.canceled && mounted) {
+        setState(() => _errorMessage = error.description ?? error.code.name);
+      }
+    } on AuthException catch (error) {
+      if (mounted) setState(() => _errorMessage = error.message);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
   Future<void> _resetPassword() async {
     final l10n = context.l10n;
     final email = _emailController.text.trim();
@@ -303,6 +333,28 @@ class _SignInFormState extends ConsumerState<_SignInForm> {
                 onPressed: _isSubmitting ? null : _resetPassword,
                 child: Text(l10n.forgotPassword),
               ),
+            // Hidden entirely, not shown-then-erroring, when no real
+            // Google Cloud client is configured -- same fail-closed shape
+            // Env.hasGoogleSignIn exists for.
+            if (Env.hasGoogleSignIn) ...[
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  const Expanded(child: Divider()),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(l10n.orDivider, style: Theme.of(context).textTheme.bodySmall),
+                  ),
+                  const Expanded(child: Divider()),
+                ],
+              ),
+              const SizedBox(height: 20),
+              OutlinedButton.icon(
+                onPressed: _isSubmitting ? null : _submitGoogle,
+                icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
+                label: Text(l10n.continueWithGoogle),
+              ),
+            ],
           ],
         ),
       ),

@@ -31,4 +31,19 @@ abstract final class Env {
   /// "not premium, feature unavailable" rather than erroring -- nothing
   /// about reading the Bible may ever depend on this being true.
   static bool get hasRevenueCat => revenueCatAndroidApiKey.isNotEmpty;
+
+  /// The Google Cloud "Web application" OAuth client ID -- passed as
+  /// `serverClientId` when initializing GoogleSignIn on Android (no
+  /// Firebase/google-services.json needed, since this project doesn't use
+  /// Firebase elsewhere). Supabase validates the ID token against this
+  /// same client, so it must be registered as a Google provider client ID
+  /// in the Supabase Dashboard too, not just here.
+  static const googleWebClientId =
+      String.fromEnvironment('GOOGLE_WEB_CLIENT_ID');
+
+  /// True once a real Google Cloud OAuth client exists and this value is
+  /// supplied. Until then, "Continue with Google" must not appear at all
+  /// -- same fail-closed shape as hasRevenueCat above, not a button that
+  /// shows and then errors.
+  static bool get hasGoogleSignIn => googleWebClientId.isNotEmpty;
 }

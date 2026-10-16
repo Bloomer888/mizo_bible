@@ -228,6 +228,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alreadyHaveAccount => 'Already have an account? Sign in';
 
   @override
+  String get orDivider => 'OR';
+
+  @override
+  String get continueWithGoogle => 'Continue with Google';
+
+  @override
   String get cloudSyncUnavailable =>
       'Cloud sync isn\'t set up for this build. Bookmarks, highlights, notes, and history are still saved on this device.';
 

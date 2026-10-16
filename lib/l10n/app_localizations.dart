@@ -520,6 +520,18 @@ abstract class AppLocalizations {
   /// **'Already have an account? Sign in'**
   String get alreadyHaveAccount;
 
+  /// No description provided for @orDivider.
+  ///
+  /// In en, this message translates to:
+  /// **'OR'**
+  String get orDivider;
+
+  /// No description provided for @continueWithGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get continueWithGoogle;
+
   /// No description provided for @cloudSyncUnavailable.
   ///
   /// In en, this message translates to:

@@ -1,5 +1,6 @@
 {
   "SUPABASE_URL": "https://YOUR-PROJECT-REF.supabase.co",
   "SUPABASE_PUBLISHABLE_KEY": "sb_publishable_YOUR_KEY_HERE",
-  "REVENUECAT_ANDROID_API_KEY": "goog_YOUR_KEY_HERE"
+  "REVENUECAT_ANDROID_API_KEY": "goog_YOUR_KEY_HERE",
+  "GOOGLE_WEB_CLIENT_ID": "YOUR_WEB_CLIENT_ID.apps.googleusercontent.com"
 }

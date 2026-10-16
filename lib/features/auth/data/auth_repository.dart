@@ -1,5 +1,6 @@
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/db/user_database.dart';
@@ -40,6 +41,34 @@ Future<AuthResponse> signUp({required String email, required String password}) a
 
 Future<AuthResponse> signIn({required String email, required String password}) async {
   final response = await Supabase.instance.client.auth.signInWithPassword(email: email, password: password);
+  final user = response.user;
+  if (user != null) await linkPremiumIdentity(user.id);
+  return response;
+}
+
+/// GoogleSignIn.instance is already initialized at app startup (see
+/// main.dart) -- this just drives one authenticate round-trip and hands
+/// the resulting ID token to Supabase, same shape as signIn/signUp above.
+/// `authenticate()` itself throws (including on user cancellation), so
+/// this has no special cancellation handling -- callers already catch
+/// broadly around sign-in attempts.
+Future<AuthResponse> signInWithGoogle() async {
+  final googleUser = await GoogleSignIn.instance.authenticate();
+
+  const scopes = ['email', 'profile'];
+  final authorization = await googleUser.authorizationClient.authorizationForScopes(scopes) ??
+      await googleUser.authorizationClient.authorizeScopes(scopes);
+
+  final idToken = googleUser.authentication.idToken;
+  if (idToken == null) {
+    throw const AuthException('Google sign-in did not return an ID token.');
+  }
+
+  final response = await Supabase.instance.client.auth.signInWithIdToken(
+    provider: OAuthProvider.google,
+    idToken: idToken,
+    accessToken: authorization.accessToken,
+  );
   final user = response.user;
   if (user != null) await linkPremiumIdentity(user.id);
   return response;
