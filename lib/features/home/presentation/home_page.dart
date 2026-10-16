@@ -110,11 +110,11 @@ class HomePage extends ConsumerWidget {
               _ => const SizedBox.shrink(),
             },
             if (devotionAsync case AsyncData(value: final devotion?)) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _DailyDevotionCard(devotion: devotion),
             ],
             if (wordAsync case AsyncData(value: final word?)) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _WordOfTheDayCard(word: word),
             ],
             // Premium-gated and only once a plan is active and not yet
@@ -123,17 +123,17 @@ class HomePage extends ConsumerWidget {
             // lapsed subscriber), and stops appearing once the plan is
             // done rather than lingering with nothing left to do.
             if (planAsync case AsyncData(value: final planState?) when isPremium && !planState.isComplete) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _ReadingPlanCard(state: planState),
             ],
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             const _StreakCard(),
             // Moved to the bottom per the user's explicit request
             // (2026-10-13) -- stays in the app (not removed), just no
             // longer the first thing after Continue/Start Reading, now
             // that Daily Devotion and Word of the Day sit above it.
             if (verseAsync case AsyncData(value: final verse?)) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _VerseOfTheDayCard(verse: verse),
             ],
           ],
