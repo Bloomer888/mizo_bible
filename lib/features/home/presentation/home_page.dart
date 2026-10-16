@@ -94,8 +94,25 @@ class HomePage extends ConsumerWidget {
       // body -- the stretch-to-fill-tab-height bug this project hit
       // before was specific to that direct-body case and doesn't
       // reappear here, verified live on-device with three stacked cards.
+      //
+      // Bottom padding is NOT just EdgeInsets.all(16): AppShell's outer
+      // Scaffold sets extendBody: true (so content slides smoothly under
+      // where the nav bar normally sits once it's hidden by the
+      // scroll-driven show/hide behavior -- see app_shell.dart), which
+      // means this page's own body is never given space reserved for
+      // that nav bar in the first place. Without extra bottom padding,
+      // the last card's tail end renders genuinely underneath the
+      // (opaque, when visible) nav bar -- invisible, but as far as
+      // SingleChildScrollView is concerned the content already "fits",
+      // so there's nothing to scroll to reveal it. Confirmed directly:
+      // instrumenting ScrollController.position.maxScrollExtent showed
+      // exactly 0.0 even with the Verse of the Day card visibly cut off
+      // at the screen edge. kBottomNavigationBarHeight is the Material
+      // spec height AppShell's NavigationBar uses (not customized), plus
+      // the system gesture/nav inset so this also holds on devices with
+      // on-screen nav buttons instead of gesture navigation.
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
