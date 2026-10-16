@@ -32,26 +32,14 @@ final currentUserProvider = Provider<User?>((ref) {
   return Supabase.instance.client.auth.currentUser;
 });
 
-Future<AuthResponse> signUp({required String email, required String password}) async {
-  final response = await Supabase.instance.client.auth.signUp(email: email, password: password);
-  final user = response.user;
-  if (user != null) await linkPremiumIdentity(user.id);
-  return response;
-}
-
-Future<AuthResponse> signIn({required String email, required String password}) async {
-  final response = await Supabase.instance.client.auth.signInWithPassword(email: email, password: password);
-  final user = response.user;
-  if (user != null) await linkPremiumIdentity(user.id);
-  return response;
-}
-
 /// GoogleSignIn.instance is already initialized at app startup (see
 /// main.dart) -- this just drives one authenticate round-trip and hands
-/// the resulting ID token to Supabase, same shape as signIn/signUp above.
-/// `authenticate()` itself throws (including on user cancellation), so
-/// this has no special cancellation handling -- callers already catch
-/// broadly around sign-in attempts.
+/// the resulting ID token to Supabase. The only sign-in path in this app
+/// -- see account_page.dart's doc comment on _SignInForm for why there's
+/// no email/password alternative. `authenticate()` itself throws
+/// (including on user cancellation), so this has no special cancellation
+/// handling of its own -- callers already catch broadly around sign-in
+/// attempts.
 Future<AuthResponse> signInWithGoogle() async {
   final googleUser = await GoogleSignIn.instance.authenticate();
 
@@ -77,10 +65,6 @@ Future<AuthResponse> signInWithGoogle() async {
 Future<void> signOut() async {
   await unlinkPremiumIdentity();
   await Supabase.instance.client.auth.signOut();
-}
-
-Future<void> resetPassword(String email) {
-  return Supabase.instance.client.auth.resetPasswordForEmail(email);
 }
 
 /// Attaches every not-yet-claimed local row (userId still null -- created

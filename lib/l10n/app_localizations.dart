@@ -448,53 +448,11 @@ abstract class AppLocalizations {
   /// **'Sign in'**
   String get signIn;
 
-  /// No description provided for @createAccount.
+  /// No description provided for @signInUnavailable.
   ///
   /// In en, this message translates to:
-  /// **'Create account'**
-  String get createAccount;
-
-  /// No description provided for @email.
-  ///
-  /// In en, this message translates to:
-  /// **'Email'**
-  String get email;
-
-  /// No description provided for @password.
-  ///
-  /// In en, this message translates to:
-  /// **'Password'**
-  String get password;
-
-  /// No description provided for @invalidEmail.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a valid email address'**
-  String get invalidEmail;
-
-  /// No description provided for @passwordTooShort.
-  ///
-  /// In en, this message translates to:
-  /// **'Password must be at least 6 characters'**
-  String get passwordTooShort;
-
-  /// No description provided for @forgotPassword.
-  ///
-  /// In en, this message translates to:
-  /// **'Forgot password?'**
-  String get forgotPassword;
-
-  /// No description provided for @resetPasswordEmailSent.
-  ///
-  /// In en, this message translates to:
-  /// **'Check your email for a password reset link'**
-  String get resetPasswordEmailSent;
-
-  /// No description provided for @confirmEmailSent.
-  ///
-  /// In en, this message translates to:
-  /// **'Check your email to confirm your account'**
-  String get confirmEmailSent;
+  /// **'Sign-in isn\'t set up for this build yet. Bookmarks, highlights, notes, and history are still saved on this device.'**
+  String get signInUnavailable;
 
   /// No description provided for @signedInAs.
   ///
@@ -507,24 +465,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Sign out'**
   String get signOut;
-
-  /// No description provided for @needAnAccount.
-  ///
-  /// In en, this message translates to:
-  /// **'Need an account? Create one'**
-  String get needAnAccount;
-
-  /// No description provided for @alreadyHaveAccount.
-  ///
-  /// In en, this message translates to:
-  /// **'Already have an account? Sign in'**
-  String get alreadyHaveAccount;
-
-  /// No description provided for @orDivider.
-  ///
-  /// In en, this message translates to:
-  /// **'OR'**
-  String get orDivider;
 
   /// No description provided for @continueWithGoogle.
   ///

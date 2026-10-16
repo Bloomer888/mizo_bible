@@ -170,6 +170,13 @@ class _SignedInViewState extends ConsumerState<_SignedInView> {
   }
 }
 
+/// Google-only, deliberately -- no email/password path exists in this app
+/// at all (user's explicit call, 2026-10-16: typing an email and
+/// inventing a password was friction worth cutting entirely, not just
+/// de-emphasizing next to a Google button). Sign-in only ever happens
+/// here, at the moment of a Premium purchase or a deliberate Account
+/// visit -- never for reading the Bible -- so there's no broader app
+/// flow depending on a password-based identity existing.
 class _SignInForm extends ConsumerStatefulWidget {
   final bool popOnSuccess;
   const _SignInForm({required this.popOnSuccess});
@@ -179,56 +186,8 @@ class _SignInForm extends ConsumerStatefulWidget {
 }
 
 class _SignInFormState extends ConsumerState<_SignInForm> {
-  final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  bool _isSignUp = false;
   bool _isSubmitting = false;
   String? _errorMessage;
-
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    final l10n = context.l10n;
-    setState(() {
-      _isSubmitting = true;
-      _errorMessage = null;
-    });
-
-    final email = _emailController.text.trim();
-    final password = _passwordController.text;
-
-    try {
-      final response = _isSignUp
-          ? await signUp(email: email, password: password)
-          : await signIn(email: email, password: password);
-
-      final user = response.user;
-      if (user != null) {
-        await syncUserData(ref.read(userDatabaseProvider), user.id);
-      }
-
-      // Sign-up with email confirmation required returns a user but no
-      // session yet -- currentUserProvider stays null until the link is
-      // clicked and the user signs in for real, so this is the only
-      // feedback they'd otherwise get that anything happened at all.
-      if (_isSignUp && response.session == null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.confirmEmailSent)));
-      } else if (widget.popOnSuccess && response.session != null && mounted) {
-        Navigator.of(context).pop();
-      }
-    } on AuthException catch (error) {
-      if (mounted) setState(() => _errorMessage = error.message);
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
-    }
-  }
 
   Future<void> _submitGoogle() async {
     setState(() {
@@ -259,102 +218,56 @@ class _SignInFormState extends ConsumerState<_SignInForm> {
     }
   }
 
-  Future<void> _resetPassword() async {
-    final l10n = context.l10n;
-    final email = _emailController.text.trim();
-    if (!email.contains('@')) {
-      setState(() => _errorMessage = l10n.invalidEmail);
-      return;
-    }
-    try {
-      await resetPassword(email);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(l10n.resetPasswordEmailSent)));
-      }
-    } on AuthException catch (error) {
-      if (mounted) setState(() => _errorMessage = error.message);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
 
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Form(
-        key: _formKey,
+    // Not hidden-then-nothing -- an explicit message, same pattern
+    // AccountPage itself already uses one level up for !Env.hasSupabase.
+    // There's no fallback sign-in method to show instead of this one.
+    if (!Env.hasGoogleSignIn) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Text(l10n.signInUnavailable, textAlign: TextAlign.center),
+        ),
+      );
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(_isSignUp ? l10n.createAccount : l10n.signIn, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 24),
-            TextFormField(
-              controller: _emailController,
-              keyboardType: TextInputType.emailAddress,
-              autocorrect: false,
-              decoration: InputDecoration(labelText: l10n.email),
-              validator: (value) => (value == null || !value.contains('@')) ? l10n.invalidEmail : null,
+            Text(l10n.signIn, style: Theme.of(context).textTheme.headlineSmall, textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            Text(
+              l10n.premiumTagline,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.outline),
             ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: InputDecoration(labelText: l10n.password),
-              validator: (value) => (value == null || value.length < 6) ? l10n.passwordTooShort : null,
-            ),
+            const SizedBox(height: 28),
             if (_errorMessage != null) ...[
+              Text(
+                _errorMessage!,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
               const SizedBox(height: 12),
-              Text(_errorMessage!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ],
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _isSubmitting ? null : _submit,
-              child: _isSubmitting
+            FilledButton.icon(
+              onPressed: _isSubmitting ? null : _submitGoogle,
+              icon: _isSubmitting
                   ? const SizedBox(
                       height: 16,
                       width: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(_isSignUp ? l10n.createAccount : l10n.signIn),
+                  : const Icon(Icons.g_mobiledata_rounded, size: 28),
+              label: Text(l10n.continueWithGoogle),
             ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: _isSubmitting
-                  ? null
-                  : () => setState(() {
-                        _isSignUp = !_isSignUp;
-                        _errorMessage = null;
-                      }),
-              child: Text(_isSignUp ? l10n.alreadyHaveAccount : l10n.needAnAccount),
-            ),
-            if (!_isSignUp)
-              TextButton(
-                onPressed: _isSubmitting ? null : _resetPassword,
-                child: Text(l10n.forgotPassword),
-              ),
-            // Hidden entirely, not shown-then-erroring, when no real
-            // Google Cloud client is configured -- same fail-closed shape
-            // Env.hasGoogleSignIn exists for.
-            if (Env.hasGoogleSignIn) ...[
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  const Expanded(child: Divider()),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text(l10n.orDivider, style: Theme.of(context).textTheme.bodySmall),
-                  ),
-                  const Expanded(child: Divider()),
-                ],
-              ),
-              const SizedBox(height: 20),
-              OutlinedButton.icon(
-                onPressed: _isSubmitting ? null : _submitGoogle,
-                icon: const Icon(Icons.g_mobiledata_rounded, size: 28),
-                label: Text(l10n.continueWithGoogle),
-              ),
-            ],
           ],
         ),
       ),
