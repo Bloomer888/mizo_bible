@@ -201,6 +201,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get signOut => 'Sign out';
 
   @override
+  String get signOutConfirmation =>
+      'You\'ll need to sign in again to sync or access Premium features on this device.';
+
+  @override
   String get continueWithGoogle => 'Continue with Google';
 
   @override

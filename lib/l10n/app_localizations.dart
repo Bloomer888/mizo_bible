@@ -466,6 +466,12 @@ abstract class AppLocalizations {
   /// **'Sign out'**
   String get signOut;
 
+  /// No description provided for @signOutConfirmation.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll need to sign in again to sync or access Premium features on this device.'**
+  String get signOutConfirmation;
+
   /// No description provided for @continueWithGoogle.
   ///
   /// In en, this message translates to:

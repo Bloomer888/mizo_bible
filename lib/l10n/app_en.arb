@@ -82,6 +82,7 @@
   "signInUnavailable": "Sign-in isn't set up for this build yet. Bookmarks, highlights, notes, and history are still saved on this device.",
   "signedInAs": "Signed in as",
   "signOut": "Sign out",
+  "signOutConfirmation": "You'll need to sign in again to sync or access Premium features on this device.",
   "continueWithGoogle": "Continue with Google",
   "cloudSyncUnavailable": "Cloud sync isn't set up for this build. Bookmarks, highlights, notes, and history are still saved on this device.",
   "syncNow": "Sync now",

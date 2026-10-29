@@ -5,6 +5,7 @@ import '../../../core/l10n_extension.dart';
 import '../../../core/theme/app_typography.dart';
 import '../../../core/theme/theme_settings.dart';
 import '../../about/presentation/about_page.dart';
+import '../../auth/data/auth_repository.dart';
 import '../../auth/presentation/account_page.dart';
 import '../../library/presentation/bookmarks_page.dart';
 import '../../library/presentation/highlights_page.dart';
@@ -28,9 +29,28 @@ class MorePage extends ConsumerWidget {
     final isPremium = ref.watch(isPremiumProvider);
     final bookNameLanguage = ref.watch(bookNameLanguageProvider);
     final darkMode = ref.watch(darkModeProvider);
+    final user = ref.watch(currentUserProvider);
 
     void openPage(Widget page) {
       Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+    }
+
+    Future<void> confirmAndSignOut() async {
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(l10n.signOut),
+          content: Text(l10n.signOutConfirmation),
+          actions: [
+            TextButton(onPressed: () => Navigator.of(dialogContext).pop(false), child: Text(l10n.cancel)),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(l10n.signOut, style: TextStyle(color: Theme.of(dialogContext).colorScheme.error)),
+            ),
+          ],
+        ),
+      );
+      if (confirmed == true) await signOut();
     }
 
     return Scaffold(
@@ -105,6 +125,14 @@ class MorePage extends ConsumerWidget {
             title: Text(l10n.about),
             onTap: () => openPage(const AboutPage()),
           ),
+          if (user != null) ...[
+            const Divider(indent: 16, endIndent: 16),
+            ListTile(
+              leading: Icon(Icons.logout_rounded, color: Theme.of(context).colorScheme.error),
+              title: Text(l10n.signOut, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              onTap: confirmAndSignOut,
+            ),
+          ],
         ],
       ),
     );
