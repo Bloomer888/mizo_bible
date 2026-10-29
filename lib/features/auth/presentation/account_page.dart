@@ -205,14 +205,19 @@ class _SignInFormState extends ConsumerState<_SignInForm> {
         Navigator.of(context).pop();
       }
     } on GoogleSignInException catch (error) {
-      // Cancellation isn't an error from the user's perspective -- they
-      // just backed out of the account picker. Every other code (a real
-      // config problem, network failure, etc.) is worth surfacing.
+      // canceled is a genuine user-initiated back-out (tapped outside the
+      // account picker, pressed back) -- not an error worth surfacing.
       if (error.code != GoogleSignInExceptionCode.canceled && mounted) {
         setState(() => _errorMessage = error.description ?? error.code.name);
       }
     } on AuthException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
+    } catch (error) {
+      // Anything else (a platform-channel error during the token
+      // authorization step, etc.) used to be swallowed silently here --
+      // the account picker would complete but the screen never changed
+      // and nothing told the user why. Surface it instead.
+      if (mounted) setState(() => _errorMessage = error.toString());
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
