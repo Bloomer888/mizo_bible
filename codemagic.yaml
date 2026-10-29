@@ -1,0 +1,34 @@
+workflows:
+  ios-simulator-smoke-test:
+    name: iOS Simulator Smoke Test
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: latest
+    scripts:
+      - name: Get Flutter packages
+        script: flutter pub get
+      # Simulator builds are unsigned, so this needs no Apple Developer
+      # account -- the point of this workflow while that account doesn't
+      # exist yet. Supabase/RevenueCat stay unconfigured (no dart-define
+      # values passed here), which the app is built to handle gracefully
+      # -- see main.dart's Env.hasSupabase/Env.hasRevenueCat guards --
+      # so this still confirms the core offline Bible reader itself
+      # builds and runs correctly on iOS.
+      - name: Build for iOS Simulator
+        script: flutter build ios --simulator --debug
+      - name: Boot a simulator and capture a screenshot
+        script: |
+          set -e
+          DEVICE_ID=$(xcrun simctl list devices available | grep -m1 "iPhone" | grep -oE '[0-9A-F-]{36}')
+          echo "Using simulator: $DEVICE_ID"
+          xcrun simctl boot "$DEVICE_ID"
+          xcrun simctl bootstatus "$DEVICE_ID" -b
+          xcrun simctl install "$DEVICE_ID" build/ios/iphonesimulator/Runner.app
+          xcrun simctl launch "$DEVICE_ID" com.mizobible.app
+          sleep 8
+          xcrun simctl io "$DEVICE_ID" screenshot ios_screenshot.png
+    artifacts:
+      - ios_screenshot.png
+      - build/ios/iphonesimulator/Runner.app
