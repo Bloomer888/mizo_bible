@@ -9,13 +9,23 @@ workflows:
     scripts:
       - name: Get Flutter packages
         script: flutter pub get
+      # assets/db/bible.db is gitignored on purpose (a generated build
+      # artifact, not source -- tool/export_bible_db.py's own doc
+      # comment says to run it "per release"), so a fresh checkout
+      # like this one never has it on disk. Needs SUPABASE_URL and
+      # SUPABASE_SERVICE_ROLE_KEY set as encrypted variables in
+      # Codemagic's own environment settings -- never committed here.
+      - name: Generate bible.db from Supabase
+        script: |
+          pip3 install --quiet requests
+          python3 tool/export_bible_db.py
       # Simulator builds are unsigned, so this needs no Apple Developer
       # account -- the point of this workflow while that account doesn't
-      # exist yet. Supabase/RevenueCat stay unconfigured (no dart-define
-      # values passed here), which the app is built to handle gracefully
-      # -- see main.dart's Env.hasSupabase/Env.hasRevenueCat guards --
-      # so this still confirms the core offline Bible reader itself
-      # builds and runs correctly on iOS.
+      # exist yet. Supabase/RevenueCat stay unconfigured for the app
+      # itself (no dart-define values passed here), which it's built to
+      # handle gracefully -- see main.dart's Env.hasSupabase/
+      # Env.hasRevenueCat guards -- so this still confirms the core
+      # offline Bible reader builds and runs correctly on iOS.
       - name: Build for iOS Simulator
         script: flutter build ios --simulator --debug
       - name: Boot a simulator and capture a screenshot
