@@ -14,6 +14,7 @@ import 'core/theme/theme_settings.dart';
 import 'features/home/data/daily_devotion.dart';
 import 'features/home/data/verse_of_the_day.dart';
 import 'features/home/data/word_of_the_day.dart';
+import 'features/home/presentation/home_page.dart';
 import 'features/notifications/data/daily_verse_notifications.dart';
 import 'features/premium/data/premium_providers.dart';
 import 'features/sync/data/sync_repository.dart';
@@ -34,9 +35,7 @@ class _MizoBibleAppState extends ConsumerState<MizoBibleApp> with WidgetsBinding
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _syncIfSignedIn();
-    unawaited(syncDailyVerseReferences(ref.read(userDatabaseProvider)));
-    unawaited(syncWordOfDayEntries(ref.read(userDatabaseProvider)));
-    unawaited(syncDailyDevotionEntries(ref.read(userDatabaseProvider)));
+    unawaited(_syncAndRefreshHomeContent());
     _applyNotificationState(ref.read(isPremiumProvider)).catchError((_) {});
     // listenManual, not ref.listen -- this needs to fire once at
     // startup regardless of build(), and keep firing for the rest of
@@ -77,9 +76,7 @@ class _MizoBibleAppState extends ConsumerState<MizoBibleApp> with WidgetsBinding
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed) return;
     _syncIfSignedIn();
-    unawaited(syncDailyVerseReferences(ref.read(userDatabaseProvider)));
-    unawaited(syncWordOfDayEntries(ref.read(userDatabaseProvider)));
-    unawaited(syncDailyDevotionEntries(ref.read(userDatabaseProvider)));
+    unawaited(_syncAndRefreshHomeContent());
     // The verse-changed notification is one-shot, not a native repeat
     // (see its own doc comment in daily_verse_notifications.dart), so
     // it needs refreshing here to stay aligned with the next rotation
@@ -89,6 +86,27 @@ class _MizoBibleAppState extends ConsumerState<MizoBibleApp> with WidgetsBinding
     if (ref.read(isPremiumProvider)) {
       scheduleVerseChangeNotification().catchError((_) {});
     }
+  }
+
+  // Runs all three content syncs, then invalidates the Home providers
+  // that read their caches -- without this, a session that stays open
+  // across a resume (not a cold restart) would keep showing whatever
+  // Home read on its last build, since none of these FutureProviders
+  // watch anything that changes when the sync writes to Drift under
+  // them. A cold restart happened to self-correct anyway (new
+  // ProviderContainer, reads the already-synced cache fresh), which is
+  // what made this gap easy to miss testing only that way.
+  Future<void> _syncAndRefreshHomeContent() async {
+    final db = ref.read(userDatabaseProvider);
+    await Future.wait([
+      syncDailyVerseReferences(db),
+      syncWordOfDayEntries(db),
+      syncDailyDevotionEntries(db),
+    ]);
+    if (!mounted) return;
+    ref.invalidate(verseOfTheDayProvider);
+    ref.invalidate(wordOfTheDayProvider);
+    ref.invalidate(dailyDevotionProvider);
   }
 
   // Launch and resume only -- not a timer or a realtime subscription,

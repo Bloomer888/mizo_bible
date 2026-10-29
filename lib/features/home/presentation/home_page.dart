@@ -28,7 +28,13 @@ final _mostRecentProgressProvider = FutureProvider.autoDispose<BookReadingPositi
   return loadMostRecentReadingProgress(db);
 });
 
-final _verseOfTheDayProvider = FutureProvider.autoDispose<VerseOfTheDay?>((ref) async {
+/// Public (not `_`-prefixed), unlike most of this file's providers --
+/// app.dart invalidates these three by name right after its background
+/// content sync completes (on launch and on every resume), so a page
+/// that's stayed mounted across a resume picks up freshly-synced admin
+/// content immediately instead of only after a full cold restart. See
+/// app.dart's `_syncAndRefreshHomeContent`.
+final verseOfTheDayProvider = FutureProvider.autoDispose<VerseOfTheDay?>((ref) async {
   final bibleDb = ref.watch(bibleDatabaseProvider);
   final userDb = ref.watch(userDatabaseProvider);
   final names = await ref.watch(bookNamesMapProvider.future);
@@ -36,12 +42,12 @@ final _verseOfTheDayProvider = FutureProvider.autoDispose<VerseOfTheDay?>((ref) 
   return loadVerseOfTheDay(bibleDb, names, references: references);
 });
 
-final _wordOfTheDayProvider = FutureProvider.autoDispose<WordOfTheDay?>((ref) {
+final wordOfTheDayProvider = FutureProvider.autoDispose<WordOfTheDay?>((ref) {
   final db = ref.watch(userDatabaseProvider);
   return loadActiveWordOfDay(db);
 });
 
-final _dailyDevotionProvider = FutureProvider.autoDispose<DailyDevotion?>((ref) async {
+final dailyDevotionProvider = FutureProvider.autoDispose<DailyDevotion?>((ref) async {
   final db = ref.watch(userDatabaseProvider);
   final names = await ref.watch(bookNamesMapProvider.future);
   return loadActiveDailyDevotion(db, names);
@@ -79,9 +85,9 @@ class HomePage extends ConsumerWidget {
     final l10n = context.l10n;
     final progressAsync = ref.watch(_mostRecentProgressProvider);
     final namesAsync = ref.watch(bookNamesMapProvider);
-    final verseAsync = ref.watch(_verseOfTheDayProvider);
-    final devotionAsync = ref.watch(_dailyDevotionProvider);
-    final wordAsync = ref.watch(_wordOfTheDayProvider);
+    final verseAsync = ref.watch(verseOfTheDayProvider);
+    final devotionAsync = ref.watch(dailyDevotionProvider);
+    final wordAsync = ref.watch(wordOfTheDayProvider);
     final isPremium = ref.watch(isPremiumProvider);
     final planAsync = ref.watch(activePlanProgressProvider);
 
@@ -112,7 +118,7 @@ class HomePage extends ConsumerWidget {
       // the system gesture/nav inset so this also holds on devices with
       // on-screen nav buttons instead of gesture navigation.
       body: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom),
+        padding: EdgeInsets.fromLTRB(10, 16, 10, 16 + kBottomNavigationBarHeight + MediaQuery.of(context).padding.bottom),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -127,11 +133,11 @@ class HomePage extends ConsumerWidget {
               _ => const SizedBox.shrink(),
             },
             if (devotionAsync case AsyncData(value: final devotion?)) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               _DailyDevotionCard(devotion: devotion),
             ],
             if (wordAsync case AsyncData(value: final word?)) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               _WordOfTheDayCard(word: word),
             ],
             // Premium-gated and only once a plan is active and not yet
@@ -140,17 +146,17 @@ class HomePage extends ConsumerWidget {
             // lapsed subscriber), and stops appearing once the plan is
             // done rather than lingering with nothing left to do.
             if (planAsync case AsyncData(value: final planState?) when isPremium && !planState.isComplete) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               _ReadingPlanCard(state: planState),
             ],
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             const _StreakCard(),
             // Moved to the bottom per the user's explicit request
             // (2026-10-13) -- stays in the app (not removed), just no
             // longer the first thing after Continue/Start Reading, now
             // that Daily Devotion and Word of the Day sit above it.
             if (verseAsync case AsyncData(value: final verse?)) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 10),
               _VerseOfTheDayCard(verse: verse),
             ],
           ],
@@ -270,6 +276,7 @@ class _HomeCard extends StatelessWidget {
     return _PressableScale(
       onTap: onTap,
       child: Card(
+        margin: EdgeInsets.zero,
         child: ListTile(
           contentPadding: const EdgeInsets.all(16),
           leading: CircleAvatar(
@@ -335,6 +342,7 @@ class _VerseOfTheDayCard extends StatelessWidget {
       child: ConstrainedBox(
         constraints: BoxConstraints(minHeight: screenHeight * 0.38),
         child: Card(
+          margin: EdgeInsets.zero,
           child: Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
@@ -358,11 +366,11 @@ class _VerseOfTheDayCard extends StatelessWidget {
                   '${verse.bookName} ${verse.chapter}:${verse.verse}',
                   style: AppTypography.weight(TextStyle(fontSize: 16, color: scheme.primary), FontWeight.w700),
                 ),
-                SizedBox(height: screenHeight * 0.10),
-                Text(verse.englishText, style: const TextStyle(fontSize: 17, height: 1.5)),
+                const SizedBox(height: 16),
+                Text(verse.mizoText, style: const TextStyle(fontSize: 17, height: 1.5)),
                 const SizedBox(height: 10),
                 Text(
-                  verse.mizoText,
+                  verse.englishText,
                   style: TextStyle(fontSize: 15, height: 1.5, fontStyle: FontStyle.italic, color: scheme.onSurfaceVariant),
                 ),
               ],
@@ -414,20 +422,36 @@ class _WordOfTheDaySheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
+    // Fixed fraction of screen height, not size-to-content -- a short
+    // meaning used to leave the sheet looking like a tiny floating card
+    // instead of a proper detail view. Scrollable inside that fixed
+    // height so an unusually long meaning still has somewhere to go
+    // rather than overflow.
+    //
+    // crossAxisAlignment.stretch, not .start -- a Column that isn't
+    // told to stretch shrinks its WIDTH to its widest child's natural
+    // size too, not just its height. That was invisible before this
+    // sheet had a fixed height (a long meaning wraps across lines,
+    // which happens to force full width as a side effect), but a
+    // short single-line word/meaning (e.g. "Trinity"/"trinity") has no
+    // such side effect and rendered as a narrow floating column.
     return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              word.word,
-              style: AppTypography.weight(TextStyle(fontSize: 28, color: scheme.primary), FontWeight.w800),
-            ),
-            const SizedBox(height: 16),
-            Text(word.meaning, style: const TextStyle(fontSize: 16, height: 1.5)),
-          ],
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.38,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                word.word,
+                style: AppTypography.weight(TextStyle(fontSize: 28, color: scheme.primary), FontWeight.w800),
+              ),
+              const SizedBox(height: 16),
+              Text(word.meaning, style: const TextStyle(fontSize: 16, height: 1.5)),
+            ],
+          ),
         ),
       ),
     );
@@ -487,6 +511,7 @@ class _ReadingPlanCard extends ConsumerWidget {
         ),
       ),
       child: Card(
+        margin: EdgeInsets.zero,
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
@@ -579,6 +604,7 @@ class _StreakCard extends ConsumerWidget {
     final checkedInToday = ref.watch(_checkedInTodayProvider).value ?? false;
 
     return Card(
+      margin: EdgeInsets.zero,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
