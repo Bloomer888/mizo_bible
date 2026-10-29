@@ -26,9 +26,20 @@ workflows:
           xcrun simctl boot "$DEVICE_ID"
           xcrun simctl bootstatus "$DEVICE_ID" -b
           xcrun simctl install "$DEVICE_ID" build/ios/iphonesimulator/Runner.app
+          # Captured for the whole wait, not just on failure -- first
+          # launch copies the bundled Bible database to disk before
+          # anything can render, and an 8s wait wasn't enough for that
+          # on a simulator (confirmed empirically: a blank white frame,
+          # not a crash, came back). A running log is the one way to
+          # tell "still initializing" apart from "silently stuck" on
+          # the next run if the longer wait still isn't enough.
+          xcrun simctl spawn "$DEVICE_ID" log stream --level debug --predicate 'process == "Runner"' > runner_log.txt 2>&1 &
+          LOG_PID=$!
           xcrun simctl launch "$DEVICE_ID" com.mizobible.app
-          sleep 8
+          sleep 30
           xcrun simctl io "$DEVICE_ID" screenshot ios_screenshot.png
+          kill "$LOG_PID" || true
     artifacts:
       - ios_screenshot.png
+      - runner_log.txt
       - build/ios/iphonesimulator/Runner.app
