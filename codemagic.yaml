@@ -6,6 +6,8 @@ workflows:
     environment:
       flutter: stable
       xcode: latest
+      groups:
+        - supabase
     scripts:
       - name: Get Flutter packages
         script: flutter pub get
