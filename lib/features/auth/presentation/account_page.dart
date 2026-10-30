@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/db/user_database.dart';
@@ -170,13 +172,14 @@ class _SignedInViewState extends ConsumerState<_SignedInView> {
   }
 }
 
-/// Google-only, deliberately -- no email/password path exists in this app
-/// at all (user's explicit call, 2026-10-16: typing an email and
-/// inventing a password was friction worth cutting entirely, not just
-/// de-emphasizing next to a Google button). Sign-in only ever happens
-/// here, at the moment of a Premium purchase or a deliberate Account
-/// visit -- never for reading the Bible -- so there's no broader app
-/// flow depending on a password-based identity existing.
+/// Google on Android, Apple on iOS -- one button, platform-exclusive, never
+/// both. No email/password path exists in this app at all (user's explicit
+/// call, 2026-10-16: typing an email and inventing a password was friction
+/// worth cutting entirely, not just de-emphasizing next to a social
+/// button). Sign-in only ever happens here, at the moment of a Premium
+/// purchase or a deliberate Account visit -- never for reading the Bible --
+/// so there's no broader app flow depending on a password-based identity
+/// existing.
 class _SignInForm extends ConsumerStatefulWidget {
   final bool popOnSuccess;
   const _SignInForm({required this.popOnSuccess});
@@ -188,6 +191,40 @@ class _SignInForm extends ConsumerStatefulWidget {
 class _SignInFormState extends ConsumerState<_SignInForm> {
   bool _isSubmitting = false;
   String? _errorMessage;
+
+  bool get _useApple => defaultTargetPlatform == TargetPlatform.iOS;
+
+  Future<void> _submit() => _useApple ? _submitApple() : _submitGoogle();
+
+  Future<void> _submitApple() async {
+    setState(() {
+      _isSubmitting = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final response = await signInWithApple();
+      final user = response.user;
+      if (user != null) {
+        await syncUserData(ref.read(userDatabaseProvider), user.id);
+      }
+      if (widget.popOnSuccess && response.session != null && mounted) {
+        Navigator.of(context).pop();
+      }
+    } on SignInWithAppleAuthorizationException catch (error) {
+      // canceled is a genuine user-initiated back-out, same as Google's
+      // canceled code above -- not an error worth surfacing.
+      if (error.code != AuthorizationErrorCode.canceled && mounted) {
+        setState(() => _errorMessage = error.message);
+      }
+    } on AuthException catch (error) {
+      if (mounted) setState(() => _errorMessage = error.message);
+    } catch (error) {
+      if (mounted) setState(() => _errorMessage = error.toString());
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
 
   Future<void> _submitGoogle() async {
     setState(() {
@@ -230,7 +267,9 @@ class _SignInFormState extends ConsumerState<_SignInForm> {
     // Not hidden-then-nothing -- an explicit message, same pattern
     // AccountPage itself already uses one level up for !Env.hasSupabase.
     // There's no fallback sign-in method to show instead of this one.
-    if (!Env.hasGoogleSignIn) {
+    // Apple's native flow needs no dart-define client ID the way Google
+    // does -- it's gated only by platform, never by Env.hasGoogleSignIn.
+    if (!_useApple && !Env.hasGoogleSignIn) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -263,15 +302,15 @@ class _SignInFormState extends ConsumerState<_SignInForm> {
               const SizedBox(height: 12),
             ],
             FilledButton.icon(
-              onPressed: _isSubmitting ? null : _submitGoogle,
+              onPressed: _isSubmitting ? null : _submit,
               icon: _isSubmitting
                   ? const SizedBox(
                       height: 16,
                       width: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.g_mobiledata_rounded, size: 28),
-              label: Text(l10n.continueWithGoogle),
+                  : Icon(_useApple ? Icons.apple : Icons.g_mobiledata_rounded, size: _useApple ? 22 : 28),
+              label: Text(_useApple ? l10n.continueWithApple : l10n.continueWithGoogle),
             ),
           ],
         ),

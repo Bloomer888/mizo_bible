@@ -1,6 +1,10 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:sign_in_with_apple/sign_in_with_apple.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/db/user_database.dart';
@@ -56,6 +60,36 @@ Future<AuthResponse> signInWithGoogle() async {
     provider: OAuthProvider.google,
     idToken: idToken,
     accessToken: authorization.accessToken,
+  );
+  final user = response.user;
+  if (user != null) await linkPremiumIdentity(user.id);
+  return response;
+}
+
+/// iOS-only counterpart to signInWithGoogle above -- Apple requires the
+/// ID token to embed a hash of a nonce we generate, then checks the raw
+/// nonce against it on Supabase's side (signInWithIdToken's `nonce`
+/// param), so this can't be a straight token hand-off the way Google's
+/// is. generateRawNonce() is supabase_flutter's own helper, kept in sync
+/// with what signInWithIdToken expects to verify.
+Future<AuthResponse> signInWithApple() async {
+  final rawNonce = Supabase.instance.client.auth.generateRawNonce();
+  final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
+
+  final credential = await SignInWithApple.getAppleIDCredential(
+    scopes: [AppleIDAuthorizationScopes.email, AppleIDAuthorizationScopes.fullName],
+    nonce: hashedNonce,
+  );
+
+  final idToken = credential.identityToken;
+  if (idToken == null) {
+    throw const AuthException('Apple sign-in did not return an ID token.');
+  }
+
+  final response = await Supabase.instance.client.auth.signInWithIdToken(
+    provider: OAuthProvider.apple,
+    idToken: idToken,
+    nonce: rawNonce,
   );
   final user = response.user;
   if (user != null) await linkPremiumIdentity(user.id);

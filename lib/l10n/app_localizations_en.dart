@@ -208,6 +208,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continueWithGoogle => 'Continue with Google';
 
   @override
+  String get continueWithApple => 'Continue with Apple';
+
+  @override
   String get cloudSyncUnavailable =>
       'Cloud sync isn\'t set up for this build. Bookmarks, highlights, notes, and history are still saved on this device.';
 

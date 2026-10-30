@@ -84,6 +84,7 @@
   "signOut": "Sign out",
   "signOutConfirmation": "You'll need to sign in again to sync or access Premium features on this device.",
   "continueWithGoogle": "Continue with Google",
+  "continueWithApple": "Continue with Apple",
   "cloudSyncUnavailable": "Cloud sync isn't set up for this build. Bookmarks, highlights, notes, and history are still saved on this device.",
   "syncNow": "Sync now",
   "syncedJustNow": "Synced just now",
