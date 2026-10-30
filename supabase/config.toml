@@ -386,6 +386,13 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+[functions.revenuecat-webhook]
+# This function is called by RevenueCat, not by our own app, so it can't
+# send a Supabase-issued JWT -- it authenticates instead via its own
+# Authorization-header secret check inside index.ts. Disable Supabase's
+# platform-level JWT check so requests actually reach that code.
+verify_jwt = false
+
 [analytics]
 enabled = true
 port = 54327
