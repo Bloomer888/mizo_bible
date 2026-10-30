@@ -36,6 +36,11 @@ workflows:
           DEVICE_ID=$(xcrun simctl list devices available | grep -m1 "iPhone" | grep -oE '[0-9A-F-]{36}')
           echo "Using simulator: $DEVICE_ID"
           xcrun simctl boot "$DEVICE_ID"
+          # simctl alone never opens a visible window -- it drives the
+          # simulator headlessly, which is why this script works with no
+          # display at all. This line is only for a human watching live
+          # over VNC/remote access; screenshot capture below doesn't need it.
+          open -a Simulator --args -CurrentDeviceUDID "$DEVICE_ID" || true
           xcrun simctl bootstatus "$DEVICE_ID" -b
           xcrun simctl install "$DEVICE_ID" build/ios/iphonesimulator/Runner.app
           # Captured for the whole wait, not just on failure -- first
